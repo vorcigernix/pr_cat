@@ -17,7 +17,7 @@ export default async function Home() {
   // If not logged in, show welcome page
   if (!userId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 text-center bg-background">
         <h1 className="text-4xl font-bold mb-4">Welcome to DORA Metrics Portal</h1>
         <p className="text-xl mb-8 max-w-2xl">
           Sign in to view your DevOps performance metrics and improve your team's delivery capabilities.
