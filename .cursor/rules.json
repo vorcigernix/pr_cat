@@ -1,0 +1,31 @@
+{
+  "name": "Pandora Project Rules",
+  "description": "Rules and guidelines for the Pandora project",
+  "technologies": {
+    "required": [
+      {
+        "name": "Next.js",
+        "version": "15.x",
+        "canUpgrade": true,
+        "canDowngrade": false
+      },
+      {
+        "name": "shadcn/ui",
+        "description": "Component library",
+        "canRemove": false
+      },
+      {
+        "name": "Tailwind CSS",
+        "version": "4.x",
+        "canUpgrade": true,
+        "canDowngrade": false
+      }
+    ],
+    "forbidden": []
+  },
+  "conventions": {
+    "fileStructure": {
+      "description": "Following Next.js App Router convention"
+    }
+  }
+} 
