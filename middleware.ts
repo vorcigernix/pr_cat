@@ -1,6 +1,22 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
-export default clerkMiddleware();
+export default auth((req) => {
+  const isAuth = !!req.auth;
+  const { pathname } = req.nextUrl;
+  
+  // If user tries to access sign-up, redirect to sign-in
+  if (pathname.startsWith('/sign-up')) {
+    return NextResponse.redirect(new URL('/sign-in', req.url));
+  }
+  
+  // If authenticated user tries to access signin page, redirect to dashboard
+  if (isAuth && pathname.startsWith('/sign-in')) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+  
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: [

@@ -1,15 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Clerk custom styling */
-.cl-rootBox, .cl-card, .cl-internal-b3fm6y {
-  background: transparent !important;
-}
-
-.cl-userButtonPopoverCard, .cl-userButtonPopoverActions, .cl-userButtonPopoverActionButton, .cl-userButtonPopoverFooter {
-  background-color: var(--card) !important;
-}
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
