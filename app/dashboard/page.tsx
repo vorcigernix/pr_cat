@@ -1,14 +1,12 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
+import { ChartAreaEngineering } from "@/components/chart-area-engineering"
 import { DataTable } from "@/components/data-table"
-import { SectionCards } from "@/components/section-cards"
+import { SectionCardsEngineering } from "@/components/section-cards-engineering"
 import { SiteHeader } from "@/components/site-header"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-
-import data from "./data.json"
 
 export default function Page() {
   return (
@@ -26,9 +24,9 @@ export default function Page() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
+              <SectionCardsEngineering />
               <div className="px-4 lg:px-6">
-                <ChartAreaInteractive />
+                <ChartAreaEngineering />
               </div>
               <DataTable data={data} />
             </div>
@@ -38,3 +36,52 @@ export default function Page() {
     </SidebarProvider>
   )
 }
+
+// Temporary mock data until we implement the engineering-focused data table
+const data = [
+  {
+    "id": 1,
+    "header": "Add user authentication",
+    "type": "Feature",
+    "status": "In Process",
+    "target": "18",
+    "limit": "5",
+    "reviewer": "Eddie Lake"
+  },
+  {
+    "id": 2,
+    "header": "Fix responsive layout issues",
+    "type": "Bug",
+    "status": "Done",
+    "target": "29",
+    "limit": "24",
+    "reviewer": "Eddie Lake"
+  },
+  {
+    "id": 3,
+    "header": "Implement API pagination",
+    "type": "Feature",
+    "status": "Done",
+    "target": "10",
+    "limit": "13",
+    "reviewer": "Eddie Lake"
+  },
+  {
+    "id": 4,
+    "header": "Update dependencies",
+    "type": "Maintenance",
+    "status": "Done",
+    "target": "27",
+    "limit": "23",
+    "reviewer": "Jamik Tashpulatov"
+  },
+  {
+    "id": 5,
+    "header": "Refactor data fetching logic",
+    "type": "Refactor",
+    "status": "In Process",
+    "target": "2",
+    "limit": "16",
+    "reviewer": "Jamik Tashpulatov"
+  }
+];

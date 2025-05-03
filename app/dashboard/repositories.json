@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "name": "api-service",
+    "fullName": "company/api-service",
+    "language": "TypeScript",
+    "isPrivate": true,
+    "stars": 269,
+    "createdAt": "2022-05-31T04:23:23.841Z"
+  },
+  {
+    "id": 2,
+    "name": "web-client",
+    "fullName": "company/web-client",
+    "language": "Java",
+    "isPrivate": true,
+    "stars": 762,
+    "createdAt": "2022-09-17T01:57:22.576Z"
+  },
+  {
+    "id": 3,
+    "name": "mobile-app",
+    "fullName": "company/mobile-app",
+    "language": "JavaScript",
+    "isPrivate": false,
+    "stars": 787,
+    "createdAt": "2022-09-03T08:13:10.007Z"
+  },
+  {
+    "id": 4,
+    "name": "data-processor",
+    "fullName": "company/data-processor",
+    "language": "JavaScript",
+    "isPrivate": true,
+    "stars": 796,
+    "createdAt": "2022-10-19T21:50:11.414Z"
+  },
+  {
+    "id": 5,
+    "name": "auth-service",
+    "fullName": "company/auth-service",
+    "language": "Go",
+    "isPrivate": true,
+    "stars": 712,
+    "createdAt": "2022-09-04T15:11:05.265Z"
+  }
+]

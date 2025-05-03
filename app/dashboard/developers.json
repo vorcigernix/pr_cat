@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "name": "Blake Lee",
+    "email": "blake.lee@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Blake_Lee",
+    "role": "Backend",
+    "experience": "Senior",
+    "averageCodingTime": 4.8
+  },
+  {
+    "id": 2,
+    "name": "Alex Jones",
+    "email": "alex.jones@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Alex_Jones",
+    "role": "QA",
+    "experience": "Mid-level",
+    "averageCodingTime": 4.8
+  },
+  {
+    "id": 3,
+    "name": "Alex Wilson",
+    "email": "alex.wilson@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Alex_Wilson",
+    "role": "Frontend",
+    "experience": "Mid-level",
+    "averageCodingTime": 5
+  },
+  {
+    "id": 4,
+    "name": "Taylor Davis",
+    "email": "taylor.davis@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Taylor_Davis",
+    "role": "Backend",
+    "experience": "Junior",
+    "averageCodingTime": 5.5
+  },
+  {
+    "id": 5,
+    "name": "Jordan Nguyen",
+    "email": "jordan.nguyen@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Jordan_Nguyen",
+    "role": "Frontend",
+    "experience": "Lead",
+    "averageCodingTime": 3.8
+  },
+  {
+    "id": 6,
+    "name": "Blake Smith",
+    "email": "blake.smith@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Blake_Smith",
+    "role": "DevOps",
+    "experience": "Senior",
+    "averageCodingTime": 3.2
+  },
+  {
+    "id": 7,
+    "name": "Sam Jones",
+    "email": "sam.jones@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Sam_Jones",
+    "role": "Backend",
+    "experience": "Senior",
+    "averageCodingTime": 5.4
+  },
+  {
+    "id": 8,
+    "name": "Avery Lee",
+    "email": "avery.lee@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Avery_Lee",
+    "role": "Full Stack",
+    "experience": "Lead",
+    "averageCodingTime": 4.6
+  },
+  {
+    "id": 9,
+    "name": "Jamie Nguyen",
+    "email": "jamie.nguyen@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Jamie_Nguyen",
+    "role": "Full Stack",
+    "experience": "Mid-level",
+    "averageCodingTime": 3
+  },
+  {
+    "id": 10,
+    "name": "Cameron Smith",
+    "email": "cameron.smith@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Cameron_Smith",
+    "role": "DevOps",
+    "experience": "Lead",
+    "averageCodingTime": 3.6
+  }
+]

@@ -1,0 +1,4548 @@
+{
+  "developers": [
+    {
+      "id": 1,
+      "name": "Blake Lee",
+      "email": "blake.lee@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Blake_Lee",
+      "role": "Backend",
+      "experience": "Senior",
+      "averageCodingTime": 4.8
+    },
+    {
+      "id": 2,
+      "name": "Alex Jones",
+      "email": "alex.jones@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Alex_Jones",
+      "role": "QA",
+      "experience": "Mid-level",
+      "averageCodingTime": 4.8
+    },
+    {
+      "id": 3,
+      "name": "Alex Wilson",
+      "email": "alex.wilson@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Alex_Wilson",
+      "role": "Frontend",
+      "experience": "Mid-level",
+      "averageCodingTime": 5
+    },
+    {
+      "id": 4,
+      "name": "Taylor Davis",
+      "email": "taylor.davis@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Taylor_Davis",
+      "role": "Backend",
+      "experience": "Junior",
+      "averageCodingTime": 5.5
+    },
+    {
+      "id": 5,
+      "name": "Jordan Nguyen",
+      "email": "jordan.nguyen@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Jordan_Nguyen",
+      "role": "Frontend",
+      "experience": "Lead",
+      "averageCodingTime": 3.8
+    },
+    {
+      "id": 6,
+      "name": "Blake Smith",
+      "email": "blake.smith@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Blake_Smith",
+      "role": "DevOps",
+      "experience": "Senior",
+      "averageCodingTime": 3.2
+    },
+    {
+      "id": 7,
+      "name": "Sam Jones",
+      "email": "sam.jones@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Sam_Jones",
+      "role": "Backend",
+      "experience": "Senior",
+      "averageCodingTime": 5.4
+    },
+    {
+      "id": 8,
+      "name": "Avery Lee",
+      "email": "avery.lee@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Avery_Lee",
+      "role": "Full Stack",
+      "experience": "Lead",
+      "averageCodingTime": 4.6
+    },
+    {
+      "id": 9,
+      "name": "Jamie Nguyen",
+      "email": "jamie.nguyen@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Jamie_Nguyen",
+      "role": "Full Stack",
+      "experience": "Mid-level",
+      "averageCodingTime": 3
+    },
+    {
+      "id": 10,
+      "name": "Cameron Smith",
+      "email": "cameron.smith@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=Cameron_Smith",
+      "role": "DevOps",
+      "experience": "Lead",
+      "averageCodingTime": 3.6
+    }
+  ],
+  "repositories": [
+    {
+      "id": 1,
+      "name": "api-service",
+      "fullName": "company/api-service",
+      "language": "TypeScript",
+      "isPrivate": true,
+      "stars": 269,
+      "createdAt": "2022-05-31T04:23:23.841Z"
+    },
+    {
+      "id": 2,
+      "name": "web-client",
+      "fullName": "company/web-client",
+      "language": "Java",
+      "isPrivate": true,
+      "stars": 762,
+      "createdAt": "2022-09-17T01:57:22.576Z"
+    },
+    {
+      "id": 3,
+      "name": "mobile-app",
+      "fullName": "company/mobile-app",
+      "language": "JavaScript",
+      "isPrivate": false,
+      "stars": 787,
+      "createdAt": "2022-09-03T08:13:10.007Z"
+    },
+    {
+      "id": 4,
+      "name": "data-processor",
+      "fullName": "company/data-processor",
+      "language": "JavaScript",
+      "isPrivate": true,
+      "stars": 796,
+      "createdAt": "2022-10-19T21:50:11.414Z"
+    },
+    {
+      "id": 5,
+      "name": "auth-service",
+      "fullName": "company/auth-service",
+      "language": "Go",
+      "isPrivate": true,
+      "stars": 712,
+      "createdAt": "2022-09-04T15:11:05.265Z"
+    }
+  ],
+  "pullRequests": [
+    {
+      "id": 1,
+      "title": "Add unit tests for user service",
+      "number": 481,
+      "developer": {
+        "id": 7,
+        "name": "Sam Jones"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-21T09:30:02.422Z",
+      "reviewStartedAt": "2025-03-23T05:30:02.422Z",
+      "mergedAt": "2025-03-23T13:30:02.422Z",
+      "deployedAt": "2025-03-24T00:30:02.422Z",
+      "reviewers": [
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 325,
+      "linesRemoved": 203,
+      "files": 4,
+      "commentCount": 20,
+      "approvalCount": 0,
+      "reviewThoroughness": 3.79,
+      "timeToFirstReview": 44,
+      "reviewTime": 8,
+      "cycleTime": 63,
+      "qualityScore": 74
+    },
+    {
+      "id": 2,
+      "title": "Add caching layer",
+      "number": 5513,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-16T14:13:03.415Z",
+      "reviewStartedAt": "2025-02-18T01:13:03.415Z",
+      "mergedAt": "2025-02-18T20:13:03.415Z",
+      "deployedAt": "2025-02-18T23:13:03.415Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 253,
+      "linesRemoved": 206,
+      "files": 11,
+      "commentCount": 17,
+      "approvalCount": 2,
+      "reviewThoroughness": 3.7,
+      "timeToFirstReview": 35,
+      "reviewTime": 19,
+      "cycleTime": 57,
+      "qualityScore": 68
+    },
+    {
+      "id": 3,
+      "title": "Implement dark mode",
+      "number": 8718,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-18T03:46:47.251Z",
+      "reviewStartedAt": "2025-03-19T17:46:47.251Z",
+      "mergedAt": "2025-03-19T20:46:47.251Z",
+      "deployedAt": "2025-03-20T09:46:47.251Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 304,
+      "linesRemoved": 124,
+      "files": 1,
+      "commentCount": 13,
+      "approvalCount": 0,
+      "reviewThoroughness": 3.04,
+      "timeToFirstReview": 38,
+      "reviewTime": 3,
+      "cycleTime": 54,
+      "qualityScore": 87
+    },
+    {
+      "id": 4,
+      "title": "Add caching layer",
+      "number": 7590,
+      "developer": {
+        "id": 4,
+        "name": "Taylor Davis"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "open",
+      "createdAt": "2025-03-28T13:34:10.198Z",
+      "reviewStartedAt": "2025-03-29T12:34:10.198Z",
+      "mergedAt": "2025-03-31T10:34:10.198Z",
+      "deployedAt": "2025-04-01T07:34:10.198Z",
+      "reviewers": [
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 290,
+      "linesRemoved": 38,
+      "files": 13,
+      "commentCount": 14,
+      "approvalCount": 1,
+      "reviewThoroughness": 4.27,
+      "timeToFirstReview": 23,
+      "reviewTime": 46,
+      "cycleTime": 90,
+      "qualityScore": 77
+    },
+    {
+      "id": 5,
+      "title": "Add user authentication",
+      "number": 2544,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "open",
+      "createdAt": "2025-04-03T03:29:11.449Z",
+      "reviewStartedAt": "2025-04-03T23:29:11.449Z",
+      "mergedAt": "2025-04-06T20:29:11.449Z",
+      "deployedAt": "2025-04-07T07:29:11.449Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 188,
+      "linesRemoved": 76,
+      "files": 6,
+      "commentCount": 17,
+      "approvalCount": 0,
+      "reviewThoroughness": 6.44,
+      "timeToFirstReview": 20,
+      "reviewTime": 69,
+      "cycleTime": 100,
+      "qualityScore": 74
+    },
+    {
+      "id": 6,
+      "title": "Update documentation",
+      "number": 8578,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-02-15T06:43:46.636Z",
+      "reviewStartedAt": "2025-02-16T08:43:46.636Z",
+      "mergedAt": "2025-02-18T08:43:46.636Z",
+      "deployedAt": "2025-02-19T05:43:46.636Z",
+      "reviewers": [
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        },
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 87,
+      "linesRemoved": 22,
+      "files": 14,
+      "commentCount": 11,
+      "approvalCount": 0,
+      "reviewThoroughness": 10.09,
+      "timeToFirstReview": 26,
+      "reviewTime": 48,
+      "cycleTime": 95,
+      "qualityScore": 86
+    },
+    {
+      "id": 7,
+      "title": "Refactor data fetching logic",
+      "number": 6337,
+      "developer": {
+        "id": 8,
+        "name": "Avery Lee"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-05-02T07:51:15.017Z",
+      "reviewStartedAt": "2025-05-02T14:51:15.017Z",
+      "mergedAt": "2025-05-03T10:51:15.017Z",
+      "deployedAt": "2025-05-04T01:51:15.017Z",
+      "reviewers": [
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        },
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        }
+      ],
+      "linesAdded": 436,
+      "linesRemoved": 112,
+      "files": 15,
+      "commentCount": 9,
+      "approvalCount": 1,
+      "reviewThoroughness": 1.64,
+      "timeToFirstReview": 7,
+      "reviewTime": 20,
+      "cycleTime": 42,
+      "qualityScore": 66
+    },
+    {
+      "id": 8,
+      "title": "Fix responsive layout issues",
+      "number": 1234,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-03T23:17:08.501Z",
+      "reviewStartedAt": "2025-03-04T13:17:08.501Z",
+      "mergedAt": "2025-03-06T06:17:08.501Z",
+      "deployedAt": "2025-03-06T16:17:08.501Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 441,
+      "linesRemoved": 172,
+      "files": 2,
+      "commentCount": 9,
+      "approvalCount": 1,
+      "reviewThoroughness": 1.47,
+      "timeToFirstReview": 14,
+      "reviewTime": 41,
+      "cycleTime": 65,
+      "qualityScore": 75
+    },
+    {
+      "id": 9,
+      "title": "Implement API pagination",
+      "number": 2931,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-02-18T11:57:59.036Z",
+      "reviewStartedAt": "2025-02-18T13:57:59.036Z",
+      "mergedAt": "2025-02-20T03:57:59.036Z",
+      "deployedAt": "2025-02-20T04:57:59.036Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 65,
+      "linesRemoved": 45,
+      "files": 6,
+      "commentCount": 5,
+      "approvalCount": 0,
+      "reviewThoroughness": 4.55,
+      "timeToFirstReview": 2,
+      "reviewTime": 38,
+      "cycleTime": 41,
+      "qualityScore": 75
+    },
+    {
+      "id": 10,
+      "title": "Performance improvements",
+      "number": 9248,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "closed",
+      "createdAt": "2025-03-22T17:46:00.743Z",
+      "reviewStartedAt": "2025-03-22T22:46:00.743Z",
+      "mergedAt": "2025-03-23T05:46:00.743Z",
+      "deployedAt": "2025-03-24T04:46:00.743Z",
+      "reviewers": [
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 302,
+      "linesRemoved": 49,
+      "files": 8,
+      "commentCount": 16,
+      "approvalCount": 1,
+      "reviewThoroughness": 4.56,
+      "timeToFirstReview": 5,
+      "reviewTime": 7,
+      "cycleTime": 35,
+      "qualityScore": 72
+    },
+    {
+      "id": 11,
+      "title": "Add new feature",
+      "number": 6247,
+      "developer": {
+        "id": 4,
+        "name": "Taylor Davis"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-19T04:32:08.716Z",
+      "reviewStartedAt": "2025-04-20T16:32:08.716Z",
+      "mergedAt": "2025-04-23T01:32:08.716Z",
+      "deployedAt": "2025-04-23T17:32:08.716Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 456,
+      "linesRemoved": 454,
+      "files": 12,
+      "commentCount": 8,
+      "approvalCount": 0,
+      "reviewThoroughness": 0.88,
+      "timeToFirstReview": 36,
+      "reviewTime": 57,
+      "cycleTime": 109,
+      "qualityScore": 59
+    },
+    {
+      "id": 12,
+      "title": "Add user authentication",
+      "number": 788,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-05T20:32:45.930Z",
+      "reviewStartedAt": "2025-04-07T00:32:45.930Z",
+      "mergedAt": "2025-04-08T09:32:45.930Z",
+      "deployedAt": "2025-04-08T23:32:45.930Z",
+      "reviewers": [
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 55,
+      "linesRemoved": 20,
+      "files": 15,
+      "commentCount": 7,
+      "approvalCount": 0,
+      "reviewThoroughness": 9.33,
+      "timeToFirstReview": 28,
+      "reviewTime": 33,
+      "cycleTime": 75,
+      "qualityScore": 75
+    },
+    {
+      "id": 13,
+      "title": "Implement dark mode",
+      "number": 7477,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-08T10:48:28.203Z",
+      "reviewStartedAt": "2025-04-09T22:48:28.203Z",
+      "mergedAt": "2025-04-12T14:48:28.203Z",
+      "deployedAt": "2025-04-13T03:48:28.203Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 215,
+      "linesRemoved": 89,
+      "files": 3,
+      "commentCount": 20,
+      "approvalCount": 0,
+      "reviewThoroughness": 6.58,
+      "timeToFirstReview": 36,
+      "reviewTime": 64,
+      "cycleTime": 113,
+      "qualityScore": 86
+    },
+    {
+      "id": 14,
+      "title": "Performance improvements",
+      "number": 6166,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-20T16:12:28.761Z",
+      "reviewStartedAt": "2025-04-21T01:12:28.761Z",
+      "mergedAt": "2025-04-21T09:12:28.761Z",
+      "deployedAt": "2025-04-21T16:12:28.761Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 462,
+      "linesRemoved": 82,
+      "files": 12,
+      "commentCount": 18,
+      "approvalCount": 0,
+      "reviewThoroughness": 3.31,
+      "timeToFirstReview": 9,
+      "reviewTime": 8,
+      "cycleTime": 24,
+      "qualityScore": 87
+    },
+    {
+      "id": 15,
+      "title": "Implement dark mode",
+      "number": 2711,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-28T11:16:01.704Z",
+      "reviewStartedAt": "2025-03-02T09:16:01.704Z",
+      "mergedAt": "2025-03-04T11:16:01.704Z",
+      "deployedAt": "2025-03-05T10:16:01.704Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 15,
+      "linesRemoved": 6,
+      "files": 14,
+      "commentCount": 15,
+      "approvalCount": 0,
+      "reviewThoroughness": 71.43,
+      "timeToFirstReview": 46,
+      "reviewTime": 50,
+      "cycleTime": 119,
+      "qualityScore": 77
+    },
+    {
+      "id": 16,
+      "title": "Fix security vulnerability",
+      "number": 8213,
+      "developer": {
+        "id": 4,
+        "name": "Taylor Davis"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "closed",
+      "createdAt": "2025-03-05T16:29:12.042Z",
+      "reviewStartedAt": "2025-03-06T10:29:12.042Z",
+      "mergedAt": "2025-03-07T22:29:12.042Z",
+      "deployedAt": "2025-03-08T12:29:12.042Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 105,
+      "linesRemoved": 85,
+      "files": 8,
+      "commentCount": 8,
+      "approvalCount": 1,
+      "reviewThoroughness": 4.21,
+      "timeToFirstReview": 18,
+      "reviewTime": 36,
+      "cycleTime": 68,
+      "qualityScore": 58
+    },
+    {
+      "id": 17,
+      "title": "Update dependencies",
+      "number": 6419,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-02-21T05:51:08.553Z",
+      "reviewStartedAt": "2025-02-22T03:51:08.553Z",
+      "mergedAt": "2025-02-24T02:51:08.553Z",
+      "deployedAt": "2025-02-24T18:51:08.553Z",
+      "reviewers": [
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        },
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 79,
+      "linesRemoved": 77,
+      "files": 9,
+      "commentCount": 17,
+      "approvalCount": 2,
+      "reviewThoroughness": 10.9,
+      "timeToFirstReview": 22,
+      "reviewTime": 47,
+      "cycleTime": 85,
+      "qualityScore": 87
+    },
+    {
+      "id": 18,
+      "title": "Add new feature",
+      "number": 5692,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "open",
+      "createdAt": "2025-03-11T08:47:17.492Z",
+      "reviewStartedAt": "2025-03-12T21:47:17.492Z",
+      "mergedAt": "2025-03-13T04:47:17.492Z",
+      "deployedAt": "2025-03-13T20:47:17.492Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 127,
+      "linesRemoved": 121,
+      "files": 14,
+      "commentCount": 6,
+      "approvalCount": 0,
+      "reviewThoroughness": 2.42,
+      "timeToFirstReview": 37,
+      "reviewTime": 7,
+      "cycleTime": 60,
+      "qualityScore": 76
+    },
+    {
+      "id": 19,
+      "title": "Optimize database queries",
+      "number": 9418,
+      "developer": {
+        "id": 7,
+        "name": "Sam Jones"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-16T20:16:12.477Z",
+      "reviewStartedAt": "2025-02-17T09:16:12.477Z",
+      "mergedAt": "2025-02-19T22:16:12.477Z",
+      "deployedAt": "2025-02-20T16:16:12.477Z",
+      "reviewers": [
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        },
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 493,
+      "linesRemoved": 105,
+      "files": 14,
+      "commentCount": 2,
+      "approvalCount": 1,
+      "reviewThoroughness": 0.33,
+      "timeToFirstReview": 13,
+      "reviewTime": 61,
+      "cycleTime": 92,
+      "qualityScore": 54
+    },
+    {
+      "id": 20,
+      "title": "Fix security vulnerability",
+      "number": 2500,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "closed",
+      "createdAt": "2025-03-28T07:50:23.900Z",
+      "reviewStartedAt": "2025-03-30T02:50:23.900Z",
+      "mergedAt": "2025-04-02T00:50:23.900Z",
+      "deployedAt": "2025-04-02T05:50:23.900Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 154,
+      "linesRemoved": 79,
+      "files": 7,
+      "commentCount": 11,
+      "approvalCount": 0,
+      "reviewThoroughness": 4.72,
+      "timeToFirstReview": 43,
+      "reviewTime": 70,
+      "cycleTime": 118,
+      "qualityScore": 85
+    },
+    {
+      "id": 21,
+      "title": "Add user authentication",
+      "number": 4544,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "open",
+      "createdAt": "2025-03-30T18:17:53.733Z",
+      "reviewStartedAt": "2025-04-01T10:17:53.733Z",
+      "mergedAt": "2025-04-02T07:17:53.733Z",
+      "deployedAt": "2025-04-02T15:17:53.733Z",
+      "reviewers": [
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 397,
+      "linesRemoved": 27,
+      "files": 8,
+      "commentCount": 12,
+      "approvalCount": 1,
+      "reviewThoroughness": 2.83,
+      "timeToFirstReview": 40,
+      "reviewTime": 21,
+      "cycleTime": 69,
+      "qualityScore": 84
+    },
+    {
+      "id": 22,
+      "title": "Add user authentication",
+      "number": 7051,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-25T22:57:16.744Z",
+      "reviewStartedAt": "2025-03-27T01:57:16.744Z",
+      "mergedAt": "2025-03-27T06:57:16.744Z",
+      "deployedAt": "2025-03-27T20:57:16.744Z",
+      "reviewers": [
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        },
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        }
+      ],
+      "linesAdded": 263,
+      "linesRemoved": 46,
+      "files": 3,
+      "commentCount": 14,
+      "approvalCount": 2,
+      "reviewThoroughness": 4.53,
+      "timeToFirstReview": 27,
+      "reviewTime": 5,
+      "cycleTime": 46,
+      "qualityScore": 78
+    },
+    {
+      "id": 23,
+      "title": "Fix security vulnerability",
+      "number": 2542,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-03T20:23:05.414Z",
+      "reviewStartedAt": "2025-04-05T07:23:05.414Z",
+      "mergedAt": "2025-04-06T13:23:05.414Z",
+      "deployedAt": "2025-04-07T05:23:05.414Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        }
+      ],
+      "linesAdded": 183,
+      "linesRemoved": 138,
+      "files": 2,
+      "commentCount": 11,
+      "approvalCount": 1,
+      "reviewThoroughness": 3.43,
+      "timeToFirstReview": 35,
+      "reviewTime": 30,
+      "cycleTime": 81,
+      "qualityScore": 81
+    },
+    {
+      "id": 24,
+      "title": "Add error handling",
+      "number": 6785,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-14T11:02:30.762Z",
+      "reviewStartedAt": "2025-04-14T22:02:30.762Z",
+      "mergedAt": "2025-04-16T01:02:30.762Z",
+      "deployedAt": "2025-04-16T12:02:30.762Z",
+      "reviewers": [
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        },
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        }
+      ],
+      "linesAdded": 211,
+      "linesRemoved": 108,
+      "files": 6,
+      "commentCount": 15,
+      "approvalCount": 1,
+      "reviewThoroughness": 4.7,
+      "timeToFirstReview": 11,
+      "reviewTime": 27,
+      "cycleTime": 49,
+      "qualityScore": 87
+    },
+    {
+      "id": 25,
+      "title": "Add error handling",
+      "number": 8588,
+      "developer": {
+        "id": 4,
+        "name": "Taylor Davis"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-09T02:21:43.521Z",
+      "reviewStartedAt": "2025-04-10T11:21:43.521Z",
+      "mergedAt": "2025-04-13T01:21:43.521Z",
+      "deployedAt": "2025-04-13T17:21:43.521Z",
+      "reviewers": [
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        },
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 318,
+      "linesRemoved": 141,
+      "files": 15,
+      "commentCount": 14,
+      "approvalCount": 2,
+      "reviewThoroughness": 3.05,
+      "timeToFirstReview": 33,
+      "reviewTime": 62,
+      "cycleTime": 111,
+      "qualityScore": 81
+    },
+    {
+      "id": 26,
+      "title": "Refactor data fetching logic",
+      "number": 8760,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "closed",
+      "createdAt": "2025-04-15T13:51:39.080Z",
+      "reviewStartedAt": "2025-04-15T18:51:39.080Z",
+      "mergedAt": "2025-04-15T21:51:39.080Z",
+      "deployedAt": "2025-04-16T10:51:39.080Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        },
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        }
+      ],
+      "linesAdded": 82,
+      "linesRemoved": 21,
+      "files": 9,
+      "commentCount": 1,
+      "approvalCount": 2,
+      "reviewThoroughness": 0.97,
+      "timeToFirstReview": 5,
+      "reviewTime": 3,
+      "cycleTime": 21,
+      "qualityScore": 68
+    },
+    {
+      "id": 27,
+      "title": "Update documentation",
+      "number": 669,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-16T07:09:20.751Z",
+      "reviewStartedAt": "2025-03-17T16:09:20.751Z",
+      "mergedAt": "2025-03-19T13:09:20.751Z",
+      "deployedAt": "2025-03-20T08:09:20.751Z",
+      "reviewers": [
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        }
+      ],
+      "linesAdded": 215,
+      "linesRemoved": 74,
+      "files": 4,
+      "commentCount": 10,
+      "approvalCount": 1,
+      "reviewThoroughness": 3.46,
+      "timeToFirstReview": 33,
+      "reviewTime": 45,
+      "cycleTime": 97,
+      "qualityScore": 76
+    },
+    {
+      "id": 28,
+      "title": "Fix security vulnerability",
+      "number": 6788,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-12T11:30:08.212Z",
+      "reviewStartedAt": "2025-02-14T02:30:08.212Z",
+      "mergedAt": "2025-02-16T18:30:08.212Z",
+      "deployedAt": "2025-02-16T21:30:08.212Z",
+      "reviewers": [
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        }
+      ],
+      "linesAdded": 457,
+      "linesRemoved": 297,
+      "files": 4,
+      "commentCount": 9,
+      "approvalCount": 0,
+      "reviewThoroughness": 1.19,
+      "timeToFirstReview": 39,
+      "reviewTime": 64,
+      "cycleTime": 106,
+      "qualityScore": 81
+    },
+    {
+      "id": 29,
+      "title": "Fix responsive layout issues",
+      "number": 9995,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-11T19:45:46.965Z",
+      "reviewStartedAt": "2025-03-13T18:45:46.965Z",
+      "mergedAt": "2025-03-16T14:45:46.965Z",
+      "deployedAt": "2025-03-17T12:45:46.965Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 438,
+      "linesRemoved": 68,
+      "files": 3,
+      "commentCount": 19,
+      "approvalCount": 1,
+      "reviewThoroughness": 3.75,
+      "timeToFirstReview": 47,
+      "reviewTime": 68,
+      "cycleTime": 137,
+      "qualityScore": 73
+    },
+    {
+      "id": 30,
+      "title": "Fix memory leak in background process",
+      "number": 2141,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-19T03:17:54.750Z",
+      "reviewStartedAt": "2025-03-20T09:17:54.750Z",
+      "mergedAt": "2025-03-21T17:17:54.750Z",
+      "deployedAt": "2025-03-22T03:17:54.750Z",
+      "reviewers": [
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 120,
+      "linesRemoved": 20,
+      "files": 7,
+      "commentCount": 0,
+      "approvalCount": 1,
+      "reviewThoroughness": 0,
+      "timeToFirstReview": 30,
+      "reviewTime": 32,
+      "cycleTime": 72,
+      "qualityScore": 62
+    },
+    {
+      "id": 31,
+      "title": "Implement dark mode",
+      "number": 8373,
+      "developer": {
+        "id": 4,
+        "name": "Taylor Davis"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-17T23:43:15.887Z",
+      "reviewStartedAt": "2025-04-18T18:43:15.887Z",
+      "mergedAt": "2025-04-19T06:43:15.887Z",
+      "deployedAt": "2025-04-20T00:43:15.887Z",
+      "reviewers": [
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        }
+      ],
+      "linesAdded": 74,
+      "linesRemoved": 57,
+      "files": 4,
+      "commentCount": 13,
+      "approvalCount": 0,
+      "reviewThoroughness": 9.92,
+      "timeToFirstReview": 19,
+      "reviewTime": 12,
+      "cycleTime": 49,
+      "qualityScore": 93
+    },
+    {
+      "id": 32,
+      "title": "Performance improvements",
+      "number": 7078,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-02-13T20:03:20.352Z",
+      "reviewStartedAt": "2025-02-14T06:03:20.352Z",
+      "mergedAt": "2025-02-14T10:03:20.352Z",
+      "deployedAt": "2025-02-14T21:03:20.352Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        }
+      ],
+      "linesAdded": 471,
+      "linesRemoved": 161,
+      "files": 3,
+      "commentCount": 13,
+      "approvalCount": 3,
+      "reviewThoroughness": 2.06,
+      "timeToFirstReview": 10,
+      "reviewTime": 4,
+      "cycleTime": 25,
+      "qualityScore": 67
+    },
+    {
+      "id": 33,
+      "title": "Optimize database queries",
+      "number": 9826,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-16T03:48:57.238Z",
+      "reviewStartedAt": "2025-04-17T07:48:57.238Z",
+      "mergedAt": "2025-04-19T05:48:57.238Z",
+      "deployedAt": "2025-04-19T15:48:57.238Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 240,
+      "linesRemoved": 234,
+      "files": 12,
+      "commentCount": 6,
+      "approvalCount": 0,
+      "reviewThoroughness": 1.27,
+      "timeToFirstReview": 28,
+      "reviewTime": 46,
+      "cycleTime": 84,
+      "qualityScore": 68
+    },
+    {
+      "id": 34,
+      "title": "Implement dark mode",
+      "number": 7777,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "closed",
+      "createdAt": "2025-02-07T10:53:49.148Z",
+      "reviewStartedAt": "2025-02-08T20:53:49.148Z",
+      "mergedAt": "2025-02-10T21:53:49.148Z",
+      "deployedAt": "2025-02-11T11:53:49.148Z",
+      "reviewers": [
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 495,
+      "linesRemoved": 353,
+      "files": 9,
+      "commentCount": 7,
+      "approvalCount": 0,
+      "reviewThoroughness": 0.83,
+      "timeToFirstReview": 34,
+      "reviewTime": 49,
+      "cycleTime": 97,
+      "qualityScore": 66
+    },
+    {
+      "id": 35,
+      "title": "Update dependencies",
+      "number": 6640,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-08T06:04:23.313Z",
+      "reviewStartedAt": "2025-04-09T01:04:23.313Z",
+      "mergedAt": "2025-04-10T14:04:23.313Z",
+      "deployedAt": "2025-04-11T01:04:23.313Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        },
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        }
+      ],
+      "linesAdded": 114,
+      "linesRemoved": 105,
+      "files": 3,
+      "commentCount": 17,
+      "approvalCount": 3,
+      "reviewThoroughness": 7.76,
+      "timeToFirstReview": 19,
+      "reviewTime": 37,
+      "cycleTime": 67,
+      "qualityScore": 68
+    },
+    {
+      "id": 36,
+      "title": "Fix memory leak in background process",
+      "number": 4692,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-20T17:50:08.946Z",
+      "reviewStartedAt": "2025-04-21T21:50:08.946Z",
+      "mergedAt": "2025-04-22T04:50:08.946Z",
+      "deployedAt": "2025-04-22T12:50:08.946Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 22,
+      "linesRemoved": 15,
+      "files": 3,
+      "commentCount": 3,
+      "approvalCount": 3,
+      "reviewThoroughness": 8.11,
+      "timeToFirstReview": 28,
+      "reviewTime": 7,
+      "cycleTime": 43,
+      "qualityScore": 73
+    },
+    {
+      "id": 37,
+      "title": "Refactor data fetching logic",
+      "number": 5196,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "closed",
+      "createdAt": "2025-03-21T12:18:45.844Z",
+      "reviewStartedAt": "2025-03-22T03:18:45.844Z",
+      "mergedAt": "2025-03-22T16:18:45.844Z",
+      "deployedAt": "2025-03-22T23:18:45.844Z",
+      "reviewers": [
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        },
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 32,
+      "linesRemoved": 10,
+      "files": 2,
+      "commentCount": 18,
+      "approvalCount": 1,
+      "reviewThoroughness": 42.86,
+      "timeToFirstReview": 15,
+      "reviewTime": 13,
+      "cycleTime": 35,
+      "qualityScore": 73
+    },
+    {
+      "id": 38,
+      "title": "Add caching layer",
+      "number": 3607,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "open",
+      "createdAt": "2025-05-02T18:59:24.139Z",
+      "reviewStartedAt": "2025-05-03T18:59:24.139Z",
+      "mergedAt": "2025-05-05T20:59:24.139Z",
+      "deployedAt": "2025-05-06T02:59:24.139Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        },
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        }
+      ],
+      "linesAdded": 112,
+      "linesRemoved": 37,
+      "files": 12,
+      "commentCount": 8,
+      "approvalCount": 2,
+      "reviewThoroughness": 5.37,
+      "timeToFirstReview": 24,
+      "reviewTime": 50,
+      "cycleTime": 80,
+      "qualityScore": 80
+    },
+    {
+      "id": 39,
+      "title": "Add error handling",
+      "number": 6529,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-10T18:57:13.087Z",
+      "reviewStartedAt": "2025-04-12T03:57:13.087Z",
+      "mergedAt": "2025-04-12T11:57:13.087Z",
+      "deployedAt": "2025-04-12T19:57:13.087Z",
+      "reviewers": [
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 187,
+      "linesRemoved": 116,
+      "files": 2,
+      "commentCount": 14,
+      "approvalCount": 1,
+      "reviewThoroughness": 4.62,
+      "timeToFirstReview": 33,
+      "reviewTime": 8,
+      "cycleTime": 49,
+      "qualityScore": 87
+    },
+    {
+      "id": 40,
+      "title": "Optimize database queries",
+      "number": 6823,
+      "developer": {
+        "id": 8,
+        "name": "Avery Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-05T05:03:18.869Z",
+      "reviewStartedAt": "2025-04-06T09:03:18.869Z",
+      "mergedAt": "2025-04-08T14:03:18.869Z",
+      "deployedAt": "2025-04-09T08:03:18.869Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 405,
+      "linesRemoved": 386,
+      "files": 14,
+      "commentCount": 4,
+      "approvalCount": 1,
+      "reviewThoroughness": 0.51,
+      "timeToFirstReview": 28,
+      "reviewTime": 53,
+      "cycleTime": 99,
+      "qualityScore": 61
+    },
+    {
+      "id": 41,
+      "title": "Fix responsive layout issues",
+      "number": 1961,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "closed",
+      "createdAt": "2025-04-26T08:13:59.877Z",
+      "reviewStartedAt": "2025-04-27T22:13:59.877Z",
+      "mergedAt": "2025-04-29T00:13:59.877Z",
+      "deployedAt": "2025-04-29T19:13:59.877Z",
+      "reviewers": [
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 446,
+      "linesRemoved": 78,
+      "files": 9,
+      "commentCount": 3,
+      "approvalCount": 0,
+      "reviewThoroughness": 0.57,
+      "timeToFirstReview": 38,
+      "reviewTime": 26,
+      "cycleTime": 83,
+      "qualityScore": 51
+    },
+    {
+      "id": 42,
+      "title": "Optimize database queries",
+      "number": 2356,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-25T10:55:14.718Z",
+      "reviewStartedAt": "2025-04-25T23:55:14.718Z",
+      "mergedAt": "2025-04-28T03:55:14.718Z",
+      "deployedAt": "2025-04-28T18:55:14.718Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        }
+      ],
+      "linesAdded": 393,
+      "linesRemoved": 249,
+      "files": 1,
+      "commentCount": 19,
+      "approvalCount": 2,
+      "reviewThoroughness": 2.96,
+      "timeToFirstReview": 13,
+      "reviewTime": 52,
+      "cycleTime": 80,
+      "qualityScore": 85
+    },
+    {
+      "id": 43,
+      "title": "Fix responsive layout issues",
+      "number": 1217,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-01T19:00:20.587Z",
+      "reviewStartedAt": "2025-04-02T01:00:20.587Z",
+      "mergedAt": "2025-04-02T20:00:20.587Z",
+      "deployedAt": "2025-04-03T07:00:20.587Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 226,
+      "linesRemoved": 180,
+      "files": 15,
+      "commentCount": 14,
+      "approvalCount": 1,
+      "reviewThoroughness": 3.45,
+      "timeToFirstReview": 6,
+      "reviewTime": 19,
+      "cycleTime": 36,
+      "qualityScore": 79
+    },
+    {
+      "id": 44,
+      "title": "Optimize database queries",
+      "number": 1759,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-15T14:54:26.292Z",
+      "reviewStartedAt": "2025-04-15T22:54:26.292Z",
+      "mergedAt": "2025-04-18T09:54:26.292Z",
+      "deployedAt": "2025-04-19T03:54:26.292Z",
+      "reviewers": [
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        },
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 440,
+      "linesRemoved": 201,
+      "files": 12,
+      "commentCount": 5,
+      "approvalCount": 0,
+      "reviewThoroughness": 0.78,
+      "timeToFirstReview": 8,
+      "reviewTime": 59,
+      "cycleTime": 85,
+      "qualityScore": 60
+    },
+    {
+      "id": 45,
+      "title": "Update dependencies",
+      "number": 3971,
+      "developer": {
+        "id": 3,
+        "name": "Alex Wilson"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-05-02T17:43:56.939Z",
+      "reviewStartedAt": "2025-05-04T00:43:56.939Z",
+      "mergedAt": "2025-05-05T07:43:56.939Z",
+      "deployedAt": "2025-05-05T13:43:56.939Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 485,
+      "linesRemoved": 266,
+      "files": 4,
+      "commentCount": 3,
+      "approvalCount": 0,
+      "reviewThoroughness": 0.4,
+      "timeToFirstReview": 31,
+      "reviewTime": 31,
+      "cycleTime": 68,
+      "qualityScore": 50
+    },
+    {
+      "id": 46,
+      "title": "Refactor data fetching logic",
+      "number": 179,
+      "developer": {
+        "id": 3,
+        "name": "Alex Wilson"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-03T13:45:00.848Z",
+      "reviewStartedAt": "2025-02-04T08:45:00.848Z",
+      "mergedAt": "2025-02-06T13:45:00.848Z",
+      "deployedAt": "2025-02-07T02:45:00.848Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        }
+      ],
+      "linesAdded": 438,
+      "linesRemoved": 174,
+      "files": 7,
+      "commentCount": 10,
+      "approvalCount": 2,
+      "reviewThoroughness": 1.63,
+      "timeToFirstReview": 19,
+      "reviewTime": 53,
+      "cycleTime": 85,
+      "qualityScore": 69
+    },
+    {
+      "id": 47,
+      "title": "Implement dark mode",
+      "number": 8787,
+      "developer": {
+        "id": 7,
+        "name": "Sam Jones"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "open",
+      "createdAt": "2025-04-05T15:05:15.413Z",
+      "reviewStartedAt": "2025-04-06T13:05:15.413Z",
+      "mergedAt": "2025-04-08T03:05:15.413Z",
+      "deployedAt": "2025-04-08T16:05:15.413Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 263,
+      "linesRemoved": 247,
+      "files": 1,
+      "commentCount": 1,
+      "approvalCount": 0,
+      "reviewThoroughness": 0.2,
+      "timeToFirstReview": 22,
+      "reviewTime": 38,
+      "cycleTime": 73,
+      "qualityScore": 68
+    },
+    {
+      "id": 48,
+      "title": "Implement API pagination",
+      "number": 4156,
+      "developer": {
+        "id": 8,
+        "name": "Avery Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-27T07:09:00.426Z",
+      "reviewStartedAt": "2025-04-29T05:09:00.426Z",
+      "mergedAt": "2025-04-29T20:09:00.426Z",
+      "deployedAt": "2025-04-30T19:09:00.426Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 118,
+      "linesRemoved": 37,
+      "files": 15,
+      "commentCount": 18,
+      "approvalCount": 0,
+      "reviewThoroughness": 11.61,
+      "timeToFirstReview": 46,
+      "reviewTime": 15,
+      "cycleTime": 84,
+      "qualityScore": 89
+    },
+    {
+      "id": 49,
+      "title": "Fix responsive layout issues",
+      "number": 9162,
+      "developer": {
+        "id": 4,
+        "name": "Taylor Davis"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "open",
+      "createdAt": "2025-02-10T06:21:36.817Z",
+      "reviewStartedAt": "2025-02-11T08:21:36.817Z",
+      "mergedAt": "2025-02-12T14:21:36.817Z",
+      "deployedAt": "2025-02-13T13:21:36.817Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 224,
+      "linesRemoved": 84,
+      "files": 3,
+      "commentCount": 15,
+      "approvalCount": 2,
+      "reviewThoroughness": 4.87,
+      "timeToFirstReview": 26,
+      "reviewTime": 30,
+      "cycleTime": 79,
+      "qualityScore": 91
+    },
+    {
+      "id": 50,
+      "title": "Add user authentication",
+      "number": 1462,
+      "developer": {
+        "id": 8,
+        "name": "Avery Lee"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-14T01:44:49.430Z",
+      "reviewStartedAt": "2025-03-14T07:44:49.430Z",
+      "mergedAt": "2025-03-14T10:44:49.430Z",
+      "deployedAt": "2025-03-15T09:44:49.430Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        }
+      ],
+      "linesAdded": 172,
+      "linesRemoved": 128,
+      "files": 7,
+      "commentCount": 7,
+      "approvalCount": 0,
+      "reviewThoroughness": 2.33,
+      "timeToFirstReview": 6,
+      "reviewTime": 3,
+      "cycleTime": 32,
+      "qualityScore": 74
+    },
+    {
+      "id": 51,
+      "title": "Optimize database queries",
+      "number": 5613,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "closed",
+      "createdAt": "2025-02-05T06:52:49.027Z",
+      "reviewStartedAt": "2025-02-07T00:52:49.027Z",
+      "mergedAt": "2025-02-08T03:52:49.027Z",
+      "deployedAt": "2025-02-08T08:52:49.027Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 67,
+      "linesRemoved": 23,
+      "files": 4,
+      "commentCount": 8,
+      "approvalCount": 2,
+      "reviewThoroughness": 8.89,
+      "timeToFirstReview": 42,
+      "reviewTime": 27,
+      "cycleTime": 74,
+      "qualityScore": 68
+    },
+    {
+      "id": 52,
+      "title": "Optimize database queries",
+      "number": 1674,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "open",
+      "createdAt": "2025-04-18T09:15:45.167Z",
+      "reviewStartedAt": "2025-04-18T18:15:45.167Z",
+      "mergedAt": "2025-04-20T14:15:45.167Z",
+      "deployedAt": "2025-04-21T01:15:45.167Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 435,
+      "linesRemoved": 8,
+      "files": 1,
+      "commentCount": 9,
+      "approvalCount": 1,
+      "reviewThoroughness": 2.03,
+      "timeToFirstReview": 9,
+      "reviewTime": 44,
+      "cycleTime": 64,
+      "qualityScore": 80
+    },
+    {
+      "id": 53,
+      "title": "Fix responsive layout issues",
+      "number": 1323,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-04T13:30:05.897Z",
+      "reviewStartedAt": "2025-03-06T07:30:05.897Z",
+      "mergedAt": "2025-03-08T03:30:05.897Z",
+      "deployedAt": "2025-03-09T01:30:05.897Z",
+      "reviewers": [
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 255,
+      "linesRemoved": 63,
+      "files": 9,
+      "commentCount": 11,
+      "approvalCount": 2,
+      "reviewThoroughness": 3.46,
+      "timeToFirstReview": 42,
+      "reviewTime": 44,
+      "cycleTime": 108,
+      "qualityScore": 68
+    },
+    {
+      "id": 54,
+      "title": "Add new feature",
+      "number": 9114,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-10T11:02:09.378Z",
+      "reviewStartedAt": "2025-02-11T00:02:09.378Z",
+      "mergedAt": "2025-02-13T10:02:09.378Z",
+      "deployedAt": "2025-02-13T11:02:09.378Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 176,
+      "linesRemoved": 0,
+      "files": 2,
+      "commentCount": 13,
+      "approvalCount": 2,
+      "reviewThoroughness": 7.39,
+      "timeToFirstReview": 13,
+      "reviewTime": 58,
+      "cycleTime": 72,
+      "qualityScore": 91
+    },
+    {
+      "id": 55,
+      "title": "Implement dark mode",
+      "number": 1663,
+      "developer": {
+        "id": 8,
+        "name": "Avery Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-17T19:25:32.206Z",
+      "reviewStartedAt": "2025-03-19T06:25:32.206Z",
+      "mergedAt": "2025-03-20T05:25:32.206Z",
+      "deployedAt": "2025-03-20T07:25:32.206Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        }
+      ],
+      "linesAdded": 64,
+      "linesRemoved": 8,
+      "files": 4,
+      "commentCount": 17,
+      "approvalCount": 1,
+      "reviewThoroughness": 23.61,
+      "timeToFirstReview": 35,
+      "reviewTime": 23,
+      "cycleTime": 60,
+      "qualityScore": 92
+    },
+    {
+      "id": 56,
+      "title": "Performance improvements",
+      "number": 2175,
+      "developer": {
+        "id": 8,
+        "name": "Avery Lee"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-16T22:00:52.718Z",
+      "reviewStartedAt": "2025-03-18T09:00:52.718Z",
+      "mergedAt": "2025-03-20T21:00:52.718Z",
+      "deployedAt": "2025-03-20T22:00:52.718Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        },
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 444,
+      "linesRemoved": 95,
+      "files": 12,
+      "commentCount": 15,
+      "approvalCount": 2,
+      "reviewThoroughness": 2.78,
+      "timeToFirstReview": 35,
+      "reviewTime": 60,
+      "cycleTime": 96,
+      "qualityScore": 76
+    },
+    {
+      "id": 57,
+      "title": "Add unit tests for user service",
+      "number": 2441,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-24T01:31:05.795Z",
+      "reviewStartedAt": "2025-03-25T16:31:05.795Z",
+      "mergedAt": "2025-03-28T10:31:05.795Z",
+      "deployedAt": "2025-03-29T00:31:05.795Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 347,
+      "linesRemoved": 215,
+      "files": 8,
+      "commentCount": 14,
+      "approvalCount": 0,
+      "reviewThoroughness": 2.49,
+      "timeToFirstReview": 39,
+      "reviewTime": 66,
+      "cycleTime": 119,
+      "qualityScore": 89
+    },
+    {
+      "id": 58,
+      "title": "Add user authentication",
+      "number": 1867,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "closed",
+      "createdAt": "2025-03-06T16:25:40.380Z",
+      "reviewStartedAt": "2025-03-08T16:25:40.380Z",
+      "mergedAt": "2025-03-10T14:25:40.380Z",
+      "deployedAt": "2025-03-10T15:25:40.380Z",
+      "reviewers": [
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        }
+      ],
+      "linesAdded": 477,
+      "linesRemoved": 136,
+      "files": 2,
+      "commentCount": 12,
+      "approvalCount": 1,
+      "reviewThoroughness": 1.96,
+      "timeToFirstReview": 48,
+      "reviewTime": 46,
+      "cycleTime": 95,
+      "qualityScore": 67
+    },
+    {
+      "id": 59,
+      "title": "Implement dark mode",
+      "number": 7075,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "open",
+      "createdAt": "2025-02-05T23:54:57.785Z",
+      "reviewStartedAt": "2025-02-06T13:54:57.785Z",
+      "mergedAt": "2025-02-07T06:54:57.785Z",
+      "deployedAt": "2025-02-08T06:54:57.785Z",
+      "reviewers": [
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        },
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 348,
+      "linesRemoved": 184,
+      "files": 14,
+      "commentCount": 4,
+      "approvalCount": 1,
+      "reviewThoroughness": 0.75,
+      "timeToFirstReview": 14,
+      "reviewTime": 17,
+      "cycleTime": 55,
+      "qualityScore": 52
+    },
+    {
+      "id": 60,
+      "title": "Fix memory leak in background process",
+      "number": 2762,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-18T11:38:22.843Z",
+      "reviewStartedAt": "2025-03-18T23:38:22.843Z",
+      "mergedAt": "2025-03-21T05:38:22.843Z",
+      "deployedAt": "2025-03-21T21:38:22.843Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        }
+      ],
+      "linesAdded": 273,
+      "linesRemoved": 93,
+      "files": 13,
+      "commentCount": 20,
+      "approvalCount": 1,
+      "reviewThoroughness": 5.46,
+      "timeToFirstReview": 12,
+      "reviewTime": 54,
+      "cycleTime": 82,
+      "qualityScore": 87
+    },
+    {
+      "id": 61,
+      "title": "Implement API pagination",
+      "number": 9170,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-28T23:41:35.253Z",
+      "reviewStartedAt": "2025-04-29T17:41:35.253Z",
+      "mergedAt": "2025-04-30T02:41:35.253Z",
+      "deployedAt": "2025-04-30T12:41:35.253Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 6,
+      "linesRemoved": 1,
+      "files": 1,
+      "commentCount": 20,
+      "approvalCount": 1,
+      "reviewThoroughness": 285.71,
+      "timeToFirstReview": 18,
+      "reviewTime": 9,
+      "cycleTime": 37,
+      "qualityScore": 96
+    },
+    {
+      "id": 62,
+      "title": "Fix responsive layout issues",
+      "number": 486,
+      "developer": {
+        "id": 3,
+        "name": "Alex Wilson"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-12T11:07:01.108Z",
+      "reviewStartedAt": "2025-03-14T01:07:01.108Z",
+      "mergedAt": "2025-03-14T13:07:01.108Z",
+      "deployedAt": "2025-03-14T22:07:01.108Z",
+      "reviewers": [
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        }
+      ],
+      "linesAdded": 487,
+      "linesRemoved": 160,
+      "files": 12,
+      "commentCount": 2,
+      "approvalCount": 1,
+      "reviewThoroughness": 0.31,
+      "timeToFirstReview": 38,
+      "reviewTime": 12,
+      "cycleTime": 59,
+      "qualityScore": 49
+    },
+    {
+      "id": 63,
+      "title": "Fix security vulnerability",
+      "number": 9701,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "closed",
+      "createdAt": "2025-02-28T08:12:33.532Z",
+      "reviewStartedAt": "2025-02-28T22:12:33.532Z",
+      "mergedAt": "2025-03-01T03:12:33.532Z",
+      "deployedAt": "2025-03-01T23:12:33.532Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 112,
+      "linesRemoved": 39,
+      "files": 2,
+      "commentCount": 17,
+      "approvalCount": 1,
+      "reviewThoroughness": 11.26,
+      "timeToFirstReview": 14,
+      "reviewTime": 5,
+      "cycleTime": 39,
+      "qualityScore": 74
+    },
+    {
+      "id": 64,
+      "title": "Performance improvements",
+      "number": 7252,
+      "developer": {
+        "id": 7,
+        "name": "Sam Jones"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-31T15:23:34.292Z",
+      "reviewStartedAt": "2025-04-02T05:23:34.292Z",
+      "mergedAt": "2025-04-03T19:23:34.292Z",
+      "deployedAt": "2025-04-03T22:23:34.292Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        }
+      ],
+      "linesAdded": 436,
+      "linesRemoved": 381,
+      "files": 1,
+      "commentCount": 8,
+      "approvalCount": 3,
+      "reviewThoroughness": 0.98,
+      "timeToFirstReview": 38,
+      "reviewTime": 38,
+      "cycleTime": 79,
+      "qualityScore": 70
+    },
+    {
+      "id": 65,
+      "title": "Update dependencies",
+      "number": 4283,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-03T07:18:14.654Z",
+      "reviewStartedAt": "2025-04-04T12:18:14.654Z",
+      "mergedAt": "2025-04-04T19:18:14.654Z",
+      "deployedAt": "2025-04-05T17:18:14.654Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 326,
+      "linesRemoved": 16,
+      "files": 4,
+      "commentCount": 4,
+      "approvalCount": 0,
+      "reviewThoroughness": 1.17,
+      "timeToFirstReview": 29,
+      "reviewTime": 7,
+      "cycleTime": 58,
+      "qualityScore": 73
+    },
+    {
+      "id": 66,
+      "title": "Add new feature",
+      "number": 1685,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "closed",
+      "createdAt": "2025-04-05T22:36:16.338Z",
+      "reviewStartedAt": "2025-04-07T06:36:16.338Z",
+      "mergedAt": "2025-04-08T20:36:16.338Z",
+      "deployedAt": "2025-04-09T02:36:16.338Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 6,
+      "linesRemoved": 6,
+      "files": 12,
+      "commentCount": 11,
+      "approvalCount": 0,
+      "reviewThoroughness": 91.67,
+      "timeToFirstReview": 32,
+      "reviewTime": 38,
+      "cycleTime": 76,
+      "qualityScore": 71
+    },
+    {
+      "id": 67,
+      "title": "Add unit tests for user service",
+      "number": 6881,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-18T19:05:54.696Z",
+      "reviewStartedAt": "2025-03-18T22:05:54.696Z",
+      "mergedAt": "2025-03-20T16:05:54.696Z",
+      "deployedAt": "2025-03-21T06:05:54.696Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        },
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 125,
+      "linesRemoved": 107,
+      "files": 13,
+      "commentCount": 16,
+      "approvalCount": 3,
+      "reviewThoroughness": 6.9,
+      "timeToFirstReview": 3,
+      "reviewTime": 42,
+      "cycleTime": 59,
+      "qualityScore": 79
+    },
+    {
+      "id": 68,
+      "title": "Add new feature",
+      "number": 8897,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "closed",
+      "createdAt": "2025-02-04T23:20:31.492Z",
+      "reviewStartedAt": "2025-02-06T18:20:31.492Z",
+      "mergedAt": "2025-02-07T04:20:31.492Z",
+      "deployedAt": "2025-02-07T05:20:31.492Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 485,
+      "linesRemoved": 482,
+      "files": 8,
+      "commentCount": 2,
+      "approvalCount": 1,
+      "reviewThoroughness": 0.21,
+      "timeToFirstReview": 43,
+      "reviewTime": 10,
+      "cycleTime": 54,
+      "qualityScore": 58
+    },
+    {
+      "id": 69,
+      "title": "Implement API pagination",
+      "number": 7852,
+      "developer": {
+        "id": 7,
+        "name": "Sam Jones"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "open",
+      "createdAt": "2025-02-15T08:48:26.608Z",
+      "reviewStartedAt": "2025-02-15T22:48:26.608Z",
+      "mergedAt": "2025-02-18T05:48:26.608Z",
+      "deployedAt": "2025-02-18T06:48:26.608Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 15,
+      "linesRemoved": 1,
+      "files": 12,
+      "commentCount": 1,
+      "approvalCount": 1,
+      "reviewThoroughness": 6.25,
+      "timeToFirstReview": 14,
+      "reviewTime": 55,
+      "cycleTime": 70,
+      "qualityScore": 49
+    },
+    {
+      "id": 70,
+      "title": "Refactor data fetching logic",
+      "number": 1013,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "open",
+      "createdAt": "2025-03-27T09:30:39.990Z",
+      "reviewStartedAt": "2025-03-27T19:30:39.990Z",
+      "mergedAt": "2025-03-30T04:30:39.990Z",
+      "deployedAt": "2025-03-30T08:30:39.990Z",
+      "reviewers": [
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 73,
+      "linesRemoved": 66,
+      "files": 10,
+      "commentCount": 1,
+      "approvalCount": 0,
+      "reviewThoroughness": 0.72,
+      "timeToFirstReview": 10,
+      "reviewTime": 57,
+      "cycleTime": 71,
+      "qualityScore": 64
+    },
+    {
+      "id": 71,
+      "title": "Fix memory leak in background process",
+      "number": 6241,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-03-28T13:43:32.575Z",
+      "reviewStartedAt": "2025-03-28T18:43:32.575Z",
+      "mergedAt": "2025-03-30T01:43:32.575Z",
+      "deployedAt": "2025-03-30T22:43:32.575Z",
+      "reviewers": [
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 106,
+      "linesRemoved": 91,
+      "files": 4,
+      "commentCount": 20,
+      "approvalCount": 1,
+      "reviewThoroughness": 10.15,
+      "timeToFirstReview": 5,
+      "reviewTime": 31,
+      "cycleTime": 57,
+      "qualityScore": 74
+    },
+    {
+      "id": 72,
+      "title": "Fix security vulnerability",
+      "number": 1386,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-04-30T20:57:16.805Z",
+      "reviewStartedAt": "2025-05-02T08:57:16.805Z",
+      "mergedAt": "2025-05-05T07:57:16.805Z",
+      "deployedAt": "2025-05-05T15:57:16.805Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 98,
+      "linesRemoved": 17,
+      "files": 8,
+      "commentCount": 2,
+      "approvalCount": 0,
+      "reviewThoroughness": 1.74,
+      "timeToFirstReview": 36,
+      "reviewTime": 71,
+      "cycleTime": 115,
+      "qualityScore": 58
+    },
+    {
+      "id": 73,
+      "title": "Implement dark mode",
+      "number": 7482,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "closed",
+      "createdAt": "2025-04-11T11:16:06.405Z",
+      "reviewStartedAt": "2025-04-13T10:16:06.405Z",
+      "mergedAt": "2025-04-15T15:16:06.405Z",
+      "deployedAt": "2025-04-16T04:16:06.405Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 203,
+      "linesRemoved": 69,
+      "files": 13,
+      "commentCount": 9,
+      "approvalCount": 1,
+      "reviewThoroughness": 3.31,
+      "timeToFirstReview": 47,
+      "reviewTime": 53,
+      "cycleTime": 113,
+      "qualityScore": 78
+    },
+    {
+      "id": 74,
+      "title": "Optimize database queries",
+      "number": 4258,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-08T01:13:26.244Z",
+      "reviewStartedAt": "2025-03-09T15:13:26.244Z",
+      "mergedAt": "2025-03-10T11:13:26.244Z",
+      "deployedAt": "2025-03-11T04:13:26.244Z",
+      "reviewers": [
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        }
+      ],
+      "linesAdded": 441,
+      "linesRemoved": 434,
+      "files": 9,
+      "commentCount": 12,
+      "approvalCount": 0,
+      "reviewThoroughness": 1.37,
+      "timeToFirstReview": 38,
+      "reviewTime": 20,
+      "cycleTime": 75,
+      "qualityScore": 87
+    },
+    {
+      "id": 75,
+      "title": "Add caching layer",
+      "number": 1184,
+      "developer": {
+        "id": 8,
+        "name": "Avery Lee"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-03-10T01:44:47.108Z",
+      "reviewStartedAt": "2025-03-11T07:44:47.108Z",
+      "mergedAt": "2025-03-13T12:44:47.108Z",
+      "deployedAt": "2025-03-13T21:44:47.108Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 231,
+      "linesRemoved": 218,
+      "files": 9,
+      "commentCount": 8,
+      "approvalCount": 0,
+      "reviewThoroughness": 1.78,
+      "timeToFirstReview": 30,
+      "reviewTime": 53,
+      "cycleTime": 92,
+      "qualityScore": 71
+    },
+    {
+      "id": 76,
+      "title": "Implement dark mode",
+      "number": 1448,
+      "developer": {
+        "id": 3,
+        "name": "Alex Wilson"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-05-02T00:43:23.166Z",
+      "reviewStartedAt": "2025-05-02T23:43:23.166Z",
+      "mergedAt": "2025-05-03T03:43:23.166Z",
+      "deployedAt": "2025-05-03T05:43:23.166Z",
+      "reviewers": [
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 344,
+      "linesRemoved": 89,
+      "files": 7,
+      "commentCount": 16,
+      "approvalCount": 1,
+      "reviewThoroughness": 3.7,
+      "timeToFirstReview": 23,
+      "reviewTime": 4,
+      "cycleTime": 29,
+      "qualityScore": 79
+    },
+    {
+      "id": 77,
+      "title": "Refactor data fetching logic",
+      "number": 3637,
+      "developer": {
+        "id": 7,
+        "name": "Sam Jones"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-02-15T13:46:02.845Z",
+      "reviewStartedAt": "2025-02-16T04:46:02.845Z",
+      "mergedAt": "2025-02-16T12:46:02.845Z",
+      "deployedAt": "2025-02-16T17:46:02.845Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 480,
+      "linesRemoved": 262,
+      "files": 12,
+      "commentCount": 13,
+      "approvalCount": 1,
+      "reviewThoroughness": 1.75,
+      "timeToFirstReview": 15,
+      "reviewTime": 8,
+      "cycleTime": 28,
+      "qualityScore": 67
+    },
+    {
+      "id": 78,
+      "title": "Implement API pagination",
+      "number": 1897,
+      "developer": {
+        "id": 6,
+        "name": "Blake Smith"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-24T02:49:59.148Z",
+      "reviewStartedAt": "2025-03-24T23:49:59.148Z",
+      "mergedAt": "2025-03-27T10:49:59.148Z",
+      "deployedAt": "2025-03-27T20:49:59.148Z",
+      "reviewers": [
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        },
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 80,
+      "linesRemoved": 49,
+      "files": 15,
+      "commentCount": 13,
+      "approvalCount": 2,
+      "reviewThoroughness": 10.08,
+      "timeToFirstReview": 21,
+      "reviewTime": 59,
+      "cycleTime": 90,
+      "qualityScore": 93
+    },
+    {
+      "id": 79,
+      "title": "Update dependencies",
+      "number": 3672,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-02-22T16:05:46.815Z",
+      "reviewStartedAt": "2025-02-24T14:05:46.815Z",
+      "mergedAt": "2025-02-24T21:05:46.815Z",
+      "deployedAt": "2025-02-25T15:05:46.815Z",
+      "reviewers": [
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        },
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 178,
+      "linesRemoved": 22,
+      "files": 10,
+      "commentCount": 15,
+      "approvalCount": 1,
+      "reviewThoroughness": 7.5,
+      "timeToFirstReview": 46,
+      "reviewTime": 7,
+      "cycleTime": 71,
+      "qualityScore": 88
+    },
+    {
+      "id": 80,
+      "title": "Add unit tests for user service",
+      "number": 6216,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-15T14:24:35.073Z",
+      "reviewStartedAt": "2025-03-16T11:24:35.073Z",
+      "mergedAt": "2025-03-17T10:24:35.073Z",
+      "deployedAt": "2025-03-17T16:24:35.073Z",
+      "reviewers": [
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        }
+      ],
+      "linesAdded": 280,
+      "linesRemoved": 25,
+      "files": 3,
+      "commentCount": 8,
+      "approvalCount": 0,
+      "reviewThoroughness": 2.62,
+      "timeToFirstReview": 21,
+      "reviewTime": 23,
+      "cycleTime": 50,
+      "qualityScore": 76
+    },
+    {
+      "id": 81,
+      "title": "Add unit tests for user service",
+      "number": 5356,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-05-02T09:13:17.981Z",
+      "reviewStartedAt": "2025-05-04T03:13:17.981Z",
+      "mergedAt": "2025-05-04T08:13:17.981Z",
+      "deployedAt": "2025-05-04T15:13:17.981Z",
+      "reviewers": [
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        },
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 371,
+      "linesRemoved": 67,
+      "files": 4,
+      "commentCount": 10,
+      "approvalCount": 0,
+      "reviewThoroughness": 2.28,
+      "timeToFirstReview": 42,
+      "reviewTime": 5,
+      "cycleTime": 54,
+      "qualityScore": 77
+    },
+    {
+      "id": 82,
+      "title": "Fix responsive layout issues",
+      "number": 7304,
+      "developer": {
+        "id": 3,
+        "name": "Alex Wilson"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-03-03T23:35:08.425Z",
+      "reviewStartedAt": "2025-03-05T15:35:08.425Z",
+      "mergedAt": "2025-03-07T03:35:08.425Z",
+      "deployedAt": "2025-03-08T03:35:08.425Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 96,
+      "linesRemoved": 65,
+      "files": 12,
+      "commentCount": 2,
+      "approvalCount": 0,
+      "reviewThoroughness": 1.24,
+      "timeToFirstReview": 40,
+      "reviewTime": 36,
+      "cycleTime": 100,
+      "qualityScore": 49
+    },
+    {
+      "id": 83,
+      "title": "Implement dark mode",
+      "number": 5568,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-12T19:28:59.375Z",
+      "reviewStartedAt": "2025-03-14T13:28:59.375Z",
+      "mergedAt": "2025-03-16T23:28:59.375Z",
+      "deployedAt": "2025-03-17T19:28:59.375Z",
+      "reviewers": [
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        }
+      ],
+      "linesAdded": 29,
+      "linesRemoved": 23,
+      "files": 14,
+      "commentCount": 15,
+      "approvalCount": 0,
+      "reviewThoroughness": 28.85,
+      "timeToFirstReview": 42,
+      "reviewTime": 58,
+      "cycleTime": 120,
+      "qualityScore": 75
+    },
+    {
+      "id": 84,
+      "title": "Add error handling",
+      "number": 2585,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "open",
+      "createdAt": "2025-03-28T01:55:16.554Z",
+      "reviewStartedAt": "2025-03-28T09:55:16.554Z",
+      "mergedAt": "2025-03-29T04:55:16.554Z",
+      "deployedAt": "2025-03-29T05:55:16.554Z",
+      "reviewers": [
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        }
+      ],
+      "linesAdded": 32,
+      "linesRemoved": 16,
+      "files": 9,
+      "commentCount": 18,
+      "approvalCount": 1,
+      "reviewThoroughness": 37.5,
+      "timeToFirstReview": 8,
+      "reviewTime": 19,
+      "cycleTime": 28,
+      "qualityScore": 92
+    },
+    {
+      "id": 85,
+      "title": "Update documentation",
+      "number": 3318,
+      "developer": {
+        "id": 8,
+        "name": "Avery Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-08T16:40:58.431Z",
+      "reviewStartedAt": "2025-02-10T00:40:58.431Z",
+      "mergedAt": "2025-02-10T01:40:58.431Z",
+      "deployedAt": "2025-02-10T04:40:58.431Z",
+      "reviewers": [
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        }
+      ],
+      "linesAdded": 225,
+      "linesRemoved": 223,
+      "files": 12,
+      "commentCount": 9,
+      "approvalCount": 1,
+      "reviewThoroughness": 2.01,
+      "timeToFirstReview": 32,
+      "reviewTime": 1,
+      "cycleTime": 36,
+      "qualityScore": 75
+    },
+    {
+      "id": 86,
+      "title": "Optimize database queries",
+      "number": 2591,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "closed",
+      "createdAt": "2025-05-01T05:11:23.119Z",
+      "reviewStartedAt": "2025-05-02T20:11:23.119Z",
+      "mergedAt": "2025-05-05T12:11:23.119Z",
+      "deployedAt": "2025-05-06T08:11:23.119Z",
+      "reviewers": [
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 145,
+      "linesRemoved": 62,
+      "files": 3,
+      "commentCount": 1,
+      "approvalCount": 1,
+      "reviewThoroughness": 0.48,
+      "timeToFirstReview": 39,
+      "reviewTime": 64,
+      "cycleTime": 123,
+      "qualityScore": 51
+    },
+    {
+      "id": 87,
+      "title": "Optimize database queries",
+      "number": 3583,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "open",
+      "createdAt": "2025-03-02T04:13:20.297Z",
+      "reviewStartedAt": "2025-03-02T13:13:20.297Z",
+      "mergedAt": "2025-03-03T12:13:20.297Z",
+      "deployedAt": "2025-03-03T17:13:20.297Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 286,
+      "linesRemoved": 27,
+      "files": 5,
+      "commentCount": 13,
+      "approvalCount": 1,
+      "reviewThoroughness": 4.15,
+      "timeToFirstReview": 9,
+      "reviewTime": 23,
+      "cycleTime": 37,
+      "qualityScore": 71
+    },
+    {
+      "id": 88,
+      "title": "Optimize database queries",
+      "number": 5057,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "closed",
+      "createdAt": "2025-03-27T14:41:10.258Z",
+      "reviewStartedAt": "2025-03-29T01:41:10.258Z",
+      "mergedAt": "2025-03-31T22:41:10.258Z",
+      "deployedAt": "2025-04-01T21:41:10.258Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        },
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        }
+      ],
+      "linesAdded": 109,
+      "linesRemoved": 94,
+      "files": 11,
+      "commentCount": 18,
+      "approvalCount": 2,
+      "reviewThoroughness": 8.87,
+      "timeToFirstReview": 35,
+      "reviewTime": 69,
+      "cycleTime": 127,
+      "qualityScore": 78
+    },
+    {
+      "id": 89,
+      "title": "Update documentation",
+      "number": 9702,
+      "developer": {
+        "id": 4,
+        "name": "Taylor Davis"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-18T22:49:29.348Z",
+      "reviewStartedAt": "2025-03-18T23:49:29.348Z",
+      "mergedAt": "2025-03-21T12:49:29.348Z",
+      "deployedAt": "2025-03-21T20:49:29.348Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        }
+      ],
+      "linesAdded": 287,
+      "linesRemoved": 172,
+      "files": 11,
+      "commentCount": 0,
+      "approvalCount": 0,
+      "reviewThoroughness": 0,
+      "timeToFirstReview": 1,
+      "reviewTime": 61,
+      "cycleTime": 70,
+      "qualityScore": 53
+    },
+    {
+      "id": 90,
+      "title": "Update documentation",
+      "number": 775,
+      "developer": {
+        "id": 7,
+        "name": "Sam Jones"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-06T13:32:56.570Z",
+      "reviewStartedAt": "2025-02-07T02:32:56.570Z",
+      "mergedAt": "2025-02-09T03:32:56.570Z",
+      "deployedAt": "2025-02-09T15:32:56.570Z",
+      "reviewers": [
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        },
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        }
+      ],
+      "linesAdded": 278,
+      "linesRemoved": 34,
+      "files": 14,
+      "commentCount": 1,
+      "approvalCount": 1,
+      "reviewThoroughness": 0.32,
+      "timeToFirstReview": 13,
+      "reviewTime": 49,
+      "cycleTime": 74,
+      "qualityScore": 48
+    },
+    {
+      "id": 91,
+      "title": "Update dependencies",
+      "number": 8250,
+      "developer": {
+        "id": 3,
+        "name": "Alex Wilson"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-27T01:57:03.052Z",
+      "reviewStartedAt": "2025-02-27T10:57:03.052Z",
+      "mergedAt": "2025-03-01T00:57:03.052Z",
+      "deployedAt": "2025-03-01T11:57:03.052Z",
+      "reviewers": [
+        {
+          "id": 10,
+          "name": "Cameron Smith"
+        },
+        {
+          "id": 5,
+          "name": "Jordan Nguyen"
+        }
+      ],
+      "linesAdded": 73,
+      "linesRemoved": 28,
+      "files": 15,
+      "commentCount": 9,
+      "approvalCount": 1,
+      "reviewThoroughness": 8.91,
+      "timeToFirstReview": 9,
+      "reviewTime": 38,
+      "cycleTime": 58,
+      "qualityScore": 66
+    },
+    {
+      "id": 92,
+      "title": "Implement dark mode",
+      "number": 6008,
+      "developer": {
+        "id": 3,
+        "name": "Alex Wilson"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-09T00:52:13.110Z",
+      "reviewStartedAt": "2025-03-09T05:52:13.110Z",
+      "mergedAt": "2025-03-10T21:52:13.110Z",
+      "deployedAt": "2025-03-11T03:52:13.110Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 2,
+          "name": "Alex Jones"
+        },
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 418,
+      "linesRemoved": 34,
+      "files": 5,
+      "commentCount": 13,
+      "approvalCount": 0,
+      "reviewThoroughness": 2.88,
+      "timeToFirstReview": 5,
+      "reviewTime": 40,
+      "cycleTime": 51,
+      "qualityScore": 68
+    },
+    {
+      "id": 93,
+      "title": "Implement dark mode",
+      "number": 5654,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 1,
+        "name": "api-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-04T17:39:59.906Z",
+      "reviewStartedAt": "2025-02-05T15:39:59.906Z",
+      "mergedAt": "2025-02-05T22:39:59.906Z",
+      "deployedAt": "2025-02-06T11:39:59.906Z",
+      "reviewers": [
+        {
+          "id": 1,
+          "name": "Blake Lee"
+        },
+        {
+          "id": 6,
+          "name": "Blake Smith"
+        }
+      ],
+      "linesAdded": 76,
+      "linesRemoved": 34,
+      "files": 7,
+      "commentCount": 1,
+      "approvalCount": 0,
+      "reviewThoroughness": 0.91,
+      "timeToFirstReview": 22,
+      "reviewTime": 7,
+      "cycleTime": 42,
+      "qualityScore": 62
+    },
+    {
+      "id": 94,
+      "title": "Fix security vulnerability",
+      "number": 9981,
+      "developer": {
+        "id": 1,
+        "name": "Blake Lee"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-22T19:50:03.002Z",
+      "reviewStartedAt": "2025-03-24T13:50:03.002Z",
+      "mergedAt": "2025-03-27T06:50:03.002Z",
+      "deployedAt": "2025-03-28T00:50:03.002Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 355,
+      "linesRemoved": 239,
+      "files": 7,
+      "commentCount": 18,
+      "approvalCount": 1,
+      "reviewThoroughness": 3.03,
+      "timeToFirstReview": 42,
+      "reviewTime": 65,
+      "cycleTime": 125,
+      "qualityScore": 82
+    },
+    {
+      "id": 95,
+      "title": "Add new feature",
+      "number": 1543,
+      "developer": {
+        "id": 5,
+        "name": "Jordan Nguyen"
+      },
+      "repository": {
+        "id": 4,
+        "name": "data-processor"
+      },
+      "status": "open",
+      "createdAt": "2025-03-29T19:36:09.137Z",
+      "reviewStartedAt": "2025-03-30T20:36:09.137Z",
+      "mergedAt": "2025-04-01T00:36:09.137Z",
+      "deployedAt": "2025-04-01T03:36:09.137Z",
+      "reviewers": [
+        {
+          "id": 7,
+          "name": "Sam Jones"
+        }
+      ],
+      "linesAdded": 259,
+      "linesRemoved": 189,
+      "files": 3,
+      "commentCount": 16,
+      "approvalCount": 0,
+      "reviewThoroughness": 3.57,
+      "timeToFirstReview": 25,
+      "reviewTime": 28,
+      "cycleTime": 56,
+      "qualityScore": 70
+    },
+    {
+      "id": 96,
+      "title": "Update dependencies",
+      "number": 7124,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "merged",
+      "createdAt": "2025-03-02T06:03:54.248Z",
+      "reviewStartedAt": "2025-03-03T20:03:54.248Z",
+      "mergedAt": "2025-03-04T21:03:54.248Z",
+      "deployedAt": "2025-03-05T19:03:54.248Z",
+      "reviewers": [
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 400,
+      "linesRemoved": 80,
+      "files": 1,
+      "commentCount": 13,
+      "approvalCount": 0,
+      "reviewThoroughness": 2.71,
+      "timeToFirstReview": 38,
+      "reviewTime": 25,
+      "cycleTime": 85,
+      "qualityScore": 67
+    },
+    {
+      "id": 97,
+      "title": "Add error handling",
+      "number": 133,
+      "developer": {
+        "id": 9,
+        "name": "Jamie Nguyen"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "open",
+      "createdAt": "2025-03-20T00:04:32.310Z",
+      "reviewStartedAt": "2025-03-20T23:04:32.310Z",
+      "mergedAt": "2025-03-22T20:04:32.310Z",
+      "deployedAt": "2025-03-23T14:04:32.310Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        }
+      ],
+      "linesAdded": 216,
+      "linesRemoved": 89,
+      "files": 6,
+      "commentCount": 14,
+      "approvalCount": 0,
+      "reviewThoroughness": 4.59,
+      "timeToFirstReview": 23,
+      "reviewTime": 45,
+      "cycleTime": 86,
+      "qualityScore": 73
+    },
+    {
+      "id": 98,
+      "title": "Fix memory leak in background process",
+      "number": 5045,
+      "developer": {
+        "id": 2,
+        "name": "Alex Jones"
+      },
+      "repository": {
+        "id": 3,
+        "name": "mobile-app"
+      },
+      "status": "open",
+      "createdAt": "2025-03-13T14:30:09.368Z",
+      "reviewStartedAt": "2025-03-14T17:30:09.368Z",
+      "mergedAt": "2025-03-15T06:30:09.368Z",
+      "deployedAt": "2025-03-15T08:30:09.368Z",
+      "reviewers": [
+        {
+          "id": 8,
+          "name": "Avery Lee"
+        },
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 439,
+      "linesRemoved": 167,
+      "files": 13,
+      "commentCount": 15,
+      "approvalCount": 3,
+      "reviewThoroughness": 2.48,
+      "timeToFirstReview": 27,
+      "reviewTime": 13,
+      "cycleTime": 42,
+      "qualityScore": 79
+    },
+    {
+      "id": 99,
+      "title": "Add unit tests for user service",
+      "number": 239,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 5,
+        "name": "auth-service"
+      },
+      "status": "merged",
+      "createdAt": "2025-02-08T07:03:08.928Z",
+      "reviewStartedAt": "2025-02-10T00:03:08.928Z",
+      "mergedAt": "2025-02-12T05:03:08.928Z",
+      "deployedAt": "2025-02-12T17:03:08.928Z",
+      "reviewers": [
+        {
+          "id": 9,
+          "name": "Jamie Nguyen"
+        }
+      ],
+      "linesAdded": 441,
+      "linesRemoved": 169,
+      "files": 3,
+      "commentCount": 2,
+      "approvalCount": 1,
+      "reviewThoroughness": 0.33,
+      "timeToFirstReview": 41,
+      "reviewTime": 53,
+      "cycleTime": 106,
+      "qualityScore": 46
+    },
+    {
+      "id": 100,
+      "title": "Update dependencies",
+      "number": 9479,
+      "developer": {
+        "id": 10,
+        "name": "Cameron Smith"
+      },
+      "repository": {
+        "id": 2,
+        "name": "web-client"
+      },
+      "status": "open",
+      "createdAt": "2025-03-20T03:21:51.343Z",
+      "reviewStartedAt": "2025-03-21T17:21:51.343Z",
+      "mergedAt": "2025-03-23T09:21:51.343Z",
+      "deployedAt": "2025-03-24T01:21:51.343Z",
+      "reviewers": [
+        {
+          "id": 4,
+          "name": "Taylor Davis"
+        },
+        {
+          "id": 3,
+          "name": "Alex Wilson"
+        }
+      ],
+      "linesAdded": 15,
+      "linesRemoved": 12,
+      "files": 13,
+      "commentCount": 4,
+      "approvalCount": 0,
+      "reviewThoroughness": 14.81,
+      "timeToFirstReview": 38,
+      "reviewTime": 40,
+      "cycleTime": 94,
+      "qualityScore": 67
+    }
+  ],
+  "timeSeriesData": [
+    {
+      "date": "2025-02-01",
+      "prThroughput": 0,
+      "cycleTime": 22.5,
+      "reviewTime": 11.3,
+      "codingHours": 4.3
+    },
+    {
+      "date": "2025-02-02",
+      "prThroughput": 0,
+      "cycleTime": 25.9,
+      "reviewTime": 10.8,
+      "codingHours": 3.9
+    },
+    {
+      "date": "2025-02-03",
+      "prThroughput": 1,
+      "cycleTime": 85,
+      "reviewTime": 53,
+      "codingHours": 4.4
+    },
+    {
+      "date": "2025-02-04",
+      "prThroughput": 1,
+      "cycleTime": 42,
+      "reviewTime": 7,
+      "codingHours": 5.3
+    },
+    {
+      "date": "2025-02-05",
+      "prThroughput": 1,
+      "cycleTime": 74,
+      "reviewTime": 27,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-02-06",
+      "prThroughput": 1,
+      "cycleTime": 74,
+      "reviewTime": 49,
+      "codingHours": 4.7
+    },
+    {
+      "date": "2025-02-07",
+      "prThroughput": 1,
+      "cycleTime": 97,
+      "reviewTime": 49,
+      "codingHours": 4
+    },
+    {
+      "date": "2025-02-08",
+      "prThroughput": 2,
+      "cycleTime": 71,
+      "reviewTime": 27,
+      "codingHours": 4
+    },
+    {
+      "date": "2025-02-09",
+      "prThroughput": 0,
+      "cycleTime": 35,
+      "reviewTime": 6.8,
+      "codingHours": 3.8
+    },
+    {
+      "date": "2025-02-10",
+      "prThroughput": 2,
+      "cycleTime": 75.5,
+      "reviewTime": 44,
+      "codingHours": 5.2
+    },
+    {
+      "date": "2025-02-11",
+      "prThroughput": 0,
+      "cycleTime": 38.4,
+      "reviewTime": 10,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-02-12",
+      "prThroughput": 1,
+      "cycleTime": 106,
+      "reviewTime": 64,
+      "codingHours": 5.2
+    },
+    {
+      "date": "2025-02-13",
+      "prThroughput": 1,
+      "cycleTime": 25,
+      "reviewTime": 4,
+      "codingHours": 5
+    },
+    {
+      "date": "2025-02-14",
+      "prThroughput": 0,
+      "cycleTime": 27.5,
+      "reviewTime": 4.7,
+      "codingHours": 3.7
+    },
+    {
+      "date": "2025-02-15",
+      "prThroughput": 3,
+      "cycleTime": 64.3,
+      "reviewTime": 37,
+      "codingHours": 3.9
+    },
+    {
+      "date": "2025-02-16",
+      "prThroughput": 2,
+      "cycleTime": 74.5,
+      "reviewTime": 40,
+      "codingHours": 5
+    },
+    {
+      "date": "2025-02-17",
+      "prThroughput": 0,
+      "cycleTime": 33.2,
+      "reviewTime": 6.1,
+      "codingHours": 4.3
+    },
+    {
+      "date": "2025-02-18",
+      "prThroughput": 1,
+      "cycleTime": 41,
+      "reviewTime": 38,
+      "codingHours": 4.7
+    },
+    {
+      "date": "2025-02-19",
+      "prThroughput": 0,
+      "cycleTime": 31.6,
+      "reviewTime": 4.7,
+      "codingHours": 5
+    },
+    {
+      "date": "2025-02-20",
+      "prThroughput": 0,
+      "cycleTime": 28.1,
+      "reviewTime": 5.4,
+      "codingHours": 4.9
+    },
+    {
+      "date": "2025-02-21",
+      "prThroughput": 1,
+      "cycleTime": 85,
+      "reviewTime": 47,
+      "codingHours": 4.7
+    },
+    {
+      "date": "2025-02-22",
+      "prThroughput": 1,
+      "cycleTime": 71,
+      "reviewTime": 7,
+      "codingHours": 5
+    },
+    {
+      "date": "2025-02-23",
+      "prThroughput": 0,
+      "cycleTime": 33.4,
+      "reviewTime": 8.8,
+      "codingHours": 3.8
+    },
+    {
+      "date": "2025-02-24",
+      "prThroughput": 0,
+      "cycleTime": 23.5,
+      "reviewTime": 8.9,
+      "codingHours": 4.9
+    },
+    {
+      "date": "2025-02-25",
+      "prThroughput": 0,
+      "cycleTime": 37.2,
+      "reviewTime": 11.3,
+      "codingHours": 4.8
+    },
+    {
+      "date": "2025-02-26",
+      "prThroughput": 0,
+      "cycleTime": 26.8,
+      "reviewTime": 10.8,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-02-27",
+      "prThroughput": 1,
+      "cycleTime": 58,
+      "reviewTime": 38,
+      "codingHours": 4.5
+    },
+    {
+      "date": "2025-02-28",
+      "prThroughput": 2,
+      "cycleTime": 79,
+      "reviewTime": 27.5,
+      "codingHours": 4.4
+    },
+    {
+      "date": "2025-03-01",
+      "prThroughput": 0,
+      "cycleTime": 23.6,
+      "reviewTime": 4.5,
+      "codingHours": 4.5
+    },
+    {
+      "date": "2025-03-02",
+      "prThroughput": 2,
+      "cycleTime": 61,
+      "reviewTime": 24,
+      "codingHours": 4.4
+    },
+    {
+      "date": "2025-03-03",
+      "prThroughput": 0,
+      "cycleTime": 30.9,
+      "reviewTime": 10.2,
+      "codingHours": 3.9
+    },
+    {
+      "date": "2025-03-04",
+      "prThroughput": 1,
+      "cycleTime": 108,
+      "reviewTime": 44,
+      "codingHours": 5.4
+    },
+    {
+      "date": "2025-03-05",
+      "prThroughput": 1,
+      "cycleTime": 68,
+      "reviewTime": 36,
+      "codingHours": 4.6
+    },
+    {
+      "date": "2025-03-06",
+      "prThroughput": 1,
+      "cycleTime": 95,
+      "reviewTime": 46,
+      "codingHours": 5.2
+    },
+    {
+      "date": "2025-03-07",
+      "prThroughput": 0,
+      "cycleTime": 22.4,
+      "reviewTime": 9.6,
+      "codingHours": 3.5
+    },
+    {
+      "date": "2025-03-08",
+      "prThroughput": 1,
+      "cycleTime": 75,
+      "reviewTime": 20,
+      "codingHours": 3.7
+    },
+    {
+      "date": "2025-03-09",
+      "prThroughput": 1,
+      "cycleTime": 51,
+      "reviewTime": 40,
+      "codingHours": 3.8
+    },
+    {
+      "date": "2025-03-10",
+      "prThroughput": 1,
+      "cycleTime": 92,
+      "reviewTime": 53,
+      "codingHours": 4.3
+    },
+    {
+      "date": "2025-03-11",
+      "prThroughput": 2,
+      "cycleTime": 98.5,
+      "reviewTime": 37.5,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-03-12",
+      "prThroughput": 2,
+      "cycleTime": 89.5,
+      "reviewTime": 35,
+      "codingHours": 3.7
+    },
+    {
+      "date": "2025-03-13",
+      "prThroughput": 1,
+      "cycleTime": 42,
+      "reviewTime": 13,
+      "codingHours": 3.8
+    },
+    {
+      "date": "2025-03-14",
+      "prThroughput": 1,
+      "cycleTime": 32,
+      "reviewTime": 3,
+      "codingHours": 3.7
+    },
+    {
+      "date": "2025-03-15",
+      "prThroughput": 1,
+      "cycleTime": 50,
+      "reviewTime": 23,
+      "codingHours": 5.3
+    },
+    {
+      "date": "2025-03-16",
+      "prThroughput": 2,
+      "cycleTime": 96.5,
+      "reviewTime": 52.5,
+      "codingHours": 4.9
+    },
+    {
+      "date": "2025-03-17",
+      "prThroughput": 1,
+      "cycleTime": 60,
+      "reviewTime": 23,
+      "codingHours": 3.8
+    },
+    {
+      "date": "2025-03-18",
+      "prThroughput": 4,
+      "cycleTime": 66.3,
+      "reviewTime": 40,
+      "codingHours": 3.9
+    },
+    {
+      "date": "2025-03-19",
+      "prThroughput": 1,
+      "cycleTime": 72,
+      "reviewTime": 32,
+      "codingHours": 5.4
+    },
+    {
+      "date": "2025-03-20",
+      "prThroughput": 2,
+      "cycleTime": 90,
+      "reviewTime": 42.5,
+      "codingHours": 3.9
+    },
+    {
+      "date": "2025-03-21",
+      "prThroughput": 2,
+      "cycleTime": 49,
+      "reviewTime": 10.5,
+      "codingHours": 3.8
+    },
+    {
+      "date": "2025-03-22",
+      "prThroughput": 2,
+      "cycleTime": 80,
+      "reviewTime": 36,
+      "codingHours": 4.4
+    },
+    {
+      "date": "2025-03-23",
+      "prThroughput": 0,
+      "cycleTime": 37.9,
+      "reviewTime": 10.7,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-03-24",
+      "prThroughput": 2,
+      "cycleTime": 104.5,
+      "reviewTime": 62.5,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-03-25",
+      "prThroughput": 1,
+      "cycleTime": 46,
+      "reviewTime": 5,
+      "codingHours": 5.1
+    },
+    {
+      "date": "2025-03-26",
+      "prThroughput": 0,
+      "cycleTime": 30.4,
+      "reviewTime": 8.3,
+      "codingHours": 4.4
+    },
+    {
+      "date": "2025-03-27",
+      "prThroughput": 2,
+      "cycleTime": 99,
+      "reviewTime": 63,
+      "codingHours": 4.8
+    },
+    {
+      "date": "2025-03-28",
+      "prThroughput": 4,
+      "cycleTime": 73.3,
+      "reviewTime": 41.5,
+      "codingHours": 3.8
+    },
+    {
+      "date": "2025-03-29",
+      "prThroughput": 1,
+      "cycleTime": 56,
+      "reviewTime": 28,
+      "codingHours": 4.6
+    },
+    {
+      "date": "2025-03-30",
+      "prThroughput": 1,
+      "cycleTime": 69,
+      "reviewTime": 21,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-03-31",
+      "prThroughput": 1,
+      "cycleTime": 79,
+      "reviewTime": 38,
+      "codingHours": 3.7
+    },
+    {
+      "date": "2025-04-01",
+      "prThroughput": 1,
+      "cycleTime": 36,
+      "reviewTime": 19,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-04-02",
+      "prThroughput": 0,
+      "cycleTime": 20.9,
+      "reviewTime": 5.2,
+      "codingHours": 3.7
+    },
+    {
+      "date": "2025-04-03",
+      "prThroughput": 3,
+      "cycleTime": 79.7,
+      "reviewTime": 35.3,
+      "codingHours": 4.1
+    },
+    {
+      "date": "2025-04-04",
+      "prThroughput": 0,
+      "cycleTime": 36.1,
+      "reviewTime": 9.7,
+      "codingHours": 4.9
+    },
+    {
+      "date": "2025-04-05",
+      "prThroughput": 3,
+      "cycleTime": 82.3,
+      "reviewTime": 41.3,
+      "codingHours": 4.4
+    },
+    {
+      "date": "2025-04-06",
+      "prThroughput": 0,
+      "cycleTime": 37.5,
+      "reviewTime": 10,
+      "codingHours": 4.8
+    },
+    {
+      "date": "2025-04-07",
+      "prThroughput": 0,
+      "cycleTime": 39.6,
+      "reviewTime": 8.4,
+      "codingHours": 3.7
+    },
+    {
+      "date": "2025-04-08",
+      "prThroughput": 2,
+      "cycleTime": 90,
+      "reviewTime": 50.5,
+      "codingHours": 5.2
+    },
+    {
+      "date": "2025-04-09",
+      "prThroughput": 1,
+      "cycleTime": 111,
+      "reviewTime": 62,
+      "codingHours": 3.9
+    },
+    {
+      "date": "2025-04-10",
+      "prThroughput": 1,
+      "cycleTime": 49,
+      "reviewTime": 8,
+      "codingHours": 5.5
+    },
+    {
+      "date": "2025-04-11",
+      "prThroughput": 1,
+      "cycleTime": 113,
+      "reviewTime": 53,
+      "codingHours": 3.5
+    },
+    {
+      "date": "2025-04-12",
+      "prThroughput": 0,
+      "cycleTime": 23.8,
+      "reviewTime": 5.1,
+      "codingHours": 5.3
+    },
+    {
+      "date": "2025-04-13",
+      "prThroughput": 0,
+      "cycleTime": 34.9,
+      "reviewTime": 11,
+      "codingHours": 4.2
+    },
+    {
+      "date": "2025-04-14",
+      "prThroughput": 1,
+      "cycleTime": 49,
+      "reviewTime": 27,
+      "codingHours": 4.9
+    },
+    {
+      "date": "2025-04-15",
+      "prThroughput": 2,
+      "cycleTime": 53,
+      "reviewTime": 31,
+      "codingHours": 5.4
+    },
+    {
+      "date": "2025-04-16",
+      "prThroughput": 1,
+      "cycleTime": 84,
+      "reviewTime": 46,
+      "codingHours": 4.1
+    },
+    {
+      "date": "2025-04-17",
+      "prThroughput": 0,
+      "cycleTime": 35.3,
+      "reviewTime": 9.7,
+      "codingHours": 4.6
+    },
+    {
+      "date": "2025-04-18",
+      "prThroughput": 1,
+      "cycleTime": 64,
+      "reviewTime": 44,
+      "codingHours": 4.1
+    },
+    {
+      "date": "2025-04-19",
+      "prThroughput": 1,
+      "cycleTime": 109,
+      "reviewTime": 57,
+      "codingHours": 5.4
+    },
+    {
+      "date": "2025-04-20",
+      "prThroughput": 2,
+      "cycleTime": 33.5,
+      "reviewTime": 7.5,
+      "codingHours": 4.7
+    },
+    {
+      "date": "2025-04-21",
+      "prThroughput": 0,
+      "cycleTime": 39.1,
+      "reviewTime": 5.7,
+      "codingHours": 5.5
+    },
+    {
+      "date": "2025-04-22",
+      "prThroughput": 0,
+      "cycleTime": 27.1,
+      "reviewTime": 11.8,
+      "codingHours": 4.6
+    },
+    {
+      "date": "2025-04-23",
+      "prThroughput": 0,
+      "cycleTime": 26.6,
+      "reviewTime": 4.1,
+      "codingHours": 4
+    },
+    {
+      "date": "2025-04-24",
+      "prThroughput": 0,
+      "cycleTime": 25.1,
+      "reviewTime": 11,
+      "codingHours": 4.2
+    },
+    {
+      "date": "2025-04-25",
+      "prThroughput": 1,
+      "cycleTime": 80,
+      "reviewTime": 52,
+      "codingHours": 5
+    },
+    {
+      "date": "2025-04-26",
+      "prThroughput": 1,
+      "cycleTime": 83,
+      "reviewTime": 26,
+      "codingHours": 5.4
+    },
+    {
+      "date": "2025-04-27",
+      "prThroughput": 1,
+      "cycleTime": 84,
+      "reviewTime": 15,
+      "codingHours": 3.8
+    },
+    {
+      "date": "2025-04-28",
+      "prThroughput": 0,
+      "cycleTime": 35.1,
+      "reviewTime": 5.3,
+      "codingHours": 5.1
+    },
+    {
+      "date": "2025-04-29",
+      "prThroughput": 0,
+      "cycleTime": 37.4,
+      "reviewTime": 4.4,
+      "codingHours": 5.1
+    },
+    {
+      "date": "2025-04-30",
+      "prThroughput": 1,
+      "cycleTime": 115,
+      "reviewTime": 71,
+      "codingHours": 3.6
+    },
+    {
+      "date": "2025-05-01",
+      "prThroughput": 1,
+      "cycleTime": 123,
+      "reviewTime": 64,
+      "codingHours": 5
+    },
+    {
+      "date": "2025-05-02",
+      "prThroughput": 5,
+      "cycleTime": 54.6,
+      "reviewTime": 22,
+      "codingHours": 3.9
+    }
+  ],
+  "metricsSummary": {
+    "codingTime": {
+      "value": 4.4,
+      "change": 0,
+      "trend": "up"
+    },
+    "prSize": {
+      "value": 400,
+      "change": -32,
+      "trend": "up"
+    },
+    "cycleTime": {
+      "value": 74.3,
+      "change": -0.6,
+      "trend": "up"
+    },
+    "reviewTime": {
+      "value": 35.3,
+      "change": 0.1,
+      "trend": "down"
+    }
+  }
+}

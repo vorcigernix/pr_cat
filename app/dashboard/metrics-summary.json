@@ -1,0 +1,22 @@
+{
+  "codingTime": {
+    "value": 4.4,
+    "change": 0,
+    "trend": "up"
+  },
+  "prSize": {
+    "value": 400,
+    "change": -32,
+    "trend": "up"
+  },
+  "cycleTime": {
+    "value": 74.3,
+    "change": -0.6,
+    "trend": "up"
+  },
+  "reviewTime": {
+    "value": 35.3,
+    "change": 0.1,
+    "trend": "down"
+  }
+}
