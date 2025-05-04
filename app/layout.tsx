@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DORA Metrics Portal",
-  description: "Track and improve your DevOps performance",
+  title: "Prcat - Engineering Metrics for Teams",
+  description: "Track and improve your team's engineering performance with metrics that matter",
 };
 
 export default function RootLayout({
