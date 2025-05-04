@@ -3,37 +3,37 @@
     "id": 1,
     "name": "api-service",
     "fullName": "company/api-service",
-    "language": "TypeScript",
+    "language": "Java",
     "isPrivate": true,
-    "stars": 269,
-    "createdAt": "2022-05-31T04:23:23.841Z"
+    "stars": 35,
+    "createdAt": "2022-05-31T19:11:41.025Z"
   },
   {
     "id": 2,
     "name": "web-client",
     "fullName": "company/web-client",
-    "language": "Java",
+    "language": "TypeScript",
     "isPrivate": true,
-    "stars": 762,
-    "createdAt": "2022-09-17T01:57:22.576Z"
+    "stars": 243,
+    "createdAt": "2022-09-25T12:37:31.770Z"
   },
   {
     "id": 3,
     "name": "mobile-app",
     "fullName": "company/mobile-app",
     "language": "JavaScript",
-    "isPrivate": false,
-    "stars": 787,
-    "createdAt": "2022-09-03T08:13:10.007Z"
+    "isPrivate": true,
+    "stars": 385,
+    "createdAt": "2022-02-02T06:33:08.085Z"
   },
   {
     "id": 4,
     "name": "data-processor",
     "fullName": "company/data-processor",
-    "language": "JavaScript",
+    "language": "Java",
     "isPrivate": true,
-    "stars": 796,
-    "createdAt": "2022-10-19T21:50:11.414Z"
+    "stars": 747,
+    "createdAt": "2022-05-18T13:54:31.232Z"
   },
   {
     "id": 5,
@@ -41,7 +41,7 @@
     "fullName": "company/auth-service",
     "language": "Go",
     "isPrivate": true,
-    "stars": 712,
-    "createdAt": "2022-09-04T15:11:05.265Z"
+    "stars": 844,
+    "createdAt": "2022-11-14T08:48:12.710Z"
   }
 ]

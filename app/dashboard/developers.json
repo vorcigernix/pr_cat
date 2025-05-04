@@ -1,92 +1,92 @@
 [
   {
     "id": 1,
-    "name": "Blake Lee",
-    "email": "blake.lee@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Blake_Lee",
-    "role": "Backend",
-    "experience": "Senior",
-    "averageCodingTime": 4.8
+    "name": "Jamie Lee",
+    "email": "jamie.lee@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Jamie_Lee",
+    "role": "DevOps",
+    "experience": "Lead",
+    "averageCodingTime": 3.2
   },
   {
     "id": 2,
-    "name": "Alex Jones",
-    "email": "alex.jones@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Alex_Jones",
-    "role": "QA",
-    "experience": "Mid-level",
-    "averageCodingTime": 4.8
+    "name": "Riley Miller",
+    "email": "riley.miller@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Riley_Miller",
+    "role": "Frontend",
+    "experience": "Senior",
+    "averageCodingTime": 3.6
   },
   {
     "id": 3,
-    "name": "Alex Wilson",
-    "email": "alex.wilson@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Alex_Wilson",
-    "role": "Frontend",
+    "name": "Jordan Smith",
+    "email": "jordan.smith@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Jordan_Smith",
+    "role": "Backend",
     "experience": "Mid-level",
-    "averageCodingTime": 5
+    "averageCodingTime": 4.2
   },
   {
     "id": 4,
-    "name": "Taylor Davis",
-    "email": "taylor.davis@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Taylor_Davis",
+    "name": "Jamie Martinez",
+    "email": "jamie.martinez@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Jamie_Martinez",
+    "role": "Frontend",
+    "experience": "Lead",
+    "averageCodingTime": 4.3
+  },
+  {
+    "id": 5,
+    "name": "Jordan Martinez",
+    "email": "jordan.martinez@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Jordan_Martinez",
+    "role": "QA",
+    "experience": "Junior",
+    "averageCodingTime": 4.5
+  },
+  {
+    "id": 6,
+    "name": "Morgan Jones",
+    "email": "morgan.jones@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Morgan_Jones",
     "role": "Backend",
+    "experience": "Senior",
+    "averageCodingTime": 3.7
+  },
+  {
+    "id": 7,
+    "name": "Jordan Kim",
+    "email": "jordan.kim@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Jordan_Kim",
+    "role": "Backend",
+    "experience": "Lead",
+    "averageCodingTime": 5
+  },
+  {
+    "id": 8,
+    "name": "Jordan Rodriguez",
+    "email": "jordan.rodriguez@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Jordan_Rodriguez",
+    "role": "Full Stack",
+    "experience": "Junior",
+    "averageCodingTime": 3.3
+  },
+  {
+    "id": 9,
+    "name": "Alex Kim",
+    "email": "alex.kim@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Alex_Kim",
+    "role": "DevOps",
     "experience": "Junior",
     "averageCodingTime": 5.5
   },
   {
-    "id": 5,
-    "name": "Jordan Nguyen",
-    "email": "jordan.nguyen@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Jordan_Nguyen",
-    "role": "Frontend",
-    "experience": "Lead",
-    "averageCodingTime": 3.8
-  },
-  {
-    "id": 6,
-    "name": "Blake Smith",
-    "email": "blake.smith@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Blake_Smith",
-    "role": "DevOps",
-    "experience": "Senior",
-    "averageCodingTime": 3.2
-  },
-  {
-    "id": 7,
-    "name": "Sam Jones",
-    "email": "sam.jones@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Sam_Jones",
+    "id": 10,
+    "name": "Quinn Martinez",
+    "email": "quinn.martinez@example.com",
+    "avatar": "https://i.pravatar.cc/150?u=Quinn_Martinez",
     "role": "Backend",
     "experience": "Senior",
-    "averageCodingTime": 5.4
-  },
-  {
-    "id": 8,
-    "name": "Avery Lee",
-    "email": "avery.lee@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Avery_Lee",
-    "role": "Full Stack",
-    "experience": "Lead",
-    "averageCodingTime": 4.6
-  },
-  {
-    "id": 9,
-    "name": "Jamie Nguyen",
-    "email": "jamie.nguyen@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Jamie_Nguyen",
-    "role": "Full Stack",
-    "experience": "Mid-level",
-    "averageCodingTime": 3
-  },
-  {
-    "id": 10,
-    "name": "Cameron Smith",
-    "email": "cameron.smith@example.com",
-    "avatar": "https://i.pravatar.cc/150?u=Cameron_Smith",
-    "role": "DevOps",
-    "experience": "Lead",
-    "averageCodingTime": 3.6
+    "averageCodingTime": 3.4
   }
 ]

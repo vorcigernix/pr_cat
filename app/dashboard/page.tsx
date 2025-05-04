@@ -1,6 +1,10 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaEngineering } from "@/components/chart-area-engineering"
-import { DataTable } from "@/components/data-table"
+import { DeveloperPerformance } from "@/components/developer-performance"
+import { PRActivityTable } from "@/components/pr-activity-table"
+import { PRQualityDetails } from "@/components/pr-quality-details"
+import { RecommendationsInsights } from "@/components/recommendations-insights"
+import { RepositoryInsights } from "@/components/repository-insights"
 import { SectionCardsEngineering } from "@/components/section-cards-engineering"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -28,7 +32,11 @@ export default function Page() {
               <div className="px-4 lg:px-6">
                 <ChartAreaEngineering />
               </div>
-              <DataTable data={data} />
+              <PRActivityTable />
+              <RecommendationsInsights />
+              <PRQualityDetails />
+              <DeveloperPerformance />
+              <RepositoryInsights />
             </div>
           </div>
         </div>

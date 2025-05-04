@@ -2,638 +2,638 @@
   {
     "date": "2025-02-01",
     "prThroughput": 0,
-    "cycleTime": 22.5,
-    "reviewTime": 11.3,
-    "codingHours": 4.3
-  },
-  {
-    "date": "2025-02-02",
-    "prThroughput": 0,
-    "cycleTime": 25.9,
-    "reviewTime": 10.8,
-    "codingHours": 3.9
-  },
-  {
-    "date": "2025-02-03",
-    "prThroughput": 1,
-    "cycleTime": 85,
-    "reviewTime": 53,
-    "codingHours": 4.4
-  },
-  {
-    "date": "2025-02-04",
-    "prThroughput": 1,
-    "cycleTime": 42,
-    "reviewTime": 7,
-    "codingHours": 5.3
-  },
-  {
-    "date": "2025-02-05",
-    "prThroughput": 1,
-    "cycleTime": 74,
-    "reviewTime": 27,
-    "codingHours": 3.6
-  },
-  {
-    "date": "2025-02-06",
-    "prThroughput": 1,
-    "cycleTime": 74,
-    "reviewTime": 49,
-    "codingHours": 4.7
-  },
-  {
-    "date": "2025-02-07",
-    "prThroughput": 1,
-    "cycleTime": 97,
-    "reviewTime": 49,
-    "codingHours": 4
-  },
-  {
-    "date": "2025-02-08",
-    "prThroughput": 2,
-    "cycleTime": 71,
-    "reviewTime": 27,
-    "codingHours": 4
-  },
-  {
-    "date": "2025-02-09",
-    "prThroughput": 0,
-    "cycleTime": 35,
-    "reviewTime": 6.8,
-    "codingHours": 3.8
-  },
-  {
-    "date": "2025-02-10",
-    "prThroughput": 2,
-    "cycleTime": 75.5,
-    "reviewTime": 44,
-    "codingHours": 5.2
-  },
-  {
-    "date": "2025-02-11",
-    "prThroughput": 0,
-    "cycleTime": 38.4,
-    "reviewTime": 10,
-    "codingHours": 3.6
-  },
-  {
-    "date": "2025-02-12",
-    "prThroughput": 1,
-    "cycleTime": 106,
-    "reviewTime": 64,
-    "codingHours": 5.2
-  },
-  {
-    "date": "2025-02-13",
-    "prThroughput": 1,
-    "cycleTime": 25,
-    "reviewTime": 4,
-    "codingHours": 5
-  },
-  {
-    "date": "2025-02-14",
-    "prThroughput": 0,
-    "cycleTime": 27.5,
-    "reviewTime": 4.7,
-    "codingHours": 3.7
-  },
-  {
-    "date": "2025-02-15",
-    "prThroughput": 3,
-    "cycleTime": 64.3,
-    "reviewTime": 37,
-    "codingHours": 3.9
-  },
-  {
-    "date": "2025-02-16",
-    "prThroughput": 2,
-    "cycleTime": 74.5,
-    "reviewTime": 40,
-    "codingHours": 5
-  },
-  {
-    "date": "2025-02-17",
-    "prThroughput": 0,
-    "cycleTime": 33.2,
-    "reviewTime": 6.1,
-    "codingHours": 4.3
-  },
-  {
-    "date": "2025-02-18",
-    "prThroughput": 1,
-    "cycleTime": 41,
-    "reviewTime": 38,
-    "codingHours": 4.7
-  },
-  {
-    "date": "2025-02-19",
-    "prThroughput": 0,
-    "cycleTime": 31.6,
-    "reviewTime": 4.7,
-    "codingHours": 5
-  },
-  {
-    "date": "2025-02-20",
-    "prThroughput": 0,
-    "cycleTime": 28.1,
-    "reviewTime": 5.4,
-    "codingHours": 4.9
-  },
-  {
-    "date": "2025-02-21",
-    "prThroughput": 1,
-    "cycleTime": 85,
-    "reviewTime": 47,
-    "codingHours": 4.7
-  },
-  {
-    "date": "2025-02-22",
-    "prThroughput": 1,
-    "cycleTime": 71,
-    "reviewTime": 7,
-    "codingHours": 5
-  },
-  {
-    "date": "2025-02-23",
-    "prThroughput": 0,
-    "cycleTime": 33.4,
-    "reviewTime": 8.8,
-    "codingHours": 3.8
-  },
-  {
-    "date": "2025-02-24",
-    "prThroughput": 0,
-    "cycleTime": 23.5,
-    "reviewTime": 8.9,
-    "codingHours": 4.9
-  },
-  {
-    "date": "2025-02-25",
-    "prThroughput": 0,
-    "cycleTime": 37.2,
-    "reviewTime": 11.3,
-    "codingHours": 4.8
-  },
-  {
-    "date": "2025-02-26",
-    "prThroughput": 0,
-    "cycleTime": 26.8,
-    "reviewTime": 10.8,
-    "codingHours": 3.6
-  },
-  {
-    "date": "2025-02-27",
-    "prThroughput": 1,
-    "cycleTime": 58,
-    "reviewTime": 38,
-    "codingHours": 4.5
-  },
-  {
-    "date": "2025-02-28",
-    "prThroughput": 2,
-    "cycleTime": 79,
-    "reviewTime": 27.5,
-    "codingHours": 4.4
-  },
-  {
-    "date": "2025-03-01",
-    "prThroughput": 0,
-    "cycleTime": 23.6,
-    "reviewTime": 4.5,
-    "codingHours": 4.5
-  },
-  {
-    "date": "2025-03-02",
-    "prThroughput": 2,
-    "cycleTime": 61,
-    "reviewTime": 24,
-    "codingHours": 4.4
-  },
-  {
-    "date": "2025-03-03",
-    "prThroughput": 0,
     "cycleTime": 30.9,
-    "reviewTime": 10.2,
-    "codingHours": 3.9
-  },
-  {
-    "date": "2025-03-04",
-    "prThroughput": 1,
-    "cycleTime": 108,
-    "reviewTime": 44,
-    "codingHours": 5.4
-  },
-  {
-    "date": "2025-03-05",
-    "prThroughput": 1,
-    "cycleTime": 68,
-    "reviewTime": 36,
-    "codingHours": 4.6
-  },
-  {
-    "date": "2025-03-06",
-    "prThroughput": 1,
-    "cycleTime": 95,
-    "reviewTime": 46,
-    "codingHours": 5.2
-  },
-  {
-    "date": "2025-03-07",
-    "prThroughput": 0,
-    "cycleTime": 22.4,
-    "reviewTime": 9.6,
-    "codingHours": 3.5
-  },
-  {
-    "date": "2025-03-08",
-    "prThroughput": 1,
-    "cycleTime": 75,
-    "reviewTime": 20,
-    "codingHours": 3.7
-  },
-  {
-    "date": "2025-03-09",
-    "prThroughput": 1,
-    "cycleTime": 51,
-    "reviewTime": 40,
-    "codingHours": 3.8
-  },
-  {
-    "date": "2025-03-10",
-    "prThroughput": 1,
-    "cycleTime": 92,
-    "reviewTime": 53,
-    "codingHours": 4.3
-  },
-  {
-    "date": "2025-03-11",
-    "prThroughput": 2,
-    "cycleTime": 98.5,
-    "reviewTime": 37.5,
-    "codingHours": 3.6
-  },
-  {
-    "date": "2025-03-12",
-    "prThroughput": 2,
-    "cycleTime": 89.5,
-    "reviewTime": 35,
-    "codingHours": 3.7
-  },
-  {
-    "date": "2025-03-13",
-    "prThroughput": 1,
-    "cycleTime": 42,
-    "reviewTime": 13,
-    "codingHours": 3.8
-  },
-  {
-    "date": "2025-03-14",
-    "prThroughput": 1,
-    "cycleTime": 32,
-    "reviewTime": 3,
-    "codingHours": 3.7
-  },
-  {
-    "date": "2025-03-15",
-    "prThroughput": 1,
-    "cycleTime": 50,
-    "reviewTime": 23,
-    "codingHours": 5.3
-  },
-  {
-    "date": "2025-03-16",
-    "prThroughput": 2,
-    "cycleTime": 96.5,
-    "reviewTime": 52.5,
-    "codingHours": 4.9
-  },
-  {
-    "date": "2025-03-17",
-    "prThroughput": 1,
-    "cycleTime": 60,
-    "reviewTime": 23,
-    "codingHours": 3.8
-  },
-  {
-    "date": "2025-03-18",
-    "prThroughput": 4,
-    "cycleTime": 66.3,
-    "reviewTime": 40,
-    "codingHours": 3.9
-  },
-  {
-    "date": "2025-03-19",
-    "prThroughput": 1,
-    "cycleTime": 72,
-    "reviewTime": 32,
-    "codingHours": 5.4
-  },
-  {
-    "date": "2025-03-20",
-    "prThroughput": 2,
-    "cycleTime": 90,
-    "reviewTime": 42.5,
-    "codingHours": 3.9
-  },
-  {
-    "date": "2025-03-21",
-    "prThroughput": 2,
-    "cycleTime": 49,
-    "reviewTime": 10.5,
-    "codingHours": 3.8
-  },
-  {
-    "date": "2025-03-22",
-    "prThroughput": 2,
-    "cycleTime": 80,
-    "reviewTime": 36,
-    "codingHours": 4.4
-  },
-  {
-    "date": "2025-03-23",
-    "prThroughput": 0,
-    "cycleTime": 37.9,
-    "reviewTime": 10.7,
-    "codingHours": 3.6
-  },
-  {
-    "date": "2025-03-24",
-    "prThroughput": 2,
-    "cycleTime": 104.5,
-    "reviewTime": 62.5,
-    "codingHours": 3.6
-  },
-  {
-    "date": "2025-03-25",
-    "prThroughput": 1,
-    "cycleTime": 46,
-    "reviewTime": 5,
-    "codingHours": 5.1
-  },
-  {
-    "date": "2025-03-26",
-    "prThroughput": 0,
-    "cycleTime": 30.4,
-    "reviewTime": 8.3,
-    "codingHours": 4.4
-  },
-  {
-    "date": "2025-03-27",
-    "prThroughput": 2,
-    "cycleTime": 99,
-    "reviewTime": 63,
-    "codingHours": 4.8
-  },
-  {
-    "date": "2025-03-28",
-    "prThroughput": 4,
-    "cycleTime": 73.3,
-    "reviewTime": 41.5,
-    "codingHours": 3.8
-  },
-  {
-    "date": "2025-03-29",
-    "prThroughput": 1,
-    "cycleTime": 56,
-    "reviewTime": 28,
-    "codingHours": 4.6
-  },
-  {
-    "date": "2025-03-30",
-    "prThroughput": 1,
-    "cycleTime": 69,
-    "reviewTime": 21,
-    "codingHours": 3.6
-  },
-  {
-    "date": "2025-03-31",
-    "prThroughput": 1,
-    "cycleTime": 79,
-    "reviewTime": 38,
-    "codingHours": 3.7
-  },
-  {
-    "date": "2025-04-01",
-    "prThroughput": 1,
-    "cycleTime": 36,
-    "reviewTime": 19,
-    "codingHours": 3.6
-  },
-  {
-    "date": "2025-04-02",
-    "prThroughput": 0,
-    "cycleTime": 20.9,
-    "reviewTime": 5.2,
-    "codingHours": 3.7
-  },
-  {
-    "date": "2025-04-03",
-    "prThroughput": 3,
-    "cycleTime": 79.7,
-    "reviewTime": 35.3,
-    "codingHours": 4.1
-  },
-  {
-    "date": "2025-04-04",
-    "prThroughput": 0,
-    "cycleTime": 36.1,
-    "reviewTime": 9.7,
-    "codingHours": 4.9
-  },
-  {
-    "date": "2025-04-05",
-    "prThroughput": 3,
-    "cycleTime": 82.3,
-    "reviewTime": 41.3,
-    "codingHours": 4.4
-  },
-  {
-    "date": "2025-04-06",
-    "prThroughput": 0,
-    "cycleTime": 37.5,
-    "reviewTime": 10,
-    "codingHours": 4.8
-  },
-  {
-    "date": "2025-04-07",
-    "prThroughput": 0,
-    "cycleTime": 39.6,
-    "reviewTime": 8.4,
-    "codingHours": 3.7
-  },
-  {
-    "date": "2025-04-08",
-    "prThroughput": 2,
-    "cycleTime": 90,
-    "reviewTime": 50.5,
-    "codingHours": 5.2
-  },
-  {
-    "date": "2025-04-09",
-    "prThroughput": 1,
-    "cycleTime": 111,
-    "reviewTime": 62,
-    "codingHours": 3.9
-  },
-  {
-    "date": "2025-04-10",
-    "prThroughput": 1,
-    "cycleTime": 49,
-    "reviewTime": 8,
-    "codingHours": 5.5
-  },
-  {
-    "date": "2025-04-11",
-    "prThroughput": 1,
-    "cycleTime": 113,
-    "reviewTime": 53,
-    "codingHours": 3.5
-  },
-  {
-    "date": "2025-04-12",
-    "prThroughput": 0,
-    "cycleTime": 23.8,
-    "reviewTime": 5.1,
-    "codingHours": 5.3
-  },
-  {
-    "date": "2025-04-13",
-    "prThroughput": 0,
-    "cycleTime": 34.9,
-    "reviewTime": 11,
-    "codingHours": 4.2
-  },
-  {
-    "date": "2025-04-14",
-    "prThroughput": 1,
-    "cycleTime": 49,
-    "reviewTime": 27,
-    "codingHours": 4.9
-  },
-  {
-    "date": "2025-04-15",
-    "prThroughput": 2,
-    "cycleTime": 53,
-    "reviewTime": 31,
-    "codingHours": 5.4
-  },
-  {
-    "date": "2025-04-16",
-    "prThroughput": 1,
-    "cycleTime": 84,
-    "reviewTime": 46,
-    "codingHours": 4.1
-  },
-  {
-    "date": "2025-04-17",
-    "prThroughput": 0,
-    "cycleTime": 35.3,
-    "reviewTime": 9.7,
-    "codingHours": 4.6
-  },
-  {
-    "date": "2025-04-18",
-    "prThroughput": 1,
-    "cycleTime": 64,
-    "reviewTime": 44,
-    "codingHours": 4.1
-  },
-  {
-    "date": "2025-04-19",
-    "prThroughput": 1,
-    "cycleTime": 109,
-    "reviewTime": 57,
-    "codingHours": 5.4
-  },
-  {
-    "date": "2025-04-20",
-    "prThroughput": 2,
-    "cycleTime": 33.5,
-    "reviewTime": 7.5,
-    "codingHours": 4.7
-  },
-  {
-    "date": "2025-04-21",
-    "prThroughput": 0,
-    "cycleTime": 39.1,
-    "reviewTime": 5.7,
-    "codingHours": 5.5
-  },
-  {
-    "date": "2025-04-22",
-    "prThroughput": 0,
-    "cycleTime": 27.1,
-    "reviewTime": 11.8,
-    "codingHours": 4.6
-  },
-  {
-    "date": "2025-04-23",
-    "prThroughput": 0,
-    "cycleTime": 26.6,
     "reviewTime": 4.1,
     "codingHours": 4
   },
   {
-    "date": "2025-04-24",
+    "date": "2025-02-02",
+    "prThroughput": 1,
+    "cycleTime": 58,
+    "reviewTime": 15,
+    "codingHours": 5.1
+  },
+  {
+    "date": "2025-02-03",
+    "prThroughput": 0,
+    "cycleTime": 36.7,
+    "reviewTime": 10.5,
+    "codingHours": 4.9
+  },
+  {
+    "date": "2025-02-04",
+    "prThroughput": 0,
+    "cycleTime": 26.5,
+    "reviewTime": 4.1,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-02-05",
+    "prThroughput": 0,
+    "cycleTime": 31.9,
+    "reviewTime": 6.7,
+    "codingHours": 5.5
+  },
+  {
+    "date": "2025-02-06",
+    "prThroughput": 1,
+    "cycleTime": 71,
+    "reviewTime": 30,
+    "codingHours": 3.8
+  },
+  {
+    "date": "2025-02-07",
     "prThroughput": 0,
     "cycleTime": 25.1,
+    "reviewTime": 5.6,
+    "codingHours": 5.5
+  },
+  {
+    "date": "2025-02-08",
+    "prThroughput": 0,
+    "cycleTime": 38.2,
+    "reviewTime": 8.1,
+    "codingHours": 5.4
+  },
+  {
+    "date": "2025-02-09",
+    "prThroughput": 2,
+    "cycleTime": 62,
+    "reviewTime": 31.5,
+    "codingHours": 4.1
+  },
+  {
+    "date": "2025-02-10",
+    "prThroughput": 2,
+    "cycleTime": 78.5,
+    "reviewTime": 19,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-02-11",
+    "prThroughput": 0,
+    "cycleTime": 22.4,
+    "reviewTime": 7.1,
+    "codingHours": 5.2
+  },
+  {
+    "date": "2025-02-12",
+    "prThroughput": 1,
+    "cycleTime": 117,
+    "reviewTime": 56,
+    "codingHours": 4.9
+  },
+  {
+    "date": "2025-02-13",
+    "prThroughput": 2,
+    "cycleTime": 54.5,
+    "reviewTime": 30,
+    "codingHours": 4.1
+  },
+  {
+    "date": "2025-02-14",
+    "prThroughput": 0,
+    "cycleTime": 36.1,
+    "reviewTime": 10.3,
+    "codingHours": 4.8
+  },
+  {
+    "date": "2025-02-15",
+    "prThroughput": 1,
+    "cycleTime": 88,
+    "reviewTime": 28,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-02-16",
+    "prThroughput": 0,
+    "cycleTime": 29.8,
+    "reviewTime": 4.7,
+    "codingHours": 4.7
+  },
+  {
+    "date": "2025-02-17",
+    "prThroughput": 1,
+    "cycleTime": 106,
+    "reviewTime": 57,
+    "codingHours": 5.2
+  },
+  {
+    "date": "2025-02-18",
+    "prThroughput": 1,
+    "cycleTime": 66,
+    "reviewTime": 41,
+    "codingHours": 4.7
+  },
+  {
+    "date": "2025-02-19",
+    "prThroughput": 2,
+    "cycleTime": 69,
+    "reviewTime": 36.5,
+    "codingHours": 4.5
+  },
+  {
+    "date": "2025-02-20",
+    "prThroughput": 0,
+    "cycleTime": 21.1,
+    "reviewTime": 8.2,
+    "codingHours": 5.1
+  },
+  {
+    "date": "2025-02-21",
+    "prThroughput": 4,
+    "cycleTime": 67,
+    "reviewTime": 32.8,
+    "codingHours": 4.8
+  },
+  {
+    "date": "2025-02-22",
+    "prThroughput": 0,
+    "cycleTime": 22.1,
+    "reviewTime": 9.7,
+    "codingHours": 4.3
+  },
+  {
+    "date": "2025-02-23",
+    "prThroughput": 0,
+    "cycleTime": 35,
+    "reviewTime": 4,
+    "codingHours": 5.1
+  },
+  {
+    "date": "2025-02-24",
+    "prThroughput": 1,
+    "cycleTime": 53,
+    "reviewTime": 14,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-02-25",
+    "prThroughput": 0,
+    "cycleTime": 21.3,
+    "reviewTime": 9.7,
+    "codingHours": 4.5
+  },
+  {
+    "date": "2025-02-26",
+    "prThroughput": 1,
+    "cycleTime": 90,
+    "reviewTime": 54,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-02-27",
+    "prThroughput": 0,
+    "cycleTime": 35.4,
+    "reviewTime": 6.3,
+    "codingHours": 4.5
+  },
+  {
+    "date": "2025-02-28",
+    "prThroughput": 0,
+    "cycleTime": 38,
+    "reviewTime": 11.4,
+    "codingHours": 4.6
+  },
+  {
+    "date": "2025-03-01",
+    "prThroughput": 0,
+    "cycleTime": 28.4,
+    "reviewTime": 10.4,
+    "codingHours": 4.6
+  },
+  {
+    "date": "2025-03-02",
+    "prThroughput": 2,
+    "cycleTime": 115.5,
+    "reviewTime": 63.5,
+    "codingHours": 3.8
+  },
+  {
+    "date": "2025-03-03",
+    "prThroughput": 0,
+    "cycleTime": 26.2,
     "reviewTime": 11,
+    "codingHours": 5.2
+  },
+  {
+    "date": "2025-03-04",
+    "prThroughput": 2,
+    "cycleTime": 61,
+    "reviewTime": 37.5,
+    "codingHours": 4
+  },
+  {
+    "date": "2025-03-05",
+    "prThroughput": 0,
+    "cycleTime": 27.4,
+    "reviewTime": 11.8,
+    "codingHours": 3.6
+  },
+  {
+    "date": "2025-03-06",
+    "prThroughput": 1,
+    "cycleTime": 102,
+    "reviewTime": 46,
+    "codingHours": 4.8
+  },
+  {
+    "date": "2025-03-07",
+    "prThroughput": 1,
+    "cycleTime": 103,
+    "reviewTime": 63,
     "codingHours": 4.2
+  },
+  {
+    "date": "2025-03-08",
+    "prThroughput": 0,
+    "cycleTime": 26.4,
+    "reviewTime": 4.8,
+    "codingHours": 5.3
+  },
+  {
+    "date": "2025-03-09",
+    "prThroughput": 0,
+    "cycleTime": 36,
+    "reviewTime": 7.7,
+    "codingHours": 4.9
+  },
+  {
+    "date": "2025-03-10",
+    "prThroughput": 3,
+    "cycleTime": 86.7,
+    "reviewTime": 59,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-03-11",
+    "prThroughput": 1,
+    "cycleTime": 73,
+    "reviewTime": 37,
+    "codingHours": 4.4
+  },
+  {
+    "date": "2025-03-12",
+    "prThroughput": 1,
+    "cycleTime": 100,
+    "reviewTime": 30,
+    "codingHours": 4.8
+  },
+  {
+    "date": "2025-03-13",
+    "prThroughput": 0,
+    "cycleTime": 30.5,
+    "reviewTime": 9.6,
+    "codingHours": 3.7
+  },
+  {
+    "date": "2025-03-14",
+    "prThroughput": 3,
+    "cycleTime": 66,
+    "reviewTime": 29,
+    "codingHours": 3.8
+  },
+  {
+    "date": "2025-03-15",
+    "prThroughput": 1,
+    "cycleTime": 61,
+    "reviewTime": 17,
+    "codingHours": 5.4
+  },
+  {
+    "date": "2025-03-16",
+    "prThroughput": 0,
+    "cycleTime": 23.5,
+    "reviewTime": 9.3,
+    "codingHours": 5.1
+  },
+  {
+    "date": "2025-03-17",
+    "prThroughput": 1,
+    "cycleTime": 73,
+    "reviewTime": 35,
+    "codingHours": 3.7
+  },
+  {
+    "date": "2025-03-18",
+    "prThroughput": 1,
+    "cycleTime": 103,
+    "reviewTime": 57,
+    "codingHours": 3.8
+  },
+  {
+    "date": "2025-03-19",
+    "prThroughput": 3,
+    "cycleTime": 63.7,
+    "reviewTime": 21.7,
+    "codingHours": 5.1
+  },
+  {
+    "date": "2025-03-20",
+    "prThroughput": 0,
+    "cycleTime": 39.4,
+    "reviewTime": 12,
+    "codingHours": 5.3
+  },
+  {
+    "date": "2025-03-21",
+    "prThroughput": 4,
+    "cycleTime": 77.3,
+    "reviewTime": 29.3,
+    "codingHours": 3.8
+  },
+  {
+    "date": "2025-03-22",
+    "prThroughput": 0,
+    "cycleTime": 34.8,
+    "reviewTime": 11.7,
+    "codingHours": 3.7
+  },
+  {
+    "date": "2025-03-23",
+    "prThroughput": 1,
+    "cycleTime": 120,
+    "reviewTime": 68,
+    "codingHours": 5.3
+  },
+  {
+    "date": "2025-03-24",
+    "prThroughput": 2,
+    "cycleTime": 74,
+    "reviewTime": 25,
+    "codingHours": 3.7
+  },
+  {
+    "date": "2025-03-25",
+    "prThroughput": 1,
+    "cycleTime": 108,
+    "reviewTime": 47,
+    "codingHours": 3.7
+  },
+  {
+    "date": "2025-03-26",
+    "prThroughput": 1,
+    "cycleTime": 75,
+    "reviewTime": 19,
+    "codingHours": 4.8
+  },
+  {
+    "date": "2025-03-27",
+    "prThroughput": 3,
+    "cycleTime": 71.3,
+    "reviewTime": 39,
+    "codingHours": 4.8
+  },
+  {
+    "date": "2025-03-28",
+    "prThroughput": 0,
+    "cycleTime": 30.9,
+    "reviewTime": 5.7,
+    "codingHours": 4.7
+  },
+  {
+    "date": "2025-03-29",
+    "prThroughput": 1,
+    "cycleTime": 32,
+    "reviewTime": 13,
+    "codingHours": 4.7
+  },
+  {
+    "date": "2025-03-30",
+    "prThroughput": 0,
+    "cycleTime": 32.9,
+    "reviewTime": 7.4,
+    "codingHours": 4.5
+  },
+  {
+    "date": "2025-03-31",
+    "prThroughput": 2,
+    "cycleTime": 36,
+    "reviewTime": 8,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-04-01",
+    "prThroughput": 2,
+    "cycleTime": 70.5,
+    "reviewTime": 41,
+    "codingHours": 4.6
+  },
+  {
+    "date": "2025-04-02",
+    "prThroughput": 2,
+    "cycleTime": 68,
+    "reviewTime": 7.5,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-04-03",
+    "prThroughput": 2,
+    "cycleTime": 118.5,
+    "reviewTime": 63.5,
+    "codingHours": 4.3
+  },
+  {
+    "date": "2025-04-04",
+    "prThroughput": 1,
+    "cycleTime": 105,
+    "reviewTime": 50,
+    "codingHours": 4.4
+  },
+  {
+    "date": "2025-04-05",
+    "prThroughput": 1,
+    "cycleTime": 90,
+    "reviewTime": 61,
+    "codingHours": 4.5
+  },
+  {
+    "date": "2025-04-06",
+    "prThroughput": 1,
+    "cycleTime": 46,
+    "reviewTime": 16,
+    "codingHours": 5
+  },
+  {
+    "date": "2025-04-07",
+    "prThroughput": 2,
+    "cycleTime": 75,
+    "reviewTime": 34,
+    "codingHours": 4.9
+  },
+  {
+    "date": "2025-04-08",
+    "prThroughput": 3,
+    "cycleTime": 77,
+    "reviewTime": 48.7,
+    "codingHours": 4.9
+  },
+  {
+    "date": "2025-04-09",
+    "prThroughput": 2,
+    "cycleTime": 80,
+    "reviewTime": 28.5,
+    "codingHours": 4.5
+  },
+  {
+    "date": "2025-04-10",
+    "prThroughput": 3,
+    "cycleTime": 73.3,
+    "reviewTime": 31.3,
+    "codingHours": 4.1
+  },
+  {
+    "date": "2025-04-11",
+    "prThroughput": 1,
+    "cycleTime": 52,
+    "reviewTime": 18,
+    "codingHours": 4.3
+  },
+  {
+    "date": "2025-04-12",
+    "prThroughput": 4,
+    "cycleTime": 82,
+    "reviewTime": 33.8,
+    "codingHours": 5.1
+  },
+  {
+    "date": "2025-04-13",
+    "prThroughput": 0,
+    "cycleTime": 33.5,
+    "reviewTime": 4,
+    "codingHours": 3.6
+  },
+  {
+    "date": "2025-04-14",
+    "prThroughput": 0,
+    "cycleTime": 21.9,
+    "reviewTime": 4.3,
+    "codingHours": 5.1
+  },
+  {
+    "date": "2025-04-15",
+    "prThroughput": 2,
+    "cycleTime": 83.5,
+    "reviewTime": 57.5,
+    "codingHours": 3.6
+  },
+  {
+    "date": "2025-04-16",
+    "prThroughput": 0,
+    "cycleTime": 26.8,
+    "reviewTime": 9.8,
+    "codingHours": 5
+  },
+  {
+    "date": "2025-04-17",
+    "prThroughput": 1,
+    "cycleTime": 60,
+    "reviewTime": 42,
+    "codingHours": 4.8
+  },
+  {
+    "date": "2025-04-18",
+    "prThroughput": 0,
+    "cycleTime": 36.4,
+    "reviewTime": 5.3,
+    "codingHours": 5.2
+  },
+  {
+    "date": "2025-04-19",
+    "prThroughput": 1,
+    "cycleTime": 59,
+    "reviewTime": 42,
+    "codingHours": 4.2
+  },
+  {
+    "date": "2025-04-20",
+    "prThroughput": 0,
+    "cycleTime": 26.5,
+    "reviewTime": 8.1,
+    "codingHours": 5.1
+  },
+  {
+    "date": "2025-04-21",
+    "prThroughput": 0,
+    "cycleTime": 27.3,
+    "reviewTime": 8.6,
+    "codingHours": 4.7
+  },
+  {
+    "date": "2025-04-22",
+    "prThroughput": 0,
+    "cycleTime": 21.2,
+    "reviewTime": 11.3,
+    "codingHours": 5.3
+  },
+  {
+    "date": "2025-04-23",
+    "prThroughput": 3,
+    "cycleTime": 82.3,
+    "reviewTime": 36,
+    "codingHours": 3.9
+  },
+  {
+    "date": "2025-04-24",
+    "prThroughput": 0,
+    "cycleTime": 34.2,
+    "reviewTime": 11.2,
+    "codingHours": 5
   },
   {
     "date": "2025-04-25",
     "prThroughput": 1,
-    "cycleTime": 80,
-    "reviewTime": 52,
-    "codingHours": 5
+    "cycleTime": 61,
+    "reviewTime": 50,
+    "codingHours": 3.9
   },
   {
     "date": "2025-04-26",
-    "prThroughput": 1,
-    "cycleTime": 83,
-    "reviewTime": 26,
-    "codingHours": 5.4
+    "prThroughput": 0,
+    "cycleTime": 24.1,
+    "reviewTime": 6.4,
+    "codingHours": 5
   },
   {
     "date": "2025-04-27",
     "prThroughput": 1,
-    "cycleTime": 84,
-    "reviewTime": 15,
-    "codingHours": 3.8
+    "cycleTime": 72,
+    "reviewTime": 49,
+    "codingHours": 4.9
   },
   {
     "date": "2025-04-28",
-    "prThroughput": 0,
-    "cycleTime": 35.1,
-    "reviewTime": 5.3,
-    "codingHours": 5.1
+    "prThroughput": 2,
+    "cycleTime": 81,
+    "reviewTime": 38,
+    "codingHours": 5.3
   },
   {
     "date": "2025-04-29",
-    "prThroughput": 0,
-    "cycleTime": 37.4,
-    "reviewTime": 4.4,
-    "codingHours": 5.1
+    "prThroughput": 2,
+    "cycleTime": 95,
+    "reviewTime": 45.5,
+    "codingHours": 5.3
   },
   {
     "date": "2025-04-30",
-    "prThroughput": 1,
-    "cycleTime": 115,
-    "reviewTime": 71,
-    "codingHours": 3.6
+    "prThroughput": 2,
+    "cycleTime": 97.5,
+    "reviewTime": 53.5,
+    "codingHours": 3.9
   },
   {
     "date": "2025-05-01",
-    "prThroughput": 1,
-    "cycleTime": 123,
-    "reviewTime": 64,
-    "codingHours": 5
+    "prThroughput": 0,
+    "cycleTime": 20.9,
+    "reviewTime": 9.7,
+    "codingHours": 4.3
   },
   {
     "date": "2025-05-02",
-    "prThroughput": 5,
-    "cycleTime": 54.6,
-    "reviewTime": 22,
-    "codingHours": 3.9
+    "prThroughput": 0,
+    "cycleTime": 22.5,
+    "reviewTime": 4.2,
+    "codingHours": 4.5
   }
 ]
