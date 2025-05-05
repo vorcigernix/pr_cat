@@ -5,8 +5,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, 
 import { Badge } from "@/components/ui/badge";
 import { PrcatLogo } from "@/components/ui/prcat-logo";
 import { PRHeroSection } from "@/components/blocks/linear-hero-section";
+import { auth } from "@/auth";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
   // Sample data for metrics
   const metricsData = {
     codingTime: { value: 4.6, change: 0.3, trend: "up" },
@@ -235,11 +238,19 @@ export default function Home() {
                 <p className="text-muted-foreground mb-6 text-center">
                   Start tracking your engineering metrics today and discover ways to make your development process more efficient.
                 </p>
-                <Link href="/dashboard">
-                  <Button className="w-full" size="lg">
-                    Get Started
-                  </Button>
-                </Link>
+                {session ? (
+                  <Link href="/dashboard">
+                    <Button className="w-full" size="lg">
+                      Get Started
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/sign-in">
+                    <Button className="w-full" size="lg">
+                      Sign in
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -257,8 +268,11 @@ export default function Home() {
               Engineering metrics for teams, not managers
             </p>
             <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-sm hover:underline">Dashboard</Link>
-              <Link href="/sign-in" className="text-sm hover:underline">Sign in</Link>
+              {session ? (
+                <Link href="/dashboard" className="text-sm hover:underline">Dashboard</Link>
+              ) : (
+                <Link href="/sign-in" className="text-sm hover:underline">Sign in</Link>
+              )}
             </div>
           </div>
         </div>

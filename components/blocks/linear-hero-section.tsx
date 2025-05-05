@@ -3,7 +3,7 @@ import { HeroSection } from "@/components/blocks/hero-section-dark"
 function PRHeroSection() {
   return (
     <HeroSection
-      title="Prcat"
+      title="based on AI PR categorizer"
       subtitle={{
         regular: "Engineering metrics for ",
         gradient: "teams, not managers",

@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PrcatLogo } from "@/components/ui/prcat-logo"
 import { Menu, X } from "lucide-react"
+import { useSession } from "next-auth/react"
 
 interface HeroSectionProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string
@@ -93,6 +94,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
     ref,
   ) => {
     const [menuState, setMenuState] = React.useState(false);
+    const { data: session } = useSession();
 
     return (
       <div className={cn("relative", className)} ref={ref} {...props}>
@@ -139,14 +141,16 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
                   </div>
 
                   <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:border-l lg:pl-6">
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm">
-                      <Link href="/dashboard">
-                        <span>Dashboard</span>
-                      </Link>
-                    </Button>
+                    {session ? (
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm">
+                        <Link href="/dashboard">
+                          <span>Dashboard</span>
+                        </Link>
+                      </Button>
+                    ) : null}
                     <Button
                       asChild
                       size="sm">
@@ -179,11 +183,13 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
                 {description}
               </p>
               <div className="items-center justify-center gap-x-4 space-y-3 sm:flex sm:space-y-0">
-                <Button asChild size="lg" className="px-8">
-                  <Link href={ctaHref}>
-                    {ctaText}
-                  </Link>
-                </Button>
+                {session ? (
+                  <Button asChild size="lg" className="px-8">
+                    <Link href={ctaHref}>
+                      {ctaText}
+                    </Link>
+                  </Button>
+                ) : null}
                 
                 {secondaryCtaText && (
                   <Button asChild variant="outline" size="lg" className="border-gray-300 dark:border-gray-700">
