@@ -3,6 +3,8 @@ import { IconBrandGithub, IconArrowRight, IconCode, IconChartBar, IconClock, Ico
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PrcatLogo } from "@/components/ui/prcat-logo";
+import { PRHeroSection } from "@/components/blocks/linear-hero-section";
 
 export default function Home() {
   // Sample data for metrics
@@ -14,143 +16,9 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      {/* Navigation */}
-      <header className="border-b">
-        <div className="container max-w-6xl mx-auto flex items-center justify-between py-4 px-4">
-          <div className="flex items-center gap-2">
-            <IconCode className="h-5 w-5" />
-            <span className="text-xl font-semibold">prcat</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="#features" className="text-sm font-medium hover:underline">Features</Link>
-            <Link href="#metrics" className="text-sm font-medium hover:underline">Metrics</Link>
-            <Link href="#benefits" className="text-sm font-medium hover:underline">Benefits</Link>
-          </nav>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">Dashboard</Button>
-            </Link>
-            <Link href="/sign-in">
-              <Button className="flex items-center gap-2" size="sm">
-                <IconBrandGithub className="h-4 w-4" />
-                Sign in
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="py-16 md:py-24 lg:py-32">
-        <div className="container max-w-6xl mx-auto px-4">
-          <div className="grid gap-12 md:grid-cols-2 md:gap-12 items-center">
-            <div className="flex flex-col justify-center space-y-4 text-center md:text-left">
-              <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">
-                Engineering metrics for <span className="text-primary">teams</span>, not managers
-              </h1>
-              <p className="text-xl text-muted-foreground">
-                Prcat provides your engineering team with meaningful data about your development workflow - helping you identify bottlenecks and improve together.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center md:justify-start">
-                <Link href="/dashboard">
-                  <Button size="lg" className="flex items-center gap-2">
-                    View Dashboard
-                    <IconArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/sign-in">
-                  <Button variant="outline" size="lg" className="flex items-center gap-2">
-                    <IconBrandGithub className="h-5 w-5" />
-                    Sign in with GitHub
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center justify-center relative rounded-lg shadow-lg overflow-hidden p-2 bg-muted/50">
-              <div className="grid grid-cols-2 gap-3 w-full h-[350px] p-4 bg-background rounded-md">
-                <Card className="col-span-2 overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Engineering Metrics</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="h-[140px] w-full relative">
-                      {/* Static chart representation */}
-                      <div className="absolute inset-0 flex items-end px-4">
-                        <div className="relative flex-1 h-full flex items-end">
-                          {/* X-axis */}
-                          <div className="absolute bottom-0 w-full h-[1px] bg-border"></div>
-                          
-                          {/* Chart bars/areas */}
-                          <div className="flex justify-between w-full h-full items-end pb-4">
-                            {[65, 80, 55, 95, 70, 45, 75].map((height, i) => (
-                              <div key={i} className="flex flex-col items-center w-8">
-                                <div 
-                                  className="w-8 rounded-t-sm bg-gradient-to-t from-primary/20 to-primary/5"
-                                  style={{ height: `${height}%` }}
-                                ></div>
-                                <div className="mt-1 text-[8px] text-muted-foreground">
-                                  {i % 2 === 0 ? `Mar ${(i+1)*5}` : ''}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          {/* Area chart line */}
-                          <svg className="absolute inset-0" width="100%" height="100%">
-                            <path 
-                              d="M10,80 L50,40 L90,65 L130,20 L170,50 L210,70 L250,40" 
-                              fill="none" 
-                              stroke="#0284c7" 
-                              strokeWidth="2"
-                            />
-                            <path 
-                              d="M10,90 L50,70 L90,80 L130,60 L170,85 L210,75 L250,65" 
-                              fill="none" 
-                              stroke="#22c55e" 
-                              strokeWidth="2"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-3">
-                    <CardDescription className="text-xs">Cycle Time</CardDescription>
-                    <CardTitle className="text-lg font-semibold">
-                      {metricsData.cycleTime.value} hrs
-                    </CardTitle>
-                    <CardAction>
-                      <Badge variant="outline" className="text-green-500 text-xs">
-                        <IconTrendingUp className="h-3 w-3 mr-1" />
-                        {metricsData.cycleTime.change} hrs
-                      </Badge>
-                    </CardAction>
-                  </CardHeader>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-3">
-                    <CardDescription className="text-xs">PR Size</CardDescription>
-                    <CardTitle className="text-lg font-semibold">
-                      {metricsData.prSize.value} LOC
-                    </CardTitle>
-                    <CardAction>
-                      <Badge variant="outline" className="text-green-500 text-xs">
-                        <IconTrendingDown className="h-3 w-3 mr-1" />
-                        {metricsData.prSize.change}
-                      </Badge>
-                    </CardAction>
-                  </CardHeader>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="flex flex-col min-h-screen">
+      {/* Hero Section with Linear-style UI */}
+      <PRHeroSection />
 
       {/* Features */}
       <section id="features" className="py-16 md:py-24 bg-muted/50">
@@ -382,9 +250,8 @@ export default function Home() {
       <footer className="border-t mt-auto py-6 md:py-8">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <IconCode className="h-5 w-5" />
-              <span className="font-medium">prcat</span>
+            <div className="flex flex-row items-center gap-2">
+              <PrcatLogo fontSize="text-base" iconSize="h-4 w-4" />
             </div>
             <p className="text-sm text-muted-foreground">
               Engineering metrics for teams, not managers

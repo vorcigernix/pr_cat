@@ -76,6 +76,10 @@
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.795 0.184 86.047);
+  /* Animation delays */
+  --delay-150: 150ms;
+  --delay-300: 300ms;
+  --delay-450: 450ms;
 }
 
 .dark {
@@ -120,4 +124,132 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom styles for the prcat logo */
+.logo-text {
+  font-family: var(--font-logo);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+/* Background gradients */
+.bg-gradient-radial {
+  background-image: radial-gradient(var(--tw-gradient-stops));
+}
+
+/* 3D transformation utilities for screenshots */
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .perspective-1500 {
+    perspective: 1500px;
+  }
+  
+  .rotate-x-5 {
+    transform: rotateX(5deg);
+  }
+  
+  .rotate-x-8 {
+    transform: rotateX(8deg);
+  }
+
+  .rotate-x-12 {
+    transform: rotateX(12deg);
+  }
+  
+  .rotate-x-n5 {
+    transform: rotateX(-5deg);
+  }
+  
+  .rotate-x-n10 {
+    transform: rotateX(-10deg);
+  }
+  
+  .rotate-y-12 {
+    transform: rotateY(12deg);
+  }
+  
+  .rotate-y-15 {
+    transform: rotateY(15deg);
+  }
+  
+  .rotate-y-n8 {
+    transform: rotateY(-8deg);
+  }
+  
+  .rotate-y-n10 {
+    transform: rotateY(-10deg);
+  }
+  
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .delay-150 {
+    transition-delay: var(--delay-150);
+  }
+  
+  .delay-300 {
+    transition-delay: var(--delay-300);
+  }
+  
+  .delay-450 {
+    transition-delay: var(--delay-450);
+  }
+}
+
+/* Floating animations for screenshots */
+@keyframes float-1 {
+  0%, 100% {
+    transform: rotateX(-10deg) rotateY(15deg) translateZ(0);
+  }
+  50% {
+    transform: rotateX(-8deg) rotateY(16deg) translateZ(10px);
+  }
+}
+
+@keyframes float-2 {
+  0%, 100% {
+    transform: rotateX(5deg) rotateY(-10deg) translateZ(0);
+  }
+  50% {
+    transform: rotateX(6deg) rotateY(-11deg) translateZ(8px);
+  }
+}
+
+@keyframes float-3 {
+  0%, 100% {
+    transform: rotateX(8deg) rotateY(12deg) translateZ(0);
+  }
+  50% {
+    transform: rotateX(9deg) rotateY(13deg) translateZ(5px);
+  }
+}
+
+@keyframes float-4 {
+  0%, 100% {
+    transform: rotateX(-5deg) rotateY(-8deg) translateZ(0);
+  }
+  50% {
+    transform: rotateX(-4deg) rotateY(-7deg) translateZ(12px);
+  }
+}
+
+.animate-float-1 {
+  animation: float-1 7s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float-2 8s ease-in-out infinite;
+}
+
+.animate-float-3 {
+  animation: float-3 9s ease-in-out infinite;
+}
+
+.animate-float-4 {
+  animation: float-4 10s ease-in-out infinite;
 }
