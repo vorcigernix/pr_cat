@@ -1,11 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaEngineering } from "@/components/chart-area-engineering"
-import { DeveloperPerformance } from "@/components/developer-performance"
 import { InvestmentAreaDistribution } from "@/components/investment-area-distribution"
 import { PRActivityTable } from "@/components/pr-activity-table"
-import { PRQualityDetails } from "@/components/pr-quality-details"
-import { RecommendationsInsights } from "@/components/recommendations-insights"
-import { RepositoryInsights } from "@/components/repository-insights"
 import { SectionCardsEngineering } from "@/components/section-cards-engineering"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -13,7 +9,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-export default function Page() {
+export default function DashboardPage() {
   return (
     <SidebarProvider
       style={
@@ -29,16 +25,15 @@ export default function Page() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <div className="px-4 lg:px-6">
+                <h1 className="text-2xl font-semibold">Dashboard Overview</h1>
+              </div>
               <SectionCardsEngineering />
               <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2">
                 <ChartAreaEngineering />
                 <InvestmentAreaDistribution />
               </div>
               <PRActivityTable />
-              <RecommendationsInsights />
-              <PRQualityDetails />
-              <DeveloperPerformance />
-              <RepositoryInsights />
             </div>
           </div>
         </div>
