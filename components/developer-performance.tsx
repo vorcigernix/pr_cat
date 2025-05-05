@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -47,9 +47,21 @@ type DeveloperMetrics = {
   avgQualityScore: number;
 };
 
+// Add a PullRequest type definition
+type PullRequest = {
+  id: number;
+  developer: { id: number; name: string };
+  status: string;
+  cycleTime: number;
+  reviewTime: number;
+  linesAdded: number;
+  linesRemoved: number;
+  qualityScore: number;
+};
+
 export function DeveloperPerformance() {
   const [developers, setDevelopers] = useState<Developer[]>([]);
-  const [pullRequests, setPullRequests] = useState<any[]>([]);
+  const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [selectedDeveloper, setSelectedDeveloper] = useState<string>("all");
   const [developerMetrics, setDeveloperMetrics] = useState<DeveloperMetrics[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,13 +85,7 @@ export function DeveloperPerformance() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (developers.length > 0 && pullRequests.length > 0) {
-      calculateDeveloperMetrics();
-    }
-  }, [developers, pullRequests, selectedDeveloper]);
-
-  const calculateDeveloperMetrics = () => {
+  const calculateDeveloperMetrics = useCallback(() => {
     // Calculate metrics for each developer
     const metrics = developers.map(developer => {
       // Filter PRs by this developer
@@ -120,7 +126,13 @@ export function DeveloperPerformance() {
     metrics.sort((a, b) => b.prCount - a.prCount);
     
     setDeveloperMetrics(metrics);
-  };
+  }, [developers, pullRequests]);
+
+  useEffect(() => {
+    if (developers.length > 0 && pullRequests.length > 0) {
+      calculateDeveloperMetrics();
+    }
+  }, [developers, pullRequests, calculateDeveloperMetrics]);
 
   const getComparisonData = () => {
     // Get data for charting - compare all devs or filtered by selection

@@ -45,7 +45,7 @@ export function SectionCardsEngineering() {
       try {
         // In a real app, this would be an API call
         const data = await import("@/app/dashboard/metrics-summary.json");
-        setMetrics(data as any);
+        setMetrics(data.default as MetricsSummary);
       } catch (error) {
         console.error("Failed to load metrics data:", error);
       } finally {

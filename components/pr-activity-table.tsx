@@ -17,7 +17,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { IconArrowRight, IconCalendar, IconCheck, IconClock } from "@tabler/icons-react";
+import { IconCalendar, IconCheck, IconClock } from "@tabler/icons-react";
 
 type PullRequest = {
   id: number;
@@ -89,16 +89,6 @@ export function PRActivityTable() {
         return <Badge className="bg-red-500">Closed</Badge>;
       default:
         return <Badge className="bg-gray-500">{status}</Badge>;
-    }
-  }
-
-  function getQualityScoreBadge(score: number) {
-    if (score >= 80) {
-      return <Badge className="bg-green-500">{score}</Badge>;
-    } else if (score >= 60) {
-      return <Badge className="bg-yellow-500">{score}</Badge>;
-    } else {
-      return <Badge className="bg-red-500">{score}</Badge>;
     }
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -23,6 +23,19 @@ type Repository = {
   createdAt: string;
 };
 
+type PullRequest = {
+  id: number;
+  repository: { id: number };
+  status: string;
+  createdAt: string;
+  reviewStartedAt: string;
+  mergedAt: string;
+  deployedAt: string;
+  cycleTime: number;
+  linesAdded: number;
+  linesRemoved: number;
+};
+
 type RepositoryMetrics = {
   id: number;
   name: string;
@@ -42,7 +55,7 @@ type RepositoryMetrics = {
 
 export function RepositoryInsights() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [pullRequests, setPullRequests] = useState<any[]>([]);
+  const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [repoMetrics, setRepoMetrics] = useState<RepositoryMetrics[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,13 +78,7 @@ export function RepositoryInsights() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (repositories.length > 0 && pullRequests.length > 0) {
-      calculateRepoMetrics();
-    }
-  }, [repositories, pullRequests]);
-
-  const calculateRepoMetrics = () => {
+  const calculateRepoMetrics = useCallback(() => {
     const metrics = repositories.map(repo => {
       // Filter PRs for this repository
       const repoPRs = pullRequests.filter(pr => pr.repository.id === repo.id);
@@ -154,7 +161,13 @@ export function RepositoryInsights() {
     metrics.sort((a, b) => b.healthScore - a.healthScore);
     
     setRepoMetrics(metrics);
-  };
+  }, [repositories, pullRequests]);
+
+  useEffect(() => {
+    if (repositories.length > 0 && pullRequests.length > 0) {
+      calculateRepoMetrics();
+    }
+  }, [repositories, pullRequests, calculateRepoMetrics]);
 
   const getHealthScoreColor = (score: number) => {
     if (score >= 80) return "bg-green-500";

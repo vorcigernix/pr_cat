@@ -53,8 +53,8 @@ export function ActionableRecommendations() {
   }
 
   return (
-    <Alert variant="info" className="relative">
-      <IconBulb className="h-4 w-4" />
+    <Alert variant="default" className="relative border-primary/20 bg-primary/5">
+      <IconBulb className="h-4 w-4 text-primary" />
       <AlertTitle className="flex items-center">
         {currentRecommendation.title}
         <span className="ml-2 text-xs text-muted-foreground font-normal">

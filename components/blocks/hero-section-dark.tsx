@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { PrcatLogo } from "@/components/ui/prcat-logo"
 import { Menu, X } from "lucide-react"
 import { useSession } from "next-auth/react"
+import Image from "next/image"
 
 interface HeroSectionProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string
@@ -218,15 +219,21 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
             {bottomImage && (
               <div className="mt-16 mx-auto px-6 max-w-6xl relative z-10">
                 <div className="relative">
-                  <img
+                  <Image
                     src={bottomImage.light}
                     className="w-full shadow-lg rounded-lg border border-gray-200 dark:hidden"
                     alt="Dashboard preview"
+                    width={1200}
+                    height={675}
+                    priority
                   />
-                  <img
+                  <Image
                     src={bottomImage.dark}
                     className="hidden w-full shadow-lg rounded-lg border border-gray-800 dark:block"
                     alt="Dashboard preview"
+                    width={1200}
+                    height={675}
+                    priority
                   />
                 </div>
               </div>

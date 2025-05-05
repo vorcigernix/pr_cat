@@ -9,7 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { IconBulb, IconCheck, IconAlertCircle, IconArrowUpRight } from "@tabler/icons-react";
+import { 
+  IconAlertCircle, 
+  IconCheck, 
+  IconBulb
+} from "@tabler/icons-react";
 
 type Recommendation = {
   id: number;
@@ -62,140 +66,138 @@ export function RecommendationsInsights() {
 
   useEffect(() => {
     if (metricsData) {
+      const generateRecommendations = () => {
+        const { metricsSummary, pullRequests, timeSeriesData } = metricsData;
+        const recommendations: Recommendation[] = [];
+        
+        // Sample recommendations based on PR size
+        if (metricsSummary.prSize.value > 300) {
+          recommendations.push({
+            id: 1,
+            title: "Reduce PR size to improve review quality",
+            description: "Pull requests are averaging " + metricsSummary.prSize.value + " lines of code, which can lead to longer review times and reduced quality.",
+            impact: "high",
+            category: "quality",
+            metrics: ["PR Size", "Review Time"],
+            actionItems: [
+              "Target PRs under 200 lines of code",
+              "Break large features into smaller, focused changes",
+              "Consider using feature flags for incremental delivery"
+            ],
+            implemented: false
+          });
+        }
+
+        // Recommendation based on cycle time
+        if (metricsSummary.cycleTime.value > 30) {
+          recommendations.push({
+            id: 2,
+            title: "Reduce cycle time to ship faster",
+            description: "Your average cycle time is " + metricsSummary.cycleTime.value + " hours. Reducing this will help deliver features more quickly.",
+            impact: "high",
+            category: "cycle-time",
+            metrics: ["Cycle Time", "Review Time"],
+            actionItems: [
+              "Set up automatic deployment pipelines",
+              "Implement test automation to reduce manual testing",
+              "Establish SLAs for PR reviews (24 hours maximum)"
+            ],
+            implemented: false
+          });
+        }
+
+        // Recommendation based on review time
+        if (metricsSummary.reviewTime.value > 10) {
+          recommendations.push({
+            id: 3,
+            title: "Speed up code reviews",
+            description: "Reviews are taking an average of " + metricsSummary.reviewTime.value + " hours to complete, creating a bottleneck.",
+            impact: "medium",
+            category: "workflow",
+            metrics: ["Review Time"],
+            actionItems: [
+              "Implement a review rotation schedule",
+              "Set up automated code reviews for common issues",
+              "Add notifications for pending reviews over 24 hours"
+            ],
+            implemented: false
+          });
+        }
+
+        // Find large variation in coding time
+        const codingTimes = timeSeriesData.map((day) => day.codingHours);
+        const avgCodingTime = codingTimes.reduce((sum: number, time: number) => sum + time, 0) / codingTimes.length;
+        const variationExists = codingTimes.some((time: number) => Math.abs(time - avgCodingTime) / avgCodingTime > 0.3);
+
+        if (variationExists) {
+          recommendations.push({
+            id: 4,
+            title: "Balance workload across the team",
+            description: "There&apos;s significant variation in coding time across team members or days, indicating potential burnout risk or uneven workload.",
+            impact: "medium",
+            category: "collaboration",
+            metrics: ["Coding Time"],
+            actionItems: [
+              "Review sprint planning process",
+              "Implement paired programming for knowledge sharing",
+              "Monitor for consistent overtime patterns"
+            ],
+            implemented: false
+          });
+        }
+
+        // Find quality issues
+        const lowQualityPRs = pullRequests.filter((pr) => pr.qualityScore < 60).length;
+        const totalPRs = pullRequests.length;
+        
+        if (lowQualityPRs / totalPRs > 0.2) { // If more than 20% of PRs have low quality
+          recommendations.push({
+            id: 5,
+            title: "Improve PR quality with better automation",
+            description: `${Math.round(lowQualityPRs / totalPRs * 100)}% of PRs have low quality scores. This may indicate issues with testing or documentation.`,
+            impact: "high",
+            category: "quality",
+            metrics: ["Quality Score"],
+            actionItems: [
+              "Add required test coverage checks",
+              "Implement pre-commit hooks for linting and formatting",
+              "Create PR templates to encourage documentation"
+            ],
+            implemented: false
+          });
+        }
+
+        // Add some sample "implemented" recommendations for UI demonstration
+        recommendations.push({
+          id: 6,
+          title: "Standardize PR templates across repositories",
+          description: "Implemented PR templates have improved documentation and reduced back-and-forth in reviews.",
+          impact: "medium",
+          category: "workflow",
+          metrics: ["Review Time", "Cycle Time"],
+          actionItems: [
+            "Create standardized PR templates",
+            "Add required sections for test plan and screenshots",
+            "Include a checklist for common review items"
+          ],
+          implemented: true
+        });
+        
+        // Sort by impact (high first) and then by implemented status (not implemented first)
+        recommendations.sort((a, b) => {
+          const impactOrder = { high: 0, medium: 1, low: 2 };
+          if (a.implemented !== b.implemented) {
+            return a.implemented ? 1 : -1;
+          }
+          return impactOrder[a.impact] - impactOrder[b.impact];
+        });
+        
+        setRecommendations(recommendations);
+      };
+      
       generateRecommendations();
     }
   }, [metricsData]);
-
-  const generateRecommendations = () => {
-    if (!metricsData) return;
-
-    const { metricsSummary, pullRequests, timeSeriesData } = metricsData;
-    const recommendations: Recommendation[] = [];
-
-    // Sample recommendations based on PR size
-    if (metricsSummary.prSize.value > 300) {
-      recommendations.push({
-        id: 1,
-        title: "Reduce PR size to improve review quality",
-        description: "Pull requests are averaging " + metricsSummary.prSize.value + " lines of code, which can lead to longer review times and reduced quality.",
-        impact: "high",
-        category: "quality",
-        metrics: ["PR Size", "Review Time"],
-        actionItems: [
-          "Target PRs under 200 lines of code",
-          "Break large features into smaller, focused changes",
-          "Consider using feature flags for incremental delivery"
-        ],
-        implemented: false
-      });
-    }
-
-    // Recommendation based on cycle time
-    if (metricsSummary.cycleTime.value > 30) {
-      recommendations.push({
-        id: 2,
-        title: "Reduce cycle time to ship faster",
-        description: "Your average cycle time is " + metricsSummary.cycleTime.value + " hours. Reducing this will help deliver features more quickly.",
-        impact: "high",
-        category: "cycle-time",
-        metrics: ["Cycle Time", "Review Time"],
-        actionItems: [
-          "Set up automatic deployment pipelines",
-          "Implement test automation to reduce manual testing",
-          "Establish SLAs for PR reviews (24 hours maximum)"
-        ],
-        implemented: false
-      });
-    }
-
-    // Recommendation based on review time
-    if (metricsSummary.reviewTime.value > 10) {
-      recommendations.push({
-        id: 3,
-        title: "Speed up code reviews",
-        description: "Reviews are taking an average of " + metricsSummary.reviewTime.value + " hours to complete, creating a bottleneck.",
-        impact: "medium",
-        category: "workflow",
-        metrics: ["Review Time"],
-        actionItems: [
-          "Implement a review rotation schedule",
-          "Set up automated code reviews for common issues",
-          "Add notifications for pending reviews over 24 hours"
-        ],
-        implemented: false
-      });
-    }
-
-    // Find large variation in coding time
-    const codingTimes = timeSeriesData.map((day) => day.codingHours);
-    const avgCodingTime = codingTimes.reduce((sum: number, time: number) => sum + time, 0) / codingTimes.length;
-    const variationExists = codingTimes.some((time: number) => Math.abs(time - avgCodingTime) / avgCodingTime > 0.3);
-
-    if (variationExists) {
-      recommendations.push({
-        id: 4,
-        title: "Balance workload across the team",
-        description: "There's significant variation in coding time across team members or days, indicating potential burnout risk or uneven workload.",
-        impact: "medium",
-        category: "collaboration",
-        metrics: ["Coding Time"],
-        actionItems: [
-          "Review sprint planning process",
-          "Implement paired programming for knowledge sharing",
-          "Monitor for consistent overtime patterns"
-        ],
-        implemented: false
-      });
-    }
-
-    // Find quality issues
-    const lowQualityPRs = pullRequests.filter((pr) => pr.qualityScore < 60).length;
-    const totalPRs = pullRequests.length;
-    
-    if (lowQualityPRs / totalPRs > 0.2) { // If more than 20% of PRs have low quality
-      recommendations.push({
-        id: 5,
-        title: "Improve PR quality with better automation",
-        description: `${Math.round(lowQualityPRs / totalPRs * 100)}% of PRs have low quality scores. This may indicate issues with testing or documentation.`,
-        impact: "high",
-        category: "quality",
-        metrics: ["Quality Score"],
-        actionItems: [
-          "Add required test coverage checks",
-          "Implement pre-commit hooks for linting and formatting",
-          "Create PR templates to encourage documentation"
-        ],
-        implemented: false
-      });
-    }
-
-    // Add some sample "implemented" recommendations for UI demonstration
-    recommendations.push({
-      id: 6,
-      title: "Standardize PR templates across repositories",
-      description: "Implemented PR templates have improved documentation and reduced back-and-forth in reviews.",
-      impact: "medium",
-      category: "workflow",
-      metrics: ["Review Time", "Cycle Time"],
-      actionItems: [
-        "Create standardized PR templates",
-        "Add required sections for test plan and screenshots",
-        "Include a checklist for common review items"
-      ],
-      implemented: true
-    });
-
-    // Sort by impact (high first) and then by implemented status (not implemented first)
-    recommendations.sort((a, b) => {
-      const impactOrder = { high: 0, medium: 1, low: 2 };
-      if (a.implemented !== b.implemented) {
-        return a.implemented ? 1 : -1;
-      }
-      return impactOrder[a.impact] - impactOrder[b.impact];
-    });
-
-    setRecommendations(recommendations);
-  };
 
   const getImpactBadge = (impact: string) => {
     switch (impact) {
@@ -247,7 +249,7 @@ export function RecommendationsInsights() {
           <CardTitle>Recommendations & Insights</CardTitle>
         </div>
         <CardDescription>
-          Actionable recommendations based on your team's metrics
+          Actionable recommendations based on your team&apos;s metrics
         </CardDescription>
       </CardHeader>
       <CardContent>

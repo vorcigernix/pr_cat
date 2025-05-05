@@ -19,7 +19,7 @@ import {
 import { IconBrandGithub } from "@tabler/icons-react"
 
 export function NavUser() {
-  const { isMobile } = useSidebar()
+  const { } = useSidebar()
   const { data: session } = useSession()
 
   // If not authenticated, show GitHub login button

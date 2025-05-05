@@ -8,14 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-
-type InvestmentArea = {
-  name: string;
-  percentage: number;
-  color: string;
-};
 
 const data = [
   { name: "Product Features", value: 35, color: "#3b82f6" },
@@ -26,13 +19,7 @@ const data = [
 ];
 
 export function InvestmentAreaDistribution() {
-  const [investmentAreas, setInvestmentAreas] = useState<InvestmentArea[]>([
-    { name: "Bug Fixes", percentage: 38, color: "bg-red-500" },
-    { name: "Technical Debt", percentage: 27, color: "bg-amber-500" },
-    { name: "New Features", percentage: 25, color: "bg-blue-500" },
-    { name: "Product Debt", percentage: 10, color: "bg-violet-500" },
-  ]);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   // In a real app, this would fetch data from an API
   useEffect(() => {
@@ -58,7 +45,7 @@ export function InvestmentAreaDistribution() {
       <CardHeader>
         <CardTitle>Investment Area Distribution</CardTitle>
         <CardDescription>
-          How your team's efforts are distributed across investment areas
+          How your team&apos;s efforts are distributed across investment areas
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 
@@ -105,14 +106,14 @@ export const HeroSection = () => {
                         <div className="[perspective:1200px] [mask-image:linear-gradient(to_right,black_50%,transparent_100%)] -mr-16 pl-16 lg:-mr-56 lg:pl-56">
                             <div className="[transform:rotateX(20deg);]">
                                 <div className="lg:h-[44rem] relative skew-x-[.36rad]">
-                                    <img
+                                    <Image
                                         className="rounded-[--radius] z-[2] relative border dark:hidden"
                                         src="https://tailark.com/_next/image?url=%2Fcard.png&w=3840&q=75"
                                         alt="Tailark hero section"
                                         width={2880}
                                         height={2074}
                                     />
-                                    <img
+                                    <Image
                                         className="rounded-[--radius] z-[2] relative hidden border dark:block"
                                         src="https://tailark.com/_next/image?url=%2Fdark-card.webp&w=3840&q=75"
                                         alt="Tailark hero section"
@@ -128,82 +129,82 @@ export const HeroSection = () => {
                     <div className="m-auto max-w-5xl px-6">
                         <h2 className="text-center text-lg font-medium">Your favorite companies are our partners.</h2>
                         <div className="mx-auto mt-20 flex max-w-4xl flex-wrap items-center justify-center gap-x-12 gap-y-8 sm:gap-x-16 sm:gap-y-12">
-                            <img
-                                className="h-5 w-fit dark:invert"
+                            <Image
+                                className="h-5 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/nvidia.svg"
                                 alt="Nvidia Logo"
-                                height="20"
-                                width="auto"
+                                height={20}
+                                width={80}
                             />
-                            <img
-                                className="h-4 w-fit dark:invert"
+                            <Image
+                                className="h-4 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/column.svg"
                                 alt="Column Logo"
-                                height="16"
-                                width="auto"
+                                height={16}
+                                width={64}
                             />
-                            <img
-                                className="h-4 w-fit dark:invert"
+                            <Image
+                                className="h-4 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/github.svg"
                                 alt="GitHub Logo"
-                                height="16"
-                                width="auto"
+                                height={16}
+                                width={64}
                             />
-                            <img
-                                className="h-5 w-fit dark:invert"
+                            <Image
+                                className="h-5 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/nike.svg"
                                 alt="Nike Logo"
-                                height="20"
-                                width="auto"
+                                height={20}
+                                width={80}
                             />
-                            <img
-                                className="h-4 w-fit dark:invert"
+                            <Image
+                                className="h-4 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/laravel.svg"
                                 alt="Laravel Logo"
-                                height="16"
-                                width="auto"
+                                height={16}
+                                width={64}
                             />
-                            <img
-                                className="h-7 w-fit dark:invert"
+                            <Image
+                                className="h-7 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/lilly.svg"
                                 alt="Lilly Logo"
-                                height="28"
-                                width="auto"
+                                height={28}
+                                width={112}
                             />
-                            <img
-                                className="h-5 w-fit dark:invert"
+                            <Image
+                                className="h-5 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/lemonsqueezy.svg"
                                 alt="Lemon Squeezy Logo"
-                                height="20"
-                                width="auto"
+                                height={20}
+                                width={80}
                             />
-                            <img
-                                className="h-6 w-fit dark:invert"
+                            <Image
+                                className="h-6 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/openai.svg"
                                 alt="OpenAI Logo"
-                                height="24"
-                                width="auto"
+                                height={24}
+                                width={96}
                             />
-                            <img
-                                className="h-4 w-fit dark:invert"
+                            <Image
+                                className="h-4 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/tailwindcss.svg"
                                 alt="Tailwind CSS Logo"
-                                height="16"
-                                width="auto"
+                                height={16}
+                                width={64}
                             />
-                            <img
-                                className="h-5 w-fit dark:invert"
+                            <Image
+                                className="h-5 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/vercel.svg"
                                 alt="Vercel Logo"
-                                height="20"
-                                width="auto"
+                                height={20}
+                                width={80}
                             />
-                            <img
-                                className="h-5 w-fit dark:invert"
+                            <Image
+                                className="h-5 w-auto dark:invert"
                                 src="https://html.tailus.io/blocks/customers/zapier.svg"
                                 alt="Zapier Logo"
-                                height="20"
-                                width="auto"
+                                height={20}
+                                width={80}
                             />
                         </div>
                     </div>

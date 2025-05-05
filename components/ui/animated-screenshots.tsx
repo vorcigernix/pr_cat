@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export function AnimatedScreenshots() {
@@ -34,10 +35,13 @@ export function AnimatedScreenshots() {
               transformOrigin: "left bottom",
             }}
           >
-            <img 
+            <Image 
               src="/Screenshot 2025-05-04 at 18.06.39.png" 
               alt="Dashboard" 
               className="w-full h-full object-cover rounded-lg"
+              width={1200}
+              height={800}
+              priority
             />
             
             {/* Browser Chrome Overlay */}
@@ -64,10 +68,12 @@ export function AnimatedScreenshots() {
               animation: "float 6s ease-in-out infinite"
             }}
           >
-            <img 
+            <Image 
               src="/Screenshot 2025-05-04 at 18.07.02.png" 
               alt="Analytics Panel" 
               className="w-full h-full object-cover rounded-lg"
+              width={600}
+              height={400}
             />
           </div>
           
@@ -80,10 +86,12 @@ export function AnimatedScreenshots() {
               animation: "float 6s ease-in-out infinite 2s"
             }}
           >
-            <img 
+            <Image 
               src="/Screenshot 2025-05-04 at 18.07.33.png" 
               alt="Code Panel" 
               className="w-full h-full object-cover rounded-lg"
+              width={500}
+              height={300}
             />
           </div>
           
@@ -96,10 +104,12 @@ export function AnimatedScreenshots() {
               animation: "float 6s ease-in-out infinite 1s"
             }}
           >
-            <img 
+            <Image 
               src="/Screenshot 2025-05-04 at 18.09.15.png" 
               alt="Settings Panel" 
               className="w-full h-full object-cover rounded-lg"
+              width={400}
+              height={250}
             />
           </div>
           

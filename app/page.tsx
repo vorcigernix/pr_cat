@@ -1,22 +1,12 @@
 import Link from "next/link";
-import { IconBrandGithub, IconArrowRight, IconCode, IconChartBar, IconClock, IconReportAnalytics, IconTargetArrow, IconSpeakerphone, IconTrendingUp, IconTrendingDown } from "@tabler/icons-react";
+import { IconArrowRight, IconCode, IconChartBar, IconClock, IconReportAnalytics, IconTargetArrow, IconSpeakerphone } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { PrcatLogo } from "@/components/ui/prcat-logo";
 import { PRHeroSection } from "@/components/blocks/linear-hero-section";
 import { auth } from "@/auth";
 
 export default async function Home() {
   const session = await auth();
-
-  // Sample data for metrics
-  const metricsData = {
-    codingTime: { value: 4.6, change: 0.3, trend: "up" },
-    prSize: { value: 359, change: -55, trend: "up" },
-    cycleTime: { value: 77.8, change: -5.4, trend: "up" },
-    reviewTime: { value: 39.1, change: -5.9, trend: "up" }
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -39,7 +29,7 @@ export default async function Home() {
               </div>
               <h3 className="text-xl font-bold mb-2">DORA Metrics Dashboard</h3>
               <p className="text-muted-foreground">
-                Track key metrics like Cycle Time, PR Size, Coding Time, and Review Time to understand your team's performance.
+                Track key metrics like Cycle Time, PR Size, Coding Time, and Review Time to understand your team&apos;s performance.
               </p>
             </div>
             <div className="bg-background p-6 rounded-lg shadow-sm text-center">
@@ -48,7 +38,7 @@ export default async function Home() {
               </div>
               <h3 className="text-xl font-bold mb-2">Bottleneck Detection</h3>
               <p className="text-muted-foreground">
-                Automatically identify where work gets stuck and what's slowing down your development process.
+                Automatically identify where work gets stuck and what&apos;s slowing down your development process.
               </p>
             </div>
             <div className="bg-background p-6 rounded-lg shadow-sm text-center">
@@ -57,7 +47,7 @@ export default async function Home() {
               </div>
               <h3 className="text-xl font-bold mb-2">Actionable Recommendations</h3>
               <p className="text-muted-foreground">
-                Get tailored suggestions for improving your workflows based on your team's specific patterns.
+                Get tailored suggestions for improving your workflows based on your team&apos;s specific patterns.
               </p>
             </div>
           </div>
@@ -85,7 +75,7 @@ export default async function Home() {
                   <div>
                     <h3 className="font-medium">Custom Investment Categories</h3>
                     <p className="text-muted-foreground text-sm">
-                      Define your own investment areas like "bugs", "product debt", "technical debt", "new features", or any category that matters to your team.
+                      Define your own investment areas like &quot;bugs&quot;, &quot;product debt&quot;, &quot;technical debt&quot;, &quot;new features&quot;, or any category that matters to your team.
                     </p>
                   </div>
                 </div>
@@ -109,14 +99,14 @@ export default async function Home() {
                   <div>
                     <h3 className="font-medium">GitHub Integration</h3>
                     <p className="text-muted-foreground text-sm">
-                      Seamlessly connects to your GitHub repositories and automatically categorizes every new pull request as it's created.
+                      Seamlessly connects to your GitHub repositories and automatically categorizes every new pull request as it&apos;s created.
                     </p>
                   </div>
                 </div>
               </div>
               
               <p className="text-sm border-l-2 border-primary/50 pl-4 py-1 text-muted-foreground italic">
-                "We discovered we were spending 65% of our time on bug fixes and only 15% on innovation. This insight helped us rebalance our engineering priorities."
+                &quot;We discovered we were spending 65% of our time on bug fixes and only 15% on innovation. This insight helped us rebalance our engineering priorities.&quot;
               </p>
             </div>
             
@@ -249,181 +239,61 @@ export default async function Home() {
               </div>
               <h3 className="text-lg font-bold mb-1">Review Time</h3>
               <p className="text-sm text-muted-foreground">
-                Measure how long PRs wait for review and the time spent in review.
+                See how long code reviews take and identify opportunities to speed up feedback loops.
               </p>
             </div>
             <div className="bg-muted/30 p-6 rounded-lg text-center">
               <div className="flex justify-center mb-3">
-                <IconChartBar className="h-8 w-8 text-primary" />
+                <IconArrowRight className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-lg font-bold mb-1">Coding Time</h3>
               <p className="text-sm text-muted-foreground">
-                Understand how much time is spent actively coding versus waiting.
+                Understand how much active development time contributes to your delivery cycle.
               </p>
             </div>
           </div>
-          
-          {/* PR Quality visualization */}
-          <div className="mt-20 max-w-5xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-              <div className="col-span-1 md:col-span-1 text-center md:text-left">
-                <h3 className="text-2xl font-bold mb-3">PR Quality Analysis</h3>
-                <p className="text-muted-foreground mb-4">
-                  PR Cat helps engineering teams maintain high code quality by analyzing PR patterns and identifying areas for improvement.
-                </p>
-                <ul className="space-y-2 inline-block text-left">
-                  <li className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-[#22c55e]"></div>
-                    <span>68% High Quality PRs</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-[#eab308]"></div>
-                    <span>24% Medium Quality PRs</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-[#ef4444]"></div>
-                    <span>8% Low Quality PRs</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="col-span-1 md:col-span-2 h-[300px] flex items-center justify-center">
-                {/* Static donut chart */}
-                <div className="relative w-[240px] h-[240px]">
-                  {/* High quality - 68% */}
-                  <div className="absolute inset-0">
-                    <svg viewBox="0 0 36 36" className="w-full h-full">
-                      <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="#22c55e"
-                        strokeWidth="3"
-                        strokeDasharray="68, 100"
-                        strokeLinecap="round"
-                        transform="rotate(-90, 18, 18)"
-                      />
-                    </svg>
-                  </div>
-                  
-                  {/* Medium quality - 24% */}
-                  <div className="absolute inset-0">
-                    <svg viewBox="0 0 36 36" className="w-full h-full">
-                      <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="#eab308"
-                        strokeWidth="3"
-                        strokeDasharray="24, 100"
-                        strokeLinecap="round"
-                        transform="rotate(-18, 18, 18)"
-                      />
-                    </svg>
-                  </div>
-                  
-                  {/* Low quality - 8% */}
-                  <div className="absolute inset-0">
-                    <svg viewBox="0 0 36 36" className="w-full h-full">
-                      <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="#ef4444"
-                        strokeWidth="3"
-                        strokeDasharray="8, 100"
-                        strokeLinecap="round"
-                        transform="rotate(72, 18, 18)"
-                      />
-                    </svg>
-                  </div>
-                  
-                  {/* Inner circle */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-[160px] h-[160px] rounded-full bg-background"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        </div>
+      </section>
+      
+      {/* CTA Section */}
+      <section className="py-16 md:py-24 bg-muted/50">
+        <div className="container max-w-6xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold tracking-tight mb-4">Ready to supercharge your engineering insights?</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+            Join engineering teams that use PR Cat to gain visibility into their development workflow and make data-driven improvements.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild>
+              <Link href={session ? "/dashboard" : "/sign-up"}>
+                Get Started
+                <IconArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg">
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
           </div>
         </div>
       </section>
-
-      {/* Benefits */}
-      <section id="benefits" className="py-16 md:py-24 bg-muted/50">
-        <div className="container max-w-5xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Benefits for your team</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Improve your engineering workflow and build better software together.
-            </p>
-          </div>
-          <div className="grid gap-12 md:grid-cols-2 max-w-4xl mx-auto">
-            <div className="flex flex-col items-center md:items-start">
-              <ul className="space-y-4">
-                <li className="flex gap-3">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <IconArrowRight className="h-3 w-3 text-primary" />
-                  </div>
-                  <p><span className="font-medium">Identify bottlenecks</span> in your development process</p>
-                </li>
-                <li className="flex gap-3">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <IconArrowRight className="h-3 w-3 text-primary" />
-                  </div>
-                  <p><span className="font-medium">Improve collaboration</span> with data-driven insights</p>
-                </li>
-                <li className="flex gap-3">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <IconArrowRight className="h-3 w-3 text-primary" />
-                  </div>
-                  <p><span className="font-medium">Reduce cycle time</span> by focusing on what's important</p>
-                </li>
-                <li className="flex gap-3">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <IconArrowRight className="h-3 w-3 text-primary" />
-                  </div>
-                  <p><span className="font-medium">Track progress</span> over time with historical data</p>
-                </li>
-              </ul>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="bg-background p-6 rounded-lg shadow-lg max-w-md w-full">
-                <h3 className="text-xl font-bold mb-4 text-center">Ready to improve your team's performance?</h3>
-                <p className="text-muted-foreground mb-6 text-center">
-                  Start tracking your engineering metrics today and discover ways to make your development process more efficient.
-                </p>
-                {session ? (
-                  <Link href="/dashboard">
-                    <Button className="w-full" size="lg">
-                      Get Started
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href="/sign-in">
-                    <Button className="w-full" size="lg">
-                      Sign in
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
+      
       {/* Footer */}
-      <footer className="border-t mt-auto py-6 md:py-8">
-        <div className="container max-w-6xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex flex-row items-center gap-2">
-              <PrcatLogo fontSize="text-base" iconSize="h-4 w-4" />
+      <footer className="border-t py-12 mt-auto">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center mb-6 md:mb-0">
+              <PrcatLogo className="mr-2" />
+              <span className="text-sm text-muted-foreground">© 2023 PR Cat, Inc. All rights reserved.</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Engineering metrics for teams, not managers
-            </p>
-            <div className="flex items-center gap-4">
-              {session ? (
-                <Link href="/dashboard" className="text-sm hover:underline">Dashboard</Link>
-              ) : (
-                <Link href="/sign-in" className="text-sm hover:underline">Sign in</Link>
-              )}
+            <div className="flex gap-6">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Terms
+              </Link>
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Privacy
+              </Link>
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                Documentation
+              </Link>
             </div>
           </div>
         </div>

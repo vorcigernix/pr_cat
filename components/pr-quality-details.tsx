@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -86,13 +86,7 @@ export function PRQualityDetails() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (pullRequests.length > 0) {
-      analyzeQualityData();
-    }
-  }, [pullRequests]);
-
-  const analyzeQualityData = () => {
+  const analyzeQualityData = useCallback(() => {
     // Calculate quality distribution
     const highQuality = pullRequests.filter(pr => pr.qualityScore >= 80).length;
     const mediumQuality = pullRequests.filter(pr => pr.qualityScore >= 60 && pr.qualityScore < 80).length;
@@ -160,8 +154,14 @@ export function PRQualityDetails() {
         xlarge
       }
     });
-  };
-  
+  }, [pullRequests]);
+
+  useEffect(() => {
+    if (pullRequests.length > 0) {
+      analyzeQualityData();
+    }
+  }, [pullRequests, analyzeQualityData]);
+
   // Helper function to calculate normalized scores (0-100)
   const calculateScore = (value: number, min: number, max: number, inversed: boolean): number => {
     let score;

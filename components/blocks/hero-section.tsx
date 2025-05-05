@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { PrcatLogo } from "@/components/ui/prcat-logo";
 import { AnimatedScreenshots } from "@/components/ui/animated-screenshots";
@@ -140,40 +141,40 @@ export const HeroSection = () => {
           <div className="m-auto max-w-6xl px-6">
             <h2 className="text-center text-lg font-medium text-white/90">Trusted by engineering teams worldwide</h2>
             <div className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-x-12 gap-y-8">
-              <img
-                className="h-5 w-fit invert opacity-70 hover:opacity-100 transition-opacity"
+              <Image
+                className="h-5 w-auto invert opacity-70 hover:opacity-100 transition-opacity"
                 src="https://html.tailus.io/blocks/customers/github.svg"
                 alt="GitHub Logo"
-                height="16"
-                width="auto"
+                height={16}
+                width={64}
               />
-              <img
-                className="h-5 w-fit invert opacity-70 hover:opacity-100 transition-opacity"
+              <Image
+                className="h-5 w-auto invert opacity-70 hover:opacity-100 transition-opacity"
                 src="https://html.tailus.io/blocks/customers/vercel.svg"
                 alt="Vercel Logo"
-                height="20"
-                width="auto"
+                height={20}
+                width={80}
               />
-              <img
-                className="h-4 w-fit invert opacity-70 hover:opacity-100 transition-opacity"
+              <Image
+                className="h-4 w-auto invert opacity-70 hover:opacity-100 transition-opacity"
                 src="https://html.tailus.io/blocks/customers/tailwindcss.svg"
                 alt="Tailwind CSS Logo"
-                height="16"
-                width="auto"
+                height={16}
+                width={64}
               />
-              <img
-                className="h-6 w-fit invert opacity-70 hover:opacity-100 transition-opacity"
+              <Image
+                className="h-6 w-auto invert opacity-70 hover:opacity-100 transition-opacity"
                 src="https://html.tailus.io/blocks/customers/openai.svg"
                 alt="OpenAI Logo"
-                height="24"
-                width="auto"
+                height={24}
+                width={96}
               />
-              <img
-                className="h-4 w-fit invert opacity-70 hover:opacity-100 transition-opacity"
+              <Image
+                className="h-4 w-auto invert opacity-70 hover:opacity-100 transition-opacity"
                 src="https://html.tailus.io/blocks/customers/laravel.svg"
                 alt="Laravel Logo"
-                height="16"
-                width="auto"
+                height={16}
+                width={64}
               />
             </div>
           </div>
