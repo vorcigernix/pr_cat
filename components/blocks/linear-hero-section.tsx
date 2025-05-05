@@ -9,7 +9,7 @@ function PRHeroSection() {
         regular: "Engineering metrics for ",
         gradient: "teams, not managers",
       }}
-      description="Prcat provides your engineering team with meaningful data about your development workflow - helping you identify bottlenecks and improve together."
+      description="PR Cat provides your engineering team with meaningful data about your development workflow - helping you identify bottlenecks and improve together."
       ctaText="View Dashboard"
       ctaHref="/dashboard"
       secondaryCtaText="Sign in with GitHub"

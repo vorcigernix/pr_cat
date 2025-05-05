@@ -107,7 +107,7 @@ export const HeroSection = () => {
                   Engineering metrics for <span className="text-primary">teams</span>, not managers
                 </h1>
                 <p className="text-xl text-white/70">
-                  Prcat provides your engineering team with meaningful data about your development workflow - helping you identify bottlenecks and improve together.
+                  PR Cat provides your engineering team with meaningful data about your development workflow - helping you identify bottlenecks and improve together.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center md:justify-start">

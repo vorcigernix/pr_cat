@@ -7,14 +7,14 @@ export function DemoScreenshot() {
             <img
               className="rounded-[--radius] z-[2] relative border border-white/10 hidden dark:block"
               src="/Screenshot 2025-05-04 at 18.06.39.png"
-              alt="Prcat dashboard"
+              alt="PR Cat dashboard"
               width={2880}
               height={2074}
             />
             <img
               className="rounded-[--radius] z-[2] relative border border-black/10 dark:hidden"
               src="/Screenshot 2025-05-04 at 18.06.39.png"
-              alt="Prcat dashboard"
+              alt="PR Cat dashboard"
               width={2880}
               height={2074}
             />

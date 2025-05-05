@@ -29,7 +29,7 @@ export default async function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-4">Features designed for engineering teams</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Prcat helps your team track what matters, identify bottlenecks, and continuously improve your development process.
+              PR Cat helps your team track what matters, identify bottlenecks, and continuously improve your development process.
             </p>
           </div>
           <div className="grid gap-8 md:grid-cols-3 max-w-4xl mx-auto">
@@ -269,7 +269,7 @@ export default async function Home() {
               <div className="col-span-1 md:col-span-1 text-center md:text-left">
                 <h3 className="text-2xl font-bold mb-3">PR Quality Analysis</h3>
                 <p className="text-muted-foreground mb-4">
-                  Prcat helps engineering teams maintain high code quality by analyzing PR patterns and identifying areas for improvement.
+                  PR Cat helps engineering teams maintain high code quality by analyzing PR patterns and identifying areas for improvement.
                 </p>
                 <ul className="space-y-2 inline-block text-left">
                   <li className="flex items-center gap-2">

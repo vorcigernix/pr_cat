@@ -40,7 +40,7 @@ export default function SettingsPage() {
                   <CardHeader>
                     <CardTitle>GitHub Integration</CardTitle>
                     <CardDescription>
-                      Configure how Prcat interacts with your GitHub repositories
+                      Configure how PR Cat interacts with your GitHub repositories
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
