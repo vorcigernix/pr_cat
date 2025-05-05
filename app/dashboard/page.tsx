@@ -1,5 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { ChartAreaEngineering } from "@/components/chart-area-engineering"
+import { CompactEngineeringMetrics } from "@/components/compact-engineering-metrics"
 import { InvestmentAreaDistribution } from "@/components/investment-area-distribution"
 import { PRActivityTable } from "@/components/pr-activity-table"
 import { SectionCardsEngineering } from "@/components/section-cards-engineering"
@@ -30,7 +30,7 @@ export default function DashboardPage() {
               </div>
               <SectionCardsEngineering />
               <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2">
-                <ChartAreaEngineering />
+                <CompactEngineeringMetrics />
                 <InvestmentAreaDistribution />
               </div>
               <PRActivityTable />
@@ -41,52 +41,3 @@ export default function DashboardPage() {
     </SidebarProvider>
   )
 }
-
-// Temporary mock data until we implement the engineering-focused data table
-const data = [
-  {
-    "id": 1,
-    "header": "Add user authentication",
-    "type": "Feature",
-    "status": "In Process",
-    "target": "18",
-    "limit": "5",
-    "reviewer": "Eddie Lake"
-  },
-  {
-    "id": 2,
-    "header": "Fix responsive layout issues",
-    "type": "Bug",
-    "status": "Done",
-    "target": "29",
-    "limit": "24",
-    "reviewer": "Eddie Lake"
-  },
-  {
-    "id": 3,
-    "header": "Implement API pagination",
-    "type": "Feature",
-    "status": "Done",
-    "target": "10",
-    "limit": "13",
-    "reviewer": "Eddie Lake"
-  },
-  {
-    "id": 4,
-    "header": "Update dependencies",
-    "type": "Maintenance",
-    "status": "Done",
-    "target": "27",
-    "limit": "23",
-    "reviewer": "Jamik Tashpulatov"
-  },
-  {
-    "id": 5,
-    "header": "Refactor data fetching logic",
-    "type": "Refactor",
-    "status": "In Process",
-    "target": "2",
-    "limit": "16",
-    "reviewer": "Jamik Tashpulatov"
-  }
-];
