@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaEngineering } from "@/components/chart-area-engineering"
 import { DeveloperPerformance } from "@/components/developer-performance"
+import { InvestmentAreaDistribution } from "@/components/investment-area-distribution"
 import { PRActivityTable } from "@/components/pr-activity-table"
 import { PRQualityDetails } from "@/components/pr-quality-details"
 import { RecommendationsInsights } from "@/components/recommendations-insights"
@@ -29,8 +30,9 @@ export default function Page() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <SectionCardsEngineering />
-              <div className="px-4 lg:px-6">
+              <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2">
                 <ChartAreaEngineering />
+                <InvestmentAreaDistribution />
               </div>
               <PRActivityTable />
               <RecommendationsInsights />

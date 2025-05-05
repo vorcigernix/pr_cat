@@ -64,6 +64,157 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* AI PR Categorizer */}
+      <section id="ai-categorizer" className="py-16 md:py-24">
+        <div className="container max-w-6xl mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div>
+              <div className="bg-primary/10 dark:bg-primary/5 w-fit px-3 py-1 rounded-full mb-4">
+                <span className="text-sm font-medium text-primary">AI-Powered</span>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight mb-4">Investment Area Categorization</h2>
+              <p className="text-lg text-muted-foreground mb-6">
+                Our AI automatically analyzes your GitHub pull requests and categorizes them into strategic investment areas, giving you clear visibility into how your engineering resources are being allocated.
+              </p>
+              
+              <div className="space-y-4 mb-8">
+                <div className="flex gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <IconCode className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Custom Investment Categories</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Define your own investment areas like "bugs", "product debt", "technical debt", "new features", or any category that matters to your team.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <IconChartBar className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Resource Allocation Insights</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Track what percentage of your engineering effort is going into each investment area and make data-driven decisions about resource allocation.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <IconTargetArrow className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">GitHub Integration</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Seamlessly connects to your GitHub repositories and automatically categorizes every new pull request as it's created.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-sm border-l-2 border-primary/50 pl-4 py-1 text-muted-foreground italic">
+                "We discovered we were spending 65% of our time on bug fixes and only 15% on innovation. This insight helped us rebalance our engineering priorities."
+              </p>
+            </div>
+            
+            <div className="relative">
+              <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-primary/50 to-primary/20 opacity-50 blur-xl"></div>
+              <div className="relative bg-background border rounded-xl shadow-lg overflow-hidden">
+                <div className="bg-muted/50 border-b px-4 py-3 flex items-center">
+                  <div className="flex space-x-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  </div>
+                  <div className="mx-auto text-xs font-medium text-muted-foreground">Investment Area Analysis</div>
+                </div>
+                <div className="p-5">
+                  <div className="flex justify-between mb-2">
+                    <h3 className="text-sm font-medium">Current Sprint Allocation</h3>
+                    <span className="text-xs text-muted-foreground">Last updated: 2h ago</span>
+                  </div>
+                  
+                  <div className="space-y-3 mt-4">
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-medium">Bug Fixes</span>
+                        <span>38%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-red-500 rounded-full" style={{ width: '38%' }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-medium">Technical Debt</span>
+                        <span>27%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '27%' }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-medium">New Features</span>
+                        <span>25%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '25%' }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-medium">Product Debt</span>
+                        <span>10%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-violet-500 rounded-full" style={{ width: '10%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 pt-4 border-t">
+                    <h3 className="text-sm font-medium mb-3">Recent Categorizations</h3>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-xs">
+                        <div className="h-2.5 w-2.5 rounded-full bg-red-500"></div>
+                        <span className="flex-grow font-medium">Fix auth token refresh loop</span>
+                        <span className="text-muted-foreground">Bug Fixes</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-xs">
+                        <div className="h-2.5 w-2.5 rounded-full bg-amber-500"></div>
+                        <span className="flex-grow font-medium">Refactor API error handling</span>
+                        <span className="text-muted-foreground">Technical Debt</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-xs">
+                        <div className="h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                        <span className="flex-grow font-medium">Add user onboarding flow</span>
+                        <span className="text-muted-foreground">New Features</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-xs">
+                        <div className="h-2.5 w-2.5 rounded-full bg-violet-500"></div>
+                        <span className="flex-grow font-medium">Improve UX of checkout page</span>
+                        <span className="text-muted-foreground">Product Debt</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Metrics */}
       <section id="metrics" className="py-16 md:py-24">
         <div className="container max-w-6xl mx-auto px-4">

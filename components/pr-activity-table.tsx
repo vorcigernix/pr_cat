@@ -47,6 +47,7 @@ type PullRequest = {
   reviewTime: number;
   cycleTime: number;
   qualityScore: number;
+  investmentArea?: string;
 };
 
 export function PRActivityTable() {
@@ -101,6 +102,23 @@ export function PRActivityTable() {
     }
   }
 
+  function getInvestmentAreaBadge(area: string | undefined) {
+    if (!area) return null;
+    
+    switch (area.toLowerCase()) {
+      case "bug fixes":
+        return <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900">{area}</Badge>;
+      case "technical debt":
+        return <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900">{area}</Badge>;
+      case "new features":
+        return <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900">{area}</Badge>;
+      case "product debt":
+        return <Badge variant="outline" className="bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-900">{area}</Badge>;
+      default:
+        return <Badge variant="outline">{area}</Badge>;
+    }
+  }
+
   if (loading) {
     return (
       <Card className="mx-4 lg:mx-6">
@@ -139,7 +157,7 @@ export function PRActivityTable() {
                 <TableHead>
                   <div className="flex items-center gap-1">
                     <IconCheck size={16} />
-                    <span>Quality</span>
+                    <span>Investment Area</span>
                   </div>
                 </TableHead>
                 <TableHead>
@@ -166,7 +184,7 @@ export function PRActivityTable() {
                       <span>{pr.cycleTime.toFixed(1)} hrs</span>
                     </div>
                   </TableCell>
-                  <TableCell>{getQualityScoreBadge(pr.qualityScore)}</TableCell>
+                  <TableCell>{getInvestmentAreaBadge(pr.investmentArea || randomInvestmentArea())}</TableCell>
                   <TableCell>{formatDate(pr.createdAt)}</TableCell>
                 </TableRow>
               ))}
@@ -176,4 +194,10 @@ export function PRActivityTable() {
       </CardContent>
     </Card>
   );
+}
+
+// Helper function to randomly assign investment areas for demo purposes
+function randomInvestmentArea() {
+  const areas = ["Bug Fixes", "Technical Debt", "New Features", "Product Debt"];
+  return areas[Math.floor(Math.random() * areas.length)];
 } 

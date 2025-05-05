@@ -4,6 +4,7 @@ function PRHeroSection() {
   return (
     <HeroSection
       title="based on AI PR categorizer"
+      titleHref="#ai-categorizer"
       subtitle={{
         regular: "Engineering metrics for ",
         gradient: "teams, not managers",
