@@ -1,3 +1,4 @@
+import { ActionableRecommendations } from "@/components/actionable-recommendations"
 import { AppSidebar } from "@/components/app-sidebar"
 import { CompactEngineeringMetrics } from "@/components/compact-engineering-metrics"
 import { InvestmentAreaDistribution } from "@/components/investment-area-distribution"
@@ -29,6 +30,9 @@ export default function DashboardPage() {
                 <h1 className="text-2xl font-semibold">Dashboard Overview</h1>
               </div>
               <SectionCardsEngineering />
+              <div className="px-4 lg:px-6">
+                <ActionableRecommendations />
+              </div>
               <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 md:grid-cols-2">
                 <CompactEngineeringMetrics />
                 <InvestmentAreaDistribution />
