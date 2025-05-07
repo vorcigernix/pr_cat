@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PR Cat - AI-powered PR Categorization Tool
 
-## Getting Started
+PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps engineering teams understand how they're investing their time across different areas of their codebase.
 
-First, run the development server:
+## Features
+
+- **GitHub Integration**: Connect to your GitHub repositories and automatically track pull requests
+- **PR Categorization**: Automatically categorize PRs into investment areas
+- **Analytics Dashboard**: Visualize how your team is spending their engineering time
+- **Lifecycle Analysis**: Understand your PR workflow and identify bottlenecks
+- **Team Insights**: Get insights into team collaboration patterns
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js 18+ and pnpm (required package manager)
+- GitHub account with access to repositories you want to track
+- Turso database account (for development and production)
+
+### Environment Setup
+
+1. Clone the repository
+2. Copy the `.env.example` file to `.env.local` and fill in the values:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# GitHub OAuth Configuration
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+GITHUB_WEBHOOK_SECRET=your_github_webhook_secret
+
+# Turso Database Configuration
+TURSO_URL=libsql://your-database-url.turso.io
+TURSO_TOKEN=your_turso_auth_token
+
+# NextAuth Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret
+
+# Application URL (for webhooks and callbacks)
+APP_URL=http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Install dependencies:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
 
-## Learn More
+```bash
+pnpm dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Setting Up GitHub OAuth
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Go to your GitHub account settings
+2. Navigate to Developer Settings > OAuth Apps > New OAuth App
+3. Fill in the application details:
+   - Application name: PR Cat (Development)
+   - Homepage URL: http://localhost:3000
+   - Authorization callback URL: http://localhost:3000/api/auth/callback/github
 
-## Deploy on Vercel
+### Setting Up Turso Database
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Install the Turso CLI: https://docs.turso.tech/cli/installation
+2. Create a new Turso database:
+   ```bash
+   turso db create prcatdb
+   ```
+3. Get your database URL:
+   ```bash
+   turso db show prcatdb --url
+   ```
+4. Create an auth token:
+   ```bash
+   turso db tokens create prcatdb
+   ```
+5. Add these values to your `.env.local` file as TURSO_URL and TURSO_TOKEN
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Development
+
+The application uses Next.js 15 with the App Router and is structured as follows:
+
+- `app/`: Next.js app router pages and API routes
+- `components/`: UI components
+- `lib/`: Core application logic and utilities
+  - `repositories/`: Database access layer
+  - `services/`: Business logic services
+  - `schema.sql`: Database schema
+  - `migrate.ts`: Database migration utilities
+  - `github.ts`: GitHub API client
+  - `types.ts`: TypeScript type definitions
+
+## Deployment
+
+The application is designed to be deployed on Vercel:
+
+1. Connect your repository to Vercel
+2. Configure the environment variables
+3. Deploy!
+
+For production deployment, make sure to:
+- Create a separate GitHub OAuth application
+- Set up a production Turso database
+- Configure the correct webhook URLs

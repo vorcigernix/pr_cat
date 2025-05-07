@@ -19,6 +19,11 @@
         "version": "4.x",
         "canUpgrade": true,
         "canDowngrade": false
+      },
+      {
+        "name": "Auth.js",
+        "description": "Use Auth.js (formerly next-auth) for authentication and session management.",
+        "required": true
       }
     ],
     "forbidden": []
@@ -26,6 +31,11 @@
   "conventions": {
     "fileStructure": {
       "description": "Following Next.js App Router convention"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "description": "Always use pnpm for package management",
+      "required": true
     }
   }
 } 
