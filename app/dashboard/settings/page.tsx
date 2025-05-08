@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { GitHubProfileCard } from "@/components/ui/github-profile-card"
 import { GitHubOrganizationsCard } from "@/components/ui/github-organizations-card"
 import { GitHubRepositoriesCard } from "@/components/ui/github-repositories-card"
+import { AboutGitHubOrganizationsCard } from "@/components/ui/about-github-organizations-card"
 
 export default function SettingsPage() {
   return (
@@ -40,9 +41,14 @@ export default function SettingsPage() {
               <div className="grid gap-4 px-4 lg:px-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <GitHubProfileCard />
-                  <GitHubOrganizationsCard />
+                  <div className="flex flex-col gap-4">
+                    <GitHubOrganizationsCard />
+                    <AboutGitHubOrganizationsCard />
+                  </div>
                 </div>
+                
                 <GitHubRepositoriesCard />
+                
                 <Card>
                   <CardHeader>
                     <CardTitle>GitHub Integration</CardTitle>
@@ -72,6 +78,7 @@ export default function SettingsPage() {
                     <Button variant="outline">Manage Repository Access</Button>
                   </CardContent>
                 </Card>
+                
                 <Card>
                   <CardHeader>
                     <CardTitle>Investment Areas</CardTitle>

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { IconRefresh, IconBrandGithub, IconLock, IconLockOpen } from "@tabler/icons-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,13 +18,14 @@ interface Repository {
 }
 
 export function GitHubRepositoriesCard({ organizationName }: { organizationName?: string }) {
-  const { data: session, status, update } = useSession();
+  const { data: session, status } = useSession();
   const [isSyncing, setIsSyncing] = useState(false);
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasInitialized = useRef(false);
 
-  const fetchRepositories = async () => {
+  const fetchRepositories = useCallback(async () => {
     if (!session?.accessToken) return;
 
     setLoading(true);
@@ -49,7 +49,7 @@ export function GitHubRepositoriesCard({ organizationName }: { organizationName?
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.accessToken, organizationName]);
 
   const syncRepositories = async () => {
     if (!session?.accessToken) return;
@@ -81,12 +81,14 @@ export function GitHubRepositoriesCard({ organizationName }: { organizationName?
     }
   };
 
-  // Load repositories on mount
+  // Load repositories only once on initial mount and when auth is ready
   useEffect(() => {
-    if (session?.accessToken) {
+    // Only fetch if authenticated and not already initialized
+    if (status === "authenticated" && session?.accessToken && !hasInitialized.current) {
+      hasInitialized.current = true;
       fetchRepositories();
     }
-  }, [session]);
+  }, [status, fetchRepositories, session?.accessToken]);
 
   if (status === "loading" || loading) {
     return (

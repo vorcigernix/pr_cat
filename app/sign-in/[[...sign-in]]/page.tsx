@@ -1,9 +1,5 @@
-"use client";
-
-import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { IconBrandGithub } from "@tabler/icons-react";
+import { GitHubSignInButton } from "@/components/ui/github-signin-button";
 
 export default function SignInPage() {
   return (
@@ -15,13 +11,7 @@ export default function SignInPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Button
-              className="w-full flex items-center justify-center gap-2"
-              onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-            >
-              <IconBrandGithub size={20} />
-              Continue with GitHub
-            </Button>
+            <GitHubSignInButton />
           </div>
         </CardContent>
       </Card>

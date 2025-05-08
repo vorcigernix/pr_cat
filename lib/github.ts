@@ -33,8 +33,15 @@ export class GitHubClient {
   }
   
   async getUserOrganizations(): Promise<GitHubOrganization[]> {
-    const { data } = await this.octokit.orgs.listForAuthenticatedUser();
-    return data as GitHubOrganization[];
+    try {
+      console.log('Fetching GitHub organizations for user...');
+      const { data } = await this.octokit.orgs.listForAuthenticatedUser();
+      console.log('GitHub API response for organizations:', JSON.stringify(data, null, 2));
+      return data as GitHubOrganization[];
+    } catch (error) {
+      console.error('Error fetching GitHub organizations:', error);
+      throw error;
+    }
   }
   
   async getOrganizationRepositories(org: string): Promise<GitHubRepository[]> {

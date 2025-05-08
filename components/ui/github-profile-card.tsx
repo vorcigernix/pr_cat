@@ -3,7 +3,6 @@
 import { useSession } from "next-auth/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 
 export function GitHubProfileCard() {
   const { data: session, status } = useSession();

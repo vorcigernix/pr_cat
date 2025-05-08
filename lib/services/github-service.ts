@@ -9,7 +9,8 @@ import {
   findReviewByGitHubId,
   createPullRequestReview,
   setRepositoryTracking,
-  findRepositoryById
+  findRepositoryById,
+  addUserToOrganization
 } from '@/lib/repositories';
 import { GitHubRepository, GitHubPullRequest, GitHubOrganization, GitHubUser, PRReview } from '@/lib/types';
 
@@ -23,25 +24,34 @@ export class GitHubService {
   async syncUserOrganizations(userId: string): Promise<GitHubOrganization[]> {
     const user = await findUserById(userId);
     if (!user) {
-      throw new Error('User not found');
+      console.error(`User not found in database with ID: ${userId}`);
+      throw new Error(`User not found in database with ID: ${userId}. This may be due to ID mismatch between Auth.js and the database.`);
     }
     
     // Fetch organizations from GitHub
     const githubOrgs = await this.client.getUserOrganizations();
+    console.log(`Found ${githubOrgs.length} GitHub organizations for user ${userId}`);
     
-    // Store organizations in the database
+    // Store organizations in the database and link to user
     const storedOrgs = await Promise.all(
       githubOrgs.map(async (org) => {
+        // Create or find the organization
         const dbOrg = await findOrCreateOrganization({
           github_id: org.id,
           name: org.login,
           avatar_url: org.avatar_url,
         });
         
+        console.log(`Linking user ${userId} to organization ${dbOrg.id} (${org.login})`);
+        
+        // Link the user to the organization as a member
+        await addUserToOrganization(userId, dbOrg.id, 'member');
+        
         return dbOrg;
       })
     );
     
+    console.log(`Successfully processed ${storedOrgs.length} organizations for user ${userId}`);
     return githubOrgs;
   }
   

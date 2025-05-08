@@ -1,14 +1,5 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { RedirectToSignIn } from "@/components/ui/redirect-to-sign-in";
 
 export default function SignUpPage() {
-  const router = useRouter();
-  
-  useEffect(() => {
-    router.replace("/sign-in");
-  }, [router]);
-  
-  return null;
+  return <RedirectToSignIn />;
 } 

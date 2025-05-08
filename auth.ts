@@ -1,8 +1,7 @@
 import NextAuth from "next-auth"
 import GitHub from "next-auth/providers/github"
 import { NextAuthConfig } from "next-auth"
-import { findUserById, findUserByEmail, createUser, updateUser, getUserOrganizations } from "@/lib/repositories/user-repository"
-import { runMigrations, seedDefaultCategories } from "@/lib/migrate"
+import { findUserByEmail, createUser, updateUser, getUserOrganizations } from "@/lib/repositories/user-repository"
 import { createGitHubClient } from "@/lib/github"
 import type { JWT } from "next-auth/jwt"
 
@@ -56,6 +55,10 @@ export const config = {
       authorization: {
         params: {
           scope: 'read:user user:email repo read:org',
+          // This is the correct parameter to request organization access during OAuth
+          // It will show the organization access screen during authentication
+          allow_signup: 'true',
+          request_specific_authorization: 'true'
         },
       },
     }),
@@ -132,7 +135,7 @@ export const config = {
 
       try {
         // Check if user exists
-        let dbUser = await findUserByEmail(user.email);
+        const dbUser = await findUserByEmail(user.email);
         
         if (!dbUser) {
           // Create new user
