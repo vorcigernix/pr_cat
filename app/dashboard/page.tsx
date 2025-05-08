@@ -33,7 +33,7 @@ export default async function DashboardPage() {
   try {
     // First check if database needs migration
     try {
-      const statusResponse = await fetch(`${process.env.APP_URL || 'http://localhost:3000'}/api/status`);
+      const statusResponse = await fetch(`/api/status`);
       const statusData = await statusResponse.json();
       needsMigration = statusData.database?.migrationNeeded;
       console.log('Database status:', statusData);
