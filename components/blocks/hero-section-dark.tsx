@@ -159,7 +159,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
                         asChild
                         variant="outline"
                         size="sm">
-                        <Link href="/api/auth/signout">
+                        <Link href="/api/auth/logout">
                           <span>Sign out</span>
                         </Link>
                       </Button>

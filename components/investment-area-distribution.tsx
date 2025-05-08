@@ -11,11 +11,11 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 const data = [
-  { name: "Product Features", value: 35, color: "#3b82f6" },
-  { name: "Bug Fixes", value: 25, color: "#ef4444" },
-  { name: "Tech Debt", value: 20, color: "#f97316" },
-  { name: "Product Debt", value: 15, color: "#a855f7" },
-  { name: "Research", value: 5, color: "#14b8a6" },
+  { name: "New Features", value: 35, color: "#3b82f6" },
+  { name: "Bug Squashing", value: 25, color: "#ef4444" },
+  { name: "Code Health", value: 20, color: "#f97316" },
+  { name: "UX Improvements", value: 15, color: "#a855f7" },
+  { name: "Exploration", value: 5, color: "#14b8a6" },
 ];
 
 export function InvestmentAreaDistribution() {
@@ -30,8 +30,8 @@ export function InvestmentAreaDistribution() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Investment Area Distribution</CardTitle>
-          <CardDescription>Loading investment area data...</CardDescription>
+          <CardTitle>Team Focus Distribution</CardTitle>
+          <CardDescription>Loading team focus data...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full animate-pulse bg-muted"></div>
@@ -43,9 +43,9 @@ export function InvestmentAreaDistribution() {
   return (
     <Card className="col-span-1">
       <CardHeader>
-        <CardTitle>Investment Area Distribution</CardTitle>
+        <CardTitle>Team Focus Distribution</CardTitle>
         <CardDescription>
-          How your team&apos;s efforts are distributed across investment areas
+          Where your team is putting their collaborative energy
         </CardDescription>
       </CardHeader>
       <CardContent>

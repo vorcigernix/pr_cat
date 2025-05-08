@@ -74,15 +74,15 @@ export function RecommendationsInsights() {
         if (metricsSummary.prSize.value > 300) {
           recommendations.push({
             id: 1,
-            title: "Reduce PR size to improve review quality",
-            description: "Pull requests are averaging " + metricsSummary.prSize.value + " lines of code, which can lead to longer review times and reduced quality.",
+            title: "Level up review quality with smaller PRs",
+            description: "Pull requests are averaging " + metricsSummary.prSize.value + " lines of code, which can lead to longer review times and reduced collaboration.",
             impact: "high",
             category: "quality",
             metrics: ["PR Size", "Review Time"],
             actionItems: [
-              "Target PRs under 200 lines of code",
+              "Aim for PRs under 200 lines of code",
               "Break large features into smaller, focused changes",
-              "Consider using feature flags for incremental delivery"
+              "Use feature flags for incremental shipping"
             ],
             implemented: false
           });
@@ -92,15 +92,15 @@ export function RecommendationsInsights() {
         if (metricsSummary.cycleTime.value > 30) {
           recommendations.push({
             id: 2,
-            title: "Reduce cycle time to ship faster",
-            description: "Your average cycle time is " + metricsSummary.cycleTime.value + " hours. Reducing this will help deliver features more quickly.",
+            title: "Boost shipping velocity",
+            description: "Your team's delivery speed is " + metricsSummary.cycleTime.value + " hours. Improving this will help ship features more frequently.",
             impact: "high",
             category: "cycle-time",
-            metrics: ["Cycle Time", "Review Time"],
+            metrics: ["Delivery Speed", "Feedback Time"],
             actionItems: [
-              "Set up automatic deployment pipelines",
-              "Implement test automation to reduce manual testing",
-              "Establish SLAs for PR reviews (24 hours maximum)"
+              "Level up with automatic deployment pipelines",
+              "Add test automation to reduce manual testing time",
+              "Establish team agreements for PR reviews (24 hours maximum)"
             ],
             implemented: false
           });
@@ -110,15 +110,15 @@ export function RecommendationsInsights() {
         if (metricsSummary.reviewTime.value > 10) {
           recommendations.push({
             id: 3,
-            title: "Speed up code reviews",
-            description: "Reviews are taking an average of " + metricsSummary.reviewTime.value + " hours to complete, creating a bottleneck.",
+            title: "Accelerate feedback loops",
+            description: "Feedback is taking an average of " + metricsSummary.reviewTime.value + " hours, creating a bottleneck in your team's flow.",
             impact: "medium",
             category: "workflow",
-            metrics: ["Review Time"],
+            metrics: ["Feedback Time"],
             actionItems: [
-              "Implement a review rotation schedule",
-              "Set up automated code reviews for common issues",
-              "Add notifications for pending reviews over 24 hours"
+              "Create a review buddy system",
+              "Set up automated checks for common issues",
+              "Add a leaderboard for fastest helpful reviews"
             ],
             implemented: false
           });
@@ -132,15 +132,15 @@ export function RecommendationsInsights() {
         if (variationExists) {
           recommendations.push({
             id: 4,
-            title: "Balance workload across the team",
-            description: "There&apos;s significant variation in coding time across team members or days, indicating potential burnout risk or uneven workload.",
+            title: "Harmonize team flow states",
+            description: "There's significant variation in flow state time across the team or across days, which may affect collective momentum.",
             impact: "medium",
             category: "collaboration",
-            metrics: ["Coding Time"],
+            metrics: ["Flow State Time"],
             actionItems: [
-              "Review sprint planning process",
-              "Implement paired programming for knowledge sharing",
-              "Monitor for consistent overtime patterns"
+              "Try 'no meeting' focus blocks",
+              "Experiment with paired programming sessions",
+              "Create team rituals to protect focus time"
             ],
             implemented: false
           });
@@ -153,15 +153,15 @@ export function RecommendationsInsights() {
         if (lowQualityPRs / totalPRs > 0.2) { // If more than 20% of PRs have low quality
           recommendations.push({
             id: 5,
-            title: "Improve PR quality with better automation",
-            description: `${Math.round(lowQualityPRs / totalPRs * 100)}% of PRs have low quality scores. This may indicate issues with testing or documentation.`,
+            title: "Level up code quality with better tools",
+            description: `${Math.round(lowQualityPRs / totalPRs * 100)}% of contributions have low quality scores. Let's improve your team's toolkit.`,
             impact: "high",
             category: "quality",
             metrics: ["Quality Score"],
             actionItems: [
-              "Add required test coverage checks",
-              "Implement pre-commit hooks for linting and formatting",
-              "Create PR templates to encourage documentation"
+              "Add automated test coverage badges",
+              "Create pre-commit hooks for instant feedback",
+              "Design collaborative PR templates"
             ],
             implemented: false
           });
@@ -170,14 +170,14 @@ export function RecommendationsInsights() {
         // Add some sample "implemented" recommendations for UI demonstration
         recommendations.push({
           id: 6,
-          title: "Standardize PR templates across repositories",
-          description: "Implemented PR templates have improved documentation and reduced back-and-forth in reviews.",
+          title: "Standardized PR templates boost collaboration",
+          description: "Your new PR templates have improved team communication and reduced review cycles.",
           impact: "medium",
           category: "workflow",
-          metrics: ["Review Time", "Cycle Time"],
+          metrics: ["Feedback Time", "Delivery Speed"],
           actionItems: [
             "Create standardized PR templates",
-            "Add required sections for test plan and screenshots",
+            "Add sections for test plan and screenshots",
             "Include a checklist for common review items"
           ],
           implemented: true
@@ -215,13 +215,13 @@ export function RecommendationsInsights() {
   const getCategoryBadge = (category: string) => {
     switch (category) {
       case "cycle-time":
-        return <Badge variant="outline" className="border-blue-500 text-blue-500">Cycle Time</Badge>;
+        return <Badge variant="outline" className="border-blue-500 text-blue-500">Delivery Speed</Badge>;
       case "quality":
         return <Badge variant="outline" className="border-green-500 text-green-500">Quality</Badge>;
       case "collaboration":
         return <Badge variant="outline" className="border-purple-500 text-purple-500">Collaboration</Badge>;
       case "workflow":
-        return <Badge variant="outline" className="border-orange-500 text-orange-500">Workflow</Badge>;
+        return <Badge variant="outline" className="border-orange-500 text-orange-500">Team Flow</Badge>;
       default:
         return null;
     }
@@ -231,8 +231,8 @@ export function RecommendationsInsights() {
     return (
       <Card className="mx-4 lg:mx-6">
         <CardHeader>
-          <CardTitle>Recommendations & Insights</CardTitle>
-          <CardDescription>Loading recommendations...</CardDescription>
+          <CardTitle>Team Improvement Quests</CardTitle>
+          <CardDescription>Loading team data...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] animate-pulse bg-muted"></div>
@@ -246,10 +246,10 @@ export function RecommendationsInsights() {
       <CardHeader>
         <div className="flex items-center gap-2">
           <IconBulb size={24} className="text-yellow-500" />
-          <CardTitle>Recommendations & Insights</CardTitle>
+          <CardTitle>Team Improvement Quests</CardTitle>
         </div>
         <CardDescription>
-          Actionable recommendations based on your team&apos;s metrics
+          Opportunities to level up your team's collaboration
         </CardDescription>
       </CardHeader>
       <CardContent>

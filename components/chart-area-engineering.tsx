@@ -94,19 +94,19 @@ export function ChartAreaEngineering() {
 
   const chartConfig = {
     prThroughput: {
-      label: "PR Throughput",
+      label: "Shipping Velocity",
       color: "var(--chart-1)",
     },
     cycleTime: {
-      label: "Cycle Time (hrs)",
+      label: "Delivery Speed (hrs)",
       color: "var(--chart-2)",
     },
     reviewTime: {
-      label: "Review Time (hrs)",
+      label: "Feedback Time (hrs)",
       color: "var(--chart-3)",
     },
     codingHours: {
-      label: "Coding Hours",
+      label: "Flow State Hours",
       color: "var(--chart-4)",
     },
   } as ChartConfig;
@@ -127,7 +127,7 @@ export function ChartAreaEngineering() {
     return (
       <Card className="@container/card">
         <CardHeader>
-          <CardTitle>Engineering Metrics</CardTitle>
+          <CardTitle>Team Flow Metrics</CardTitle>
           <CardDescription>Loading data...</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center">
@@ -140,12 +140,12 @@ export function ChartAreaEngineering() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Engineering Metrics</CardTitle>
+        <CardTitle>Team Flow Metrics</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Performance metrics over time
+            Team collaboration health over time
           </span>
-          <span className="@[540px]/card:hidden">Engineering trends</span>
+          <span className="@[540px]/card:hidden">Team flow trends</span>
         </CardDescription>
         <CardAction className="flex items-center gap-2">
           <div className="hidden lg:flex gap-2">
@@ -226,7 +226,7 @@ export function ChartAreaEngineering() {
             <Tooltip 
               formatter={(value, name) => {
                 // Format the tooltip value based on the metric
-                if (name === "Cycle Time (hrs)" || name === "Review Time (hrs)" || name === "Coding Hours") {
+                if (name === "Delivery Speed (hrs)" || name === "Feedback Time (hrs)" || name === "Flow State Hours") {
                   return [`${value} hrs`, name];
                 }
                 return [value, name];
@@ -238,7 +238,7 @@ export function ChartAreaEngineering() {
               <Area
                 type="monotone"
                 dataKey="prThroughput"
-                name="PR Throughput"
+                name="Shipping Velocity"
                 stroke={chartConfig.prThroughput.color}
                 fillOpacity={1}
                 fill={`url(#fillprThroughput)`}
@@ -249,7 +249,7 @@ export function ChartAreaEngineering() {
               <Area
                 type="monotone"
                 dataKey="cycleTime"
-                name="Cycle Time (hrs)"
+                name="Delivery Speed (hrs)"
                 stroke={chartConfig.cycleTime.color}
                 fillOpacity={1}
                 fill={`url(#fillcycleTime)`}
@@ -260,7 +260,7 @@ export function ChartAreaEngineering() {
               <Area
                 type="monotone"
                 dataKey="reviewTime"
-                name="Review Time (hrs)"
+                name="Feedback Time (hrs)"
                 stroke={chartConfig.reviewTime.color}
                 fillOpacity={1}
                 fill={`url(#fillreviewTime)`}
@@ -271,7 +271,7 @@ export function ChartAreaEngineering() {
               <Area
                 type="monotone"
                 dataKey="codingHours"
-                name="Coding Hours"
+                name="Flow State Hours"
                 stroke={chartConfig.codingHours.color}
                 fillOpacity={1}
                 fill={`url(#fillcodingHours)`}

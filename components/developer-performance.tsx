@@ -151,14 +151,14 @@ export function DeveloperPerformance() {
     // Format data for the bar chart
     return [
       {
-        name: "Cycle Time (hrs)",
+        name: "Delivery Speed (hrs)",
         data: dataToChart.map(dm => ({
           name: dm.name.split(' ')[0],
           value: dm.avgCycleTime
         }))
       },
       {
-        name: "Review Time (hrs)",
+        name: "Feedback Time (hrs)",
         data: dataToChart.map(dm => ({
           name: dm.name.split(' ')[0],
           value: dm.avgReviewTime
@@ -178,8 +178,8 @@ export function DeveloperPerformance() {
     return (
       <Card className="mx-4 lg:mx-6">
         <CardHeader>
-          <CardTitle>Developer Performance</CardTitle>
-          <CardDescription>Loading developer data...</CardDescription>
+          <CardTitle>Team Member Contributions</CardTitle>
+          <CardDescription>Loading team data...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[400px] animate-pulse bg-muted"></div>
@@ -194,18 +194,18 @@ export function DeveloperPerformance() {
     <Card className="mx-4 lg:mx-6">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Developer Performance</CardTitle>
-          <CardDescription>Comparative metrics across team members</CardDescription>
+          <CardTitle>Team Member Contributions</CardTitle>
+          <CardDescription>Collaborative impact across the team</CardDescription>
         </div>
         <Select
           value={selectedDeveloper}
           onValueChange={setSelectedDeveloper}
         >
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="Select developer" />
+            <SelectValue placeholder="Select team member" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Developers</SelectItem>
+            <SelectItem value="all">All Team Members</SelectItem>
             {developers.map(dev => (
               <SelectItem key={dev.id} value={dev.id.toString()}>
                 {dev.name}
@@ -236,15 +236,15 @@ export function DeveloperPerformance() {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <div className="text-muted-foreground">PRs Merged</div>
+                      <div className="text-muted-foreground">Shipped PRs</div>
                       <div className="text-xl font-semibold">{dev.prCount}</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Avg. Cycle Time</div>
+                      <div className="text-muted-foreground">Avg. Delivery Speed</div>
                       <div className="text-xl font-semibold">{dev.avgCycleTime} hrs</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">PR Quality</div>
+                      <div className="text-muted-foreground">Code Quality</div>
                       <div className="text-xl font-semibold">
                         <Badge className={
                           dev.avgQualityScore >= 80 ? "bg-green-500" : 
@@ -287,15 +287,15 @@ export function DeveloperPerformance() {
                   <CardContent>
                     <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
                       <div>
-                        <div className="text-muted-foreground">PRs Merged</div>
+                        <div className="text-muted-foreground">Shipped PRs</div>
                         <div className="text-2xl font-semibold">{dev.prCount}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Avg. Cycle Time</div>
+                        <div className="text-muted-foreground">Avg. Delivery Speed</div>
                         <div className="text-2xl font-semibold">{dev.avgCycleTime} hrs</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">PR Quality</div>
+                        <div className="text-muted-foreground">Code Quality</div>
                         <div className="text-2xl font-semibold">
                           <Badge className={
                             dev.avgQualityScore >= 80 ? "bg-green-500" : 
@@ -318,8 +318,8 @@ export function DeveloperPerformance() {
         </div>
 
         {/* Comparison Charts */}
-        <div className="mt-6">
-          <h3 className="mb-4 text-lg font-semibold">Comparative Metrics</h3>
+        <div className="col-span-1 space-y-4 md:col-span-3">
+          <h3 className="mb-4 text-lg font-semibold">Team Collaboration Insights</h3>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {comparisonData.map(metric => (
               <Card key={metric.name}>
@@ -340,8 +340,8 @@ export function DeveloperPerformance() {
                         <Bar 
                           dataKey="value" 
                           fill={
-                            metric.name === "Cycle Time (hrs)" ? "var(--chart-2)" :
-                            metric.name === "Review Time (hrs)" ? "var(--chart-3)" :
+                            metric.name === "Delivery Speed (hrs)" ? "var(--chart-2)" :
+                            metric.name === "Feedback Time (hrs)" ? "var(--chart-3)" :
                             "var(--chart-4)"
                           } 
                         />

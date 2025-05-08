@@ -98,7 +98,7 @@ export function CompactEngineeringMetrics() {
 
   const metricsConfig = [
     { 
-      name: "PR Throughput", 
+      name: "Shipping Velocity", 
       value: metrics.prCurrent, 
       change: metrics.prChange, 
       dataKey: "prThroughput", 
@@ -107,7 +107,7 @@ export function CompactEngineeringMetrics() {
       isReversed: false  // Higher is better
     },
     { 
-      name: "Cycle Time", 
+      name: "Delivery Speed", 
       value: metrics.cycleCurrent, 
       change: metrics.cycleChange, 
       dataKey: "cycleTime", 
@@ -116,7 +116,7 @@ export function CompactEngineeringMetrics() {
       isReversed: true   // Lower is better
     },
     { 
-      name: "Review Time", 
+      name: "Feedback Time", 
       value: metrics.reviewCurrent, 
       change: metrics.reviewChange, 
       dataKey: "reviewTime", 
@@ -125,7 +125,7 @@ export function CompactEngineeringMetrics() {
       isReversed: true   // Lower is better
     },
     { 
-      name: "Coding Hours", 
+      name: "Flow State", 
       value: metrics.codingCurrent, 
       change: metrics.codingChange, 
       dataKey: "codingHours", 
@@ -139,7 +139,7 @@ export function CompactEngineeringMetrics() {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Engineering Metrics</CardTitle>
+          <CardTitle className="text-base">Team Flow Metrics</CardTitle>
         </CardHeader>
         <CardContent className="h-[220px] flex items-center justify-center">
           <div className="animate-pulse w-full h-2/3 bg-muted rounded"></div>
@@ -151,7 +151,7 @@ export function CompactEngineeringMetrics() {
   return (
     <Card>
       <CardHeader className="pb-0">
-        <CardTitle className="text-base">Engineering Performance</CardTitle>
+        <CardTitle className="text-base">Team Flow Metrics</CardTitle>
       </CardHeader>
       <CardContent className="pt-2">
         <div className="space-y-4">

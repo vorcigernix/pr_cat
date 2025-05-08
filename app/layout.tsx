@@ -24,8 +24,8 @@ const logoFont = Noto_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "PR Cat - Engineering Metrics for Teams",
-  description: "Track and improve your team's engineering performance with metrics that matter",
+  title: "PR Cat - Team Collaboration Metrics",
+  description: "Boost your team's collaboration and shipping velocity with metrics that matter",
 };
 
 export default function RootLayout({

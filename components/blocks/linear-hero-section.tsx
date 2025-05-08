@@ -6,10 +6,10 @@ function PRHeroSection() {
       title="based on AI PR categorizer"
       titleHref="#ai-categorizer"
       subtitle={{
-        regular: "Engineering metrics for ",
-        gradient: "teams, not managers",
+        regular: "For builders and ",
+        gradient: "everyone who helps them",
       }}
-      description="PR Cat provides your engineering team with meaningful data about your development workflow - helping you identify bottlenecks and improve together."
+      description="PR Cat helps engineering leads who are in the trenches with their teams. Not an enterprise surveillance tool, but a collaborative platform that improves flow and removes barriers together."
       ctaText="View Dashboard"
       ctaHref="/dashboard"
       secondaryCtaText="Sign in with GitHub"

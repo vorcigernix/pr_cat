@@ -79,7 +79,7 @@ export function SectionCardsEngineering() {
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Coding Time</CardDescription>
+          <CardDescription>Flow State Time</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {metrics.codingTime.value} hrs
           </CardTitle>
@@ -92,10 +92,10 @@ export function SectionCardsEngineering() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.codingTime.trend === 'up' ? 'Increased focused time' : 'Less coding time'}
+            {metrics.codingTime.trend === 'up' ? 'More focus time unlocked' : 'Less flow state time'}
           </div>
           <div className="text-muted-foreground">
-            Daily average per developer
+            Daily average per team member
           </div>
         </CardFooter>
       </Card>
@@ -115,17 +115,17 @@ export function SectionCardsEngineering() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.prSize.trend === 'up' ? 'Smaller PRs' : 'PRs are getting larger'}
+            {metrics.prSize.trend === 'up' ? 'More focused, digestible PRs' : 'PRs are getting larger'}
           </div>
           <div className="text-muted-foreground">
-            Avg. lines of code per PR
+            Avg. lines of code per contribution
           </div>
         </CardFooter>
       </Card>
       
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Cycle Time</CardDescription>
+          <CardDescription>Delivery Speed</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {metrics.cycleTime.value} hrs
           </CardTitle>
@@ -138,7 +138,7 @@ export function SectionCardsEngineering() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.cycleTime.trend === 'up' ? 'Faster delivery' : 'Slower delivery cycle'}
+            {metrics.cycleTime.trend === 'up' ? 'Team is shipping faster' : 'Delivery cycle slowing down'}
           </div>
           <div className="text-muted-foreground">
             From first commit to production
@@ -148,7 +148,7 @@ export function SectionCardsEngineering() {
       
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Review Time</CardDescription>
+          <CardDescription>Feedback Speed</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {metrics.reviewTime.value} hrs
           </CardTitle>
@@ -161,10 +161,10 @@ export function SectionCardsEngineering() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.reviewTime.trend === 'up' ? 'Faster reviews' : 'Reviews taking longer'}
+            {metrics.reviewTime.trend === 'up' ? 'Faster team feedback' : 'Feedback loop slowing'}
           </div>
           <div className="text-muted-foreground">
-            Average PR review completion time
+            How quickly the team reviews code
           </div>
         </CardFooter>
       </Card>
