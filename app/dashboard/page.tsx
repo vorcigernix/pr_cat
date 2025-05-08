@@ -14,6 +14,7 @@ import { findUserById, findUserByEmail, createUser, updateUser } from "@/lib/rep
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { headers } from "next/headers"
 
 export default async function DashboardPage() {
   // Check if user is in database
@@ -33,7 +34,17 @@ export default async function DashboardPage() {
   try {
     // First check if database needs migration
     try {
-      const statusResponse = await fetch(`/api/status`);
+      // Determine the base URL for API calls
+      const baseUrl = 
+        process.env.VERCEL_URL ? 
+          `https://${process.env.VERCEL_URL}` : 
+          process.env.APP_URL || 
+          'http://localhost:3000';
+      
+      const statusResponse = await fetch(`${baseUrl}/api/status`, {
+        cache: "no-store"
+      });
+      
       const statusData = await statusResponse.json();
       needsMigration = statusData.database?.migrationNeeded;
       console.log('Database status:', statusData);
