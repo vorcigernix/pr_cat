@@ -8,7 +8,6 @@ Before testing, make sure you have:
 
 1. Set up the environment as described in the README.md
 2. A GitHub account with access to test repositories
-3. Ngrok installed (for webhook testing) - [Download Ngrok](https://ngrok.com/download)
 
 ## 0. Database Initialization
 
