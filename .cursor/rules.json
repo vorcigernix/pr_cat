@@ -36,6 +36,18 @@
       "name": "pnpm",
       "description": "Always use pnpm for package management",
       "required": true
+    },
+    "routeHandlers": {
+      "description": "Dynamic route parameter handling for Next.js 15",
+      "rules": [
+        "Route parameters in dynamic routes must be structured as Promise objects",
+        "Use { params }: { params: Promise<{ paramName: string }> } as function argument signature",
+        "Always await params before using them: const { paramName } = await params",
+        "This applies to all API route handlers and page components with dynamic segments"
+      ],
+      "examples": [
+        "export async function GET(request, { params }: { params: Promise<{ slug: string }> }) { const { slug } = await params; }"
+      ]
     }
   }
 } 
