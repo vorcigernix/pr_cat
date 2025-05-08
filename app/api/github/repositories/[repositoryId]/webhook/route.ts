@@ -2,15 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { GitHubService } from '@/lib/services';
 
-interface Params {
-  params: {
-    repositoryId: string;
-  };
-}
-
 // Create a new webhook for a repository
-export async function POST(request: NextRequest, { params }: Params) {
-  const { repositoryId } = params;
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ repositoryId: string }> }
+) {
+  const { repositoryId } = await params;
   
   const session = await auth();
   
@@ -39,8 +36,11 @@ export async function POST(request: NextRequest, { params }: Params) {
 }
 
 // Delete a webhook from a repository
-export async function DELETE(request: NextRequest, { params }: Params) {
-  const { repositoryId } = params;
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ repositoryId: string }> }
+) {
+  const { repositoryId } = await params;
   
   const session = await auth();
   

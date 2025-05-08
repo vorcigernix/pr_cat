@@ -3,14 +3,11 @@ import { auth } from '@/auth';
 import { GitHubService } from '@/lib/services';
 import { findRepositoryById } from '@/lib/repositories';
 
-interface Params {
-  params: {
-    repositoryId: string;
-  };
-}
-
-export async function POST(request: NextRequest, { params }: Params) {
-  const { repositoryId } = params;
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ repositoryId: string }> }
+) {
+  const { repositoryId } = await params;
   
   const session = await auth();
   

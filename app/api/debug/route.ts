@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query, execute } from '@/lib/db';
+import { query } from '@/lib/db';
 import { createUser, findUserById } from '@/lib/repositories';
 import { auth } from '@/auth';
 

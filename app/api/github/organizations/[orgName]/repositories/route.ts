@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { GitHubService } from '@/lib/services';
 
-interface Params {
-  params: {
-    orgName: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
-  const { orgName } = params;
+// Use the context object directly with proper typing for Next.js route handler
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ orgName: string }> }
+) {
+  const { orgName } = await params;
   
   const session = await auth();
   
