@@ -42,7 +42,12 @@ export default async function DashboardPage() {
           'http://localhost:3000';
       
       const statusResponse = await fetch(`${baseUrl}/api/status`, {
-        cache: "no-store"
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          // The auth cookies should be forwarded automatically with credentials
+        }
       });
       
       const statusData = await statusResponse.json();

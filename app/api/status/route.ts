@@ -1,8 +1,27 @@
 import { NextResponse } from 'next/server';
-import { execute, query } from '@/lib/db';
+import { query } from '@/lib/db';
+import { auth } from '@/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  // Add auth check to prevent middleware redirects
   try {
+    // Check for authentication
+    const session = await auth();
+    
+    // If not authenticated, return JSON error instead of redirecting
+    if (!session || !session.user) {
+      return NextResponse.json({ 
+        status: 'error',
+        error: 'Unauthorized',
+        database: {
+          connected: false,
+          error: 'Authentication required'
+        }
+      }, { status: 401 });
+    }
+    
     let dbVersion = 0;
     let tablesExist = false;
     
