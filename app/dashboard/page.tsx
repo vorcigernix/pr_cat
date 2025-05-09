@@ -14,7 +14,7 @@ import { findUserById, findUserByEmail, createUser, updateUser } from "@/lib/rep
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { headers } from "next/headers"
+import { query } from "@/lib/db"
 
 export default async function DashboardPage() {
   // Check if user is in database
@@ -32,27 +32,29 @@ export default async function DashboardPage() {
   let needsMigration = false;
   
   try {
-    // First check if database needs migration
+    // Check database migration status directly instead of via API
     try {
-      // Determine the base URL for API calls
-      const baseUrl = 
-        process.env.VERCEL_URL ? 
-          `https://${process.env.VERCEL_URL}` : 
-          process.env.APP_URL || 
-          'http://localhost:3000';
+      let dbVersion = 0;
+      let tablesExist = false;
       
-      const statusResponse = await fetch(`${baseUrl}/api/status`, {
-        cache: "no-store",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-          // The auth cookies should be forwarded automatically with credentials
-        }
-      });
+      try {
+        // Check if schema_migrations table exists
+        const result = await query<{ version: number }>(
+          'SELECT MAX(version) as version FROM schema_migrations'
+        );
+        dbVersion = result[0]?.version || 0;
+        
+        // Check if users table exists
+        await query('SELECT 1 FROM users LIMIT 1');
+        tablesExist = true;
+      } catch (dbError) {
+        console.warn('Database table check failed:', dbError);
+        // If the error contains "no such table", tables don't exist yet
+        tablesExist = false;
+      }
       
-      const statusData = await statusResponse.json();
-      needsMigration = statusData.database?.migrationNeeded;
-      console.log('Database status:', statusData);
+      needsMigration = dbVersion === 0 || !tablesExist;
+      console.log('Database status:', { dbVersion, tablesExist, needsMigration });
     } catch (statusError) {
       console.error('Error checking database status:', statusError);
       needsMigration = true;
