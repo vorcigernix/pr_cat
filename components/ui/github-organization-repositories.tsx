@@ -40,7 +40,8 @@ export function GitHubOrganizationRepositories() {
   const [processingRepoId, setProcessingRepoId] = useState<number | null>(null);
   const hasInitialized = useRef(false);
 
-  const fetchOrganizationsWithRepositories = useCallback(async () => {
+  const fetchOrganizationsWithRepositories = useCallback(async (isInitialFetch = false) => {
+    let fetchedOrgs: OrganizationWithRepositories[] = [];
     setLoading(true);
     setError(null);
     try {
@@ -49,30 +50,49 @@ export function GitHubOrganizationRepositories() {
         throw new Error("Failed to fetch organization repositories");
       }
       const data = await response.json();
-      setOrganizationsWithRepos(data.organizationsWithRepositories || []);
-    } catch (error) {
-      setError("Failed to load organization repositories");
+      fetchedOrgs = data.organizationsWithRepositories || [];
+      setOrganizationsWithRepos(fetchedOrgs);
+
+      if (isInitialFetch && fetchedOrgs.length === 0 && status === "authenticated" && !error) {
+        console.log("Initial fetch found no organizations, triggering automatic sync...");
+        syncRepositories();
+      }
+
+    } catch (fetchError) {
+      if (fetchError instanceof Error && fetchError.message.includes("Failed to fetch")) {
+         setError("Failed to load organization repositories. Please try syncing manually.");
+      } else {
+        setError("An unexpected error occurred while fetching repositories.");
+      }
+      console.error("Error in fetchOrganizationsWithRepositories:", fetchError);
     } finally {
-      setLoading(false);
+      if (!(isInitialFetch && fetchedOrgs.length === 0 && status === "authenticated" && !error)) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [status, error]);
 
   const syncRepositories = async () => {
     setIsSyncing(true);
-    toast.info("Syncing repositories from GitHub...");
+    setLoading(true);
+    setError(null);
+    toast.info("Syncing organizations and repositories from GitHub...");
     try {
       const response = await fetch("/api/github/organizations/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) {
-        throw new Error("Failed to sync organizations and repositories");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to sync organizations and repositories");
       }
-      toast.success("Repositories synced successfully!");
-      await fetchOrganizationsWithRepositories();
-    } catch (error) {
-      setError("Failed to sync repositories");
-      toast.error("Failed to sync repositories");
+      toast.success("Sync complete! Fetching updated data...");
+      await fetchOrganizationsWithRepositories(false);
+    } catch (syncError) {
+      const errorMessage = syncError instanceof Error ? syncError.message : "Failed to sync data";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      setLoading(false);
     } finally {
       setIsSyncing(false);
     }
@@ -109,7 +129,7 @@ export function GitHubOrganizationRepositories() {
   useEffect(() => {
     if (status === "authenticated" && !hasInitialized.current) {
       hasInitialized.current = true;
-      fetchOrganizationsWithRepositories();
+      fetchOrganizationsWithRepositories(true);
     }
   }, [status, fetchOrganizationsWithRepositories]);
 
@@ -138,8 +158,8 @@ export function GitHubOrganizationRepositories() {
           <div className="text-destructive">{error}</div>
         </CardContent>
         <CardFooter>
-          <Button variant="outline" size="sm" className="w-full" onClick={fetchOrganizationsWithRepositories}>
-            Retry
+          <Button variant="outline" size="sm" className="w-full" onClick={() => fetchOrganizationsWithRepositories(true)}>
+            Retry Fetch
             <IconRefresh className="ml-2 h-4 w-4" />
           </Button>
         </CardFooter>
@@ -166,7 +186,7 @@ export function GitHubOrganizationRepositories() {
         </CardContent>
         <CardFooter>
           <Button variant="outline" size="sm" className="w-full" onClick={syncRepositories} disabled={isSyncing}>
-            {isSyncing ? "Syncing..." : "Sync GitHub Organizations"}
+            {isSyncing ? "Syncing..." : "Sync Repositories"}
             {!isSyncing && <IconRefresh className="ml-2 h-4 w-4" />}
           </Button>
         </CardFooter>

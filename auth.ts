@@ -1,9 +1,10 @@
 import NextAuth from "next-auth"
 import GitHub from "next-auth/providers/github"
 import { NextAuthConfig } from "next-auth"
-import { findUserByEmail, createUser, updateUser, getUserOrganizations } from "@/lib/repositories/user-repository"
+import { findUserByEmail, createUser, updateUser, getUserOrganizations, findUserById } from "@/lib/repositories/user-repository"
 import { createGitHubClient } from "@/lib/github"
 import type { JWT } from "next-auth/jwt"
+import { execute } from "@/lib/db"
 
 // Extend the Session interface to include accessToken and organizations
 // and GitHub profile fields
@@ -77,48 +78,48 @@ export const config = {
       return true;
     },
     async session({ session, token }) {
-      if (token && session.user && token.sub) {
-        // Basic user data from token
-        session.user.id = token.sub;
+      // Ensure session.user.id is the GitHub numeric ID from token.sub
+      if (token.sub) { 
+        session.user.id = token.sub; // token.sub IS the GitHub numeric ID
         session.user.login = token.login;
         session.user.html_url = token.html_url;
         session.user.avatar_url = token.avatar_url;
         
-        // Store the access token for GitHub API calls
         if (token.accessToken) {
           session.accessToken = token.accessToken as string;
-          
           try {
-            // Create GitHub client and fetch organizations
-            const githubClient = createGitHubClient(session.accessToken);
+            session.organizations = await getUserOrganizations(session.user.id); 
             
-            // First get organizations from database
-            session.organizations = await getUserOrganizations(session.user.id);
-            
-            // If we have access token, fetch and sync organizations from GitHub
-            if (session.organizations.length === 0) {
+            if (!session.organizations || session.organizations.length === 0) {
+              const githubClient = createGitHubClient(session.accessToken);
               const githubOrgs = await githubClient.getUserOrganizations();
-              
-              // We'll let the API endpoint handle syncing to DB when accessed
-              // This just gives immediate access to org data in session
               session.organizations = githubOrgs.map(org => ({
-                id: 0, // Temporary ID since not yet in DB
+                id: 0, 
                 github_id: org.id,
                 name: org.login,
                 avatar_url: org.avatar_url,
               }));
             }
           } catch (error) {
-            console.error("Error fetching GitHub organizations:", error);
+            console.error("Error fetching GitHub organizations for session:", error);
+            session.organizations = session.organizations || []; 
           }
         }
+      } else {
+        console.warn("Session callback: token.sub is missing for session:", session);
       }
       return session;
     },
     async jwt({ token, account, profile }) {
-      // Save extra info from GitHub profile to the token
-      if (account && profile) {
-        const gh = profile as GitHubProfile;
+      if (profile) { 
+        // Ensure profile.id exists and is a number or string before converting to string
+        if (typeof profile.id !== 'undefined' && profile.id !== null) {
+          token.sub = profile.id.toString();
+        } else {
+          // Handle missing profile.id - perhaps log an error or use a fallback if appropriate
+          console.error("JWT callback: GitHub profile.id is missing or null.");
+        }
+        const gh = profile as GitHubProfile; 
         token.login = typeof gh.login === "string" ? gh.login : undefined;
         token.html_url = typeof gh.html_url === "string" ? gh.html_url : undefined;
         token.avatar_url = typeof gh.avatar_url === "string" ? gh.avatar_url : undefined;
@@ -129,48 +130,37 @@ export const config = {
       return token;
     },
     async signIn({ user, account, profile }) {
-      if (!user.email || !user.id) {
+      if (!user.email || !profile || typeof profile.id === 'undefined' || profile.id === null) {
+        console.error("SignIn callback: Missing user.email or profile.id from GitHub.");
         return false;
       }
 
+      const githubNumericId = profile.id.toString();
+
       try {
-        // Check if user exists
-        const dbUser = await findUserByEmail(user.email);
-        
+        let dbUser = await findUserById(githubNumericId);
+
         if (!dbUser) {
-          // Create new user
-          await createUser({
-            id: user.id,
-            name: user.name ?? null,
-            email: user.email,
-            image: user.image ?? null,
-          });
-        } else if (dbUser.id !== user.id) {
-          // User exists with this email but has a different ID
-          // This is a common case with OAuth providers where IDs can change
-          console.log('User exists with different ID. Database ID:', dbUser.id, 'Auth ID:', user.id);
-          
-          // Simply update the existing user with new information
-          // We'll continue using the database's existing ID
-          await updateUser(dbUser.id, {
-            name: user.name ?? null,
-            image: user.image ?? null,
-          });
-          
-          // IMPORTANT: Override the user ID to match our database
-          // This keeps our app consistent with our database
-          user.id = dbUser.id;
-        } else {
-          // Update existing user information
-          await updateUser(user.id, {
-            name: user.name ?? null,
-            image: user.image ?? null,
-          });
+          const userByEmail = await findUserByEmail(user.email);
+          if (userByEmail) {
+            if (userByEmail.id !== githubNumericId) {
+              console.warn(`SignIn: User with email ${user.email} found with ID ${userByEmail.id}, but GitHub Numeric ID is ${githubNumericId}. The record will be updated/re-keyed to use GitHub Numeric ID.`);
+            }
+          }
         }
+        
+        console.log(`SignIn: Upserting user with GitHub Numeric ID: ${githubNumericId}`);
+        const { rowsAffected } = await execute(
+          'INSERT INTO users (id, name, email, image, created_at, updated_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now")) ON CONFLICT(id) DO UPDATE SET name = excluded.name, email = excluded.email, image = excluded.image, updated_at = datetime("now")',
+          [githubNumericId, user.name ?? profile.login ?? null, user.email, user.image ?? profile.avatar_url ?? null]
+        );
+        console.log(`SignIn: Upsert result for ${githubNumericId}, rowsAffected: ${rowsAffected}`);
+
+        user.id = githubNumericId;
         
         return true;
       } catch (error) {
-        console.error('Error during sign in:', error);
+        console.error('Error during sign in with GitHub Numeric ID:', error);
         return false;
       }
     },

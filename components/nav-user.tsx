@@ -52,26 +52,26 @@ export function NavUser() {
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <div className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-            <DropdownMenuTrigger className="h-8 w-8 outline-none">
+          <DropdownMenuTrigger asChild>
+            <div className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer">
               <Avatar className="h-8 w-8 border">
                 <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
                 <AvatarFallback>{session?.user?.name?.[0] || "U"}</AvatarFallback>
               </Avatar>
-            </DropdownMenuTrigger>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">My Account</span>
-              <span className="text-muted-foreground truncate text-xs">
-                {session?.user?.name || session?.user?.email || "Manage your account"}
-              </span>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">My Account</span>
+                <span className="text-muted-foreground truncate text-xs">
+                  {session?.user?.name || session?.user?.email || "Manage your account"}
+                </span>
+              </div>
             </div>
-          </div>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
               {session?.user?.name || session?.user?.email || "Account"}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>
+            <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

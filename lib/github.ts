@@ -1,3 +1,4 @@
+export const runtime = 'nodejs';
 import { Octokit } from '@octokit/rest';
 import { GitHubOrganization, GitHubRepository, GitHubPullRequest, GitHubUser } from './types';
 

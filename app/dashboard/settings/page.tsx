@@ -56,7 +56,7 @@ export default function SettingsPage() {
                           <div>
                             <CardTitle>GitHub Organizations</CardTitle>
                             <CardDescription>
-                              Manage your connected GitHub organizations and learn how PR Cat uses organization access.
+                              Manage your connected GitHub organizations
                             </CardDescription>
                           </div>
                           <div className="flex gap-2">
@@ -81,17 +81,7 @@ export default function SettingsPage() {
                         </CardContent>
                       </Card>
                     </div>
-                    <Card className="mt-4">
-                      <CardHeader>
-                        <CardTitle>Repositories</CardTitle>
-                        <CardDescription>
-                          Manage repository access and webhook tracking for your organizations.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <GitHubOrganizationRepositories />
-                      </CardContent>
-                    </Card>
+                    <GitHubOrganizationRepositories />
                   </TabsContent>
                   <TabsContent value="organizations">
                     <Card>
