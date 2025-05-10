@@ -213,7 +213,41 @@ export async function createPullRequestReview(review: Omit<PRReview, 'id'>): Pro
 }
 
 export async function findReviewByGitHubId(githubId: number): Promise<PRReview | null> {
-  const reviews = await query<PRReview>('SELECT * FROM pr_reviews WHERE github_id = ?', [githubId]);
+  const reviews = await query<PRReview>(
+    `SELECT * FROM pr_reviews WHERE github_id = ?`,
+    [githubId]
+  );
+  
+  return reviews.length > 0 ? reviews[0] : null;
+}
+
+export async function updatePullRequestReview(id: number, data: Partial<PRReview>): Promise<PRReview | null> {
+  const updates: string[] = [];
+  const values: any[] = [];
+  
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined) {
+      updates.push(`${key} = ?`);
+      values.push(value);
+    }
+  });
+  
+  if (updates.length === 0) {
+    return null;
+  }
+  
+  values.push(id);
+  
+  await execute(
+    `UPDATE pr_reviews SET ${updates.join(', ')} WHERE id = ?`,
+    values
+  );
+  
+  const reviews = await query<PRReview>(
+    `SELECT * FROM pr_reviews WHERE id = ?`,
+    [id]
+  );
+  
   return reviews.length > 0 ? reviews[0] : null;
 }
 

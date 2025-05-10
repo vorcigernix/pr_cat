@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { GitHubClient } from '@/lib/github';
+import { logGitHubOrgsForUser } from '@/lib/github';
+import { findUserById } from '@/lib/repositories';
+import { query } from '@/lib/db';
 
-export const runtime = 'nodejs';
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth();
   
   if (!session || !session.user) {
@@ -16,53 +16,49 @@ export async function GET() {
   }
   
   try {
-    // Create GitHub client directly
-    const githubClient = new GitHubClient(session.accessToken);
+    const user = await findUserById(session.user.id);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
+    }
     
-    // Get all information
-    const user = await githubClient.getCurrentUser();
-    const orgs = await githubClient.getUserOrganizations();
+    // Log GitHub organizations
+    await logGitHubOrgsForUser(session.accessToken);
     
-    // Get all available scopes for the token
-    const scopes = await checkTokenScopes(session.accessToken);
+    // Check user-organization connections
+    const userOrgs = await query(
+      `SELECT uo.*, o.name, o.github_id FROM user_organizations uo 
+       JOIN organizations o ON uo.organization_id = o.id
+       WHERE uo.user_id = ?`,
+      [user.id]
+    );
+    
+    // Check repository count
+    const repositories = await query(
+      `SELECT r.* FROM repositories r 
+       JOIN organizations o ON r.organization_id = o.id 
+       ORDER BY r.name ASC 
+       LIMIT 50`
+    );
+    
+    // Check user_organization table directly
+    const allUserOrgs = await query(
+      `SELECT * FROM user_organizations LIMIT 100`
+    );
     
     return NextResponse.json({
-      github: {
-        user: {
-          login: user.login,
-          id: user.id,
-          avatar_url: user.avatar_url,
-          name: user.name,
-          email: user.email,
-        },
-        organizations: orgs,
-        organizationCount: orgs.length,
-        tokenScopes: scopes,
-      }
+      userId: user.id,
+      userOrgsCount: userOrgs.length,
+      userOrgs,
+      repositoriesCount: repositories.length,
+      repositoriesSample: repositories.slice(0, 5),
+      allUserOrgsCount: allUserOrgs.length,
+      allUserOrgsSample: allUserOrgs.slice(0, 5)
     });
   } catch (error) {
-    console.error('GitHub API error:', error);
+    console.error('Debug error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch GitHub data', message: error instanceof Error ? error.message : 'Unknown error' }, 
+      { error: `Debug failed: ${error instanceof Error ? error.message : 'Unknown error'}` }, 
       { status: 500 }
     );
-  }
-}
-
-// Helper to check what permissions the token has
-async function checkTokenScopes(token: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.github.com/user', {
-      headers: {
-        Authorization: `token ${token}`,
-      },
-    });
-    
-    // Get scopes from response headers
-    const scopeHeader = response.headers.get('x-oauth-scopes') || '';
-    return scopeHeader.split(',').map(s => s.trim()).filter(Boolean);
-  } catch (error) {
-    console.error('Error checking token scopes:', error);
-    return [];
   }
 } 

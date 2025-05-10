@@ -36,17 +36,16 @@ This document outlines the implementation plan for the PR Cat application - an A
 - ✅ Lifecycle view UI
 - ✅ Analytics view UI
 - ✅ Team view UI
+- ✅ Repository insights components
+- ✅ PR quality details components
+- ✅ Engineering metrics components
+- ✅ GitHub organization and repository selection components
 - ✅ Responsive layouts and component design
 
-#### Partially Completed
-- ⚠️ GitHub Integration (OAuth setup, basic API access)
-
-### 🔄 Work In Progress
-
 #### Database Setup
-- Set up Turso database account
-- Configure direct SQL connection to Turso
-- Create initial schema with necessary tables:
+- ✅ Set up Turso database account
+- ✅ Configure direct SQL connection to Turso
+- ✅ Create initial schema with necessary tables:
   - users
   - organizations
   - repositories
@@ -54,14 +53,39 @@ This document outlines the implementation plan for the PR Cat application - an A
   - categories
   - recommendations
   - settings
-- Enable vector extension in Turso
-- Set up migration system
+- ✅ Set up migration system (schema_migrations table present)
+- ⚠️ Enable vector extension in Turso (schema prepared with embeddings table, but status uncertain)
+
+#### GitHub Integration
+- ✅ OAuth setup with GitHub provider
+- ✅ Basic API access implementation
+- ✅ Repository data fetching
+- ✅ Organization data fetching
+- ✅ Implementation of repository repositories
+- ✅ Implementation of organization repositories
+- ✅ Initial webhook endpoint implementation  
+- ✅ Enhanced webhook receiver for PR and review events
+- ✅ Webhook configuration UI
+
+### 🔄 Work In Progress
 
 #### GitHub Integration Completion
-- Complete repository selection interface
-- Set up webhook receiver for real-time updates
-- Create webhook configuration UI
-- Implement organization access
+- Set up background processing for webhooks
+- Implement PR file analysis
+- Implement review analytics
+
+#### Data Processing
+- ⚠️ Pull request data collection and processing (repository exists but likely incomplete)
+- ⚠️ Review data collection and analysis
+- Implementation of notifications for PR events
+
+#### AI Processing Pipeline
+- Create text extraction system for PRs
+- Build prompt templates for AI categorization
+- Implement vector embedding generation
+- Create categorization confidence scoring
+- Set up batch processing for historical PRs
+- Add caching layer for processed results
 
 ## Implementation Roadmap
 
@@ -206,6 +230,45 @@ This document outlines the implementation plan for the PR Cat application - an A
 - Implement usage analytics
 - Configure proper error reporting
 ```
+
+### Architecture Improvements
+
+#### Centralized Repository Access
+
+To ensure consistent access patterns and prevent code duplication, the repository access logic has been centralized:
+
+1. **Repository Service**
+   - Created a centralized `RepositoryService` class with static methods
+   - Implements organization-based access control in one place
+   - Provides consistent repository access across the application
+   - Separates business logic from data access
+
+2. **Organization-Based Access Control**
+   - Access is based on GitHub organizational boundaries
+   - Users who have added PR Cat to their GitHub organizations can access those repositories
+   - Repositories are always presented in their organizational context
+   - User interfaces are built around organization selection first, then repositories
+
+3. **Service Integration Plan**
+   - Update all pages to use the RepositoryService instead of direct database queries
+   - Remove duplicate implementation of repository queries
+   - Standardize the organization-based access control across the application
+   - Provide consistent user experience between settings and webhook configuration
+
+4. **Architectural Benefits**
+   - Single source of truth for repository access logic
+   - Consistent error handling and logging
+   - Easier to maintain and extend
+   - Clear separation of concerns
+   - Respect for GitHub's organizational boundaries
+
+The repository service implements a layer of abstraction between the raw database queries and the application's business logic, making it easier to:
+- Change the underlying database without affecting the rest of the application
+- Implement complex access control rules in one place
+- Test repository access logic in isolation
+- Add caching or other optimizations at the service level
+
+This architectural improvement addresses issues with duplicate code and inconsistent access patterns that were causing problems in the webhook configuration page.
 
 ## Implementation Details
 

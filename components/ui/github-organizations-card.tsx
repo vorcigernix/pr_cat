@@ -80,41 +80,16 @@ export function GitHubOrganizationsCard() {
 
   if (status === "loading") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>GitHub Organizations</CardTitle>
-          <CardDescription>Your organizations on GitHub</CardDescription>
-        </CardHeader>
-        <CardContent>
+
           <div className="text-muted-foreground">Loading organizations...</div>
-        </CardContent>
-      </Card>
+
     );
   }
 
   // If we have synced orgs to display, show them instead of the empty state
   if (showSyncedOrgs && syncedOrgs.length > 0) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>GitHub Organizations</CardTitle>
-              <CardDescription>Your organizations on GitHub</CardDescription>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={syncOrganizations}
-              disabled={isSyncing}
-              className="h-8 w-8"
-              title="Sync organizations"
-            >
-              <IconRefresh className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
+  
           <div className="flex flex-col gap-3">
             {syncedOrgs.map((org) => (
               <div key={org.github_id || org.id} className="flex items-center gap-3">
@@ -136,62 +111,25 @@ export function GitHubOrganizationsCard() {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+       
     );
   }
 
   if (!session?.organizations || session.organizations.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>GitHub Organizations</CardTitle>
-          <CardDescription>Your organizations on GitHub</CardDescription>
-        </CardHeader>
-        <CardContent className="pb-2">
+
           <div className="text-muted-foreground">
             {showSyncedOrgs 
               ? "No organizations found in your GitHub account." 
               : "No organizations found."}
           </div>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full"
-            onClick={syncOrganizations}
-            disabled={isSyncing || !session?.accessToken}
-          >
-            {isSyncing ? "Syncing..." : "Sync Organizations"}
-            {!isSyncing && <IconRefresh className="ml-2 h-4 w-4" />}
-          </Button>
-        </CardFooter>
-      </Card>
+
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>GitHub Organizations</CardTitle>
-            <CardDescription>Your organizations on GitHub</CardDescription>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={syncOrganizations}
-            disabled={isSyncing}
-            className="h-8 w-8"
-            title="Sync organizations"
-          >
-            <IconRefresh className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
+
+
         <div className="flex flex-col gap-3">
           {session.organizations.map((org) => (
             <div key={org.github_id || org.id} className="flex items-center gap-3">
@@ -213,7 +151,6 @@ export function GitHubOrganizationsCard() {
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+ 
   );
 } 

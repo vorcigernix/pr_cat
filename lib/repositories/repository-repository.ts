@@ -12,7 +12,11 @@ export async function findRepositoryByGitHubId(githubId: number): Promise<Reposi
 }
 
 export async function findRepositoryByFullName(fullName: string): Promise<Repository | null> {
-  const repos = await query<Repository>('SELECT * FROM repositories WHERE full_name = ?', [fullName]);
+  const repos = await query<Repository>(
+    `SELECT * FROM repositories WHERE full_name = ?`,
+    [fullName]
+  );
+  
   return repos.length > 0 ? repos[0] : null;
 }
 
@@ -161,4 +165,34 @@ export async function getRepositoryStatistics(
   `, [repositoryId]);
   
   return stats[0];
+}
+
+export async function getRepositoriesByUser(
+  userId: string, 
+  organizationId?: number
+): Promise<Repository[]> {
+  let sql = `
+    SELECT r.* 
+    FROM repositories r
+    JOIN user_organizations uo ON r.organization_id = uo.organization_id
+    WHERE uo.user_id = ?
+  `;
+  
+  const params: any[] = [userId];
+  
+  if (organizationId) {
+    sql += ` AND r.organization_id = ?`;
+    params.push(organizationId);
+  }
+  
+  sql += ` ORDER BY r.name ASC`;
+  
+  return await query<Repository>(sql, params);
+}
+
+export async function getRepositories(limit: number = 100): Promise<Repository[]> {
+  return query<Repository>(
+    `SELECT * FROM repositories ORDER BY name ASC LIMIT ?`,
+    [limit]
+  );
 } 

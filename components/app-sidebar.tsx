@@ -7,11 +7,14 @@ import {
   IconChartBar,
   IconDashboard,
   IconFolder,
+  IconLifebuoy,
   IconHelp,
   IconListDetails,
   IconSearch,
   IconSettings,
   IconUsers,
+  IconFileStack,
+  IconWebhook,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -26,6 +29,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -74,7 +79,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: "Get Help",
       url: "#",
-      icon: IconHelp,
+      icon: IconLifebuoy,
       isActive: false
     },
     {
@@ -103,6 +108,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
+        <SidebarGroup title="Projects">
+          <SidebarGroupContent className="mt-2">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Projects"
+                  className={pathname === "/dashboard/projects" ? "bg-accent text-accent-foreground" : ""}
+                  asChild
+                >
+                  <Link href="/dashboard/projects">
+                    <IconFileStack size={18} />
+                    <span>Projects</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

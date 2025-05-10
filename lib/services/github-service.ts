@@ -47,6 +47,9 @@ export class GitHubService {
         // Link the user to the organization as a member
         await addUserToOrganization(userId, dbOrg.id, 'member');
         
+        // Fetch and sync repositories for this organization 
+        await this.syncOrganizationRepositories(org.login);
+        
         return dbOrg;
       })
     );

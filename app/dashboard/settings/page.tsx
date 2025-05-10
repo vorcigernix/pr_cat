@@ -12,14 +12,17 @@ import {
   CardTitle 
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { GitHubProfileCard } from "@/components/ui/github-profile-card"
 import { GitHubOrganizationsCard } from "@/components/ui/github-organizations-card"
-import { GitHubRepositoriesCard } from "@/components/ui/github-repositories-card"
-import { AboutGitHubOrganizationsCard } from "@/components/ui/about-github-organizations-card"
+import { GitHubOrganizationRepositories } from "@/components/ui/github-organization-repositories"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { IconRefresh } from "@tabler/icons-react"
+import { ReloadOrganizationsButton } from "@/components/ui/reload-organizations-button"
 
 export default function SettingsPage() {
+  // GitHub App installation URL (replace with your app's actual URL if needed)
+  const githubAppInstallUrl = "https://github.com/apps/pr-cat/installations/new";
+
   return (
     <SidebarProvider
       style={
@@ -39,57 +42,86 @@ export default function SettingsPage() {
                 <h1 className="text-2xl font-semibold">Settings</h1>
               </div>
               <div className="grid gap-4 px-4 lg:px-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <GitHubProfileCard />
-                  <div className="flex flex-col gap-4">
-                    <GitHubOrganizationsCard />
-                    <AboutGitHubOrganizationsCard />
-                  </div>
-                </div>
-                
-                <GitHubRepositoriesCard />
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>GitHub Integration</CardTitle>
-                    <CardDescription>
-                      Configure how PR Cat interacts with your GitHub repositories
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="auto-categorize">Auto-categorize PRs</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Automatically categorize new PRs when they are created
-                        </p>
-                      </div>
-                      <Switch id="auto-categorize" defaultChecked />
+                <Tabs defaultValue="github" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="github">GitHub</TabsTrigger>
+                    <TabsTrigger value="organizations">Organizations</TabsTrigger>
+                    <TabsTrigger value="ai">AI & Categorization</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="github">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <GitHubProfileCard />
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                          <div>
+                            <CardTitle>GitHub Organizations</CardTitle>
+                            <CardDescription>
+                              Manage your connected GitHub organizations and learn how PR Cat uses organization access.
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                            >
+                              <a
+                                href="https://github.com/apps/pr-cat/installations/new"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Manage
+                              </a>
+                            </Button>
+                            <ReloadOrganizationsButton />
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <GitHubOrganizationsCard />
+                        </CardContent>
+                      </Card>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="auto-label">Apply GitHub labels</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Apply investment area labels to PRs in GitHub
+                    <Card className="mt-4">
+                      <CardHeader>
+                        <CardTitle>Repositories</CardTitle>
+                        <CardDescription>
+                          Manage repository access and webhook tracking for your organizations.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <GitHubOrganizationRepositories />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  <TabsContent value="organizations">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Investment Areas</CardTitle>
+                        <CardDescription>
+                          Customize investment area categories and thresholds for your organizations.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Button variant="outline">Manage Categories</Button>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  <TabsContent value="ai">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>AI Settings (Coming Soon)</CardTitle>
+                        <CardDescription>
+                          Configure AI-powered PR categorization and analytics features.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground text-sm">
+                          More AI and automation options will be available here in the future.
                         </p>
-                      </div>
-                      <Switch id="auto-label" defaultChecked />
-                    </div>
-                    <Button variant="outline">Manage Repository Access</Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Investment Areas</CardTitle>
-                    <CardDescription>
-                      Customize investment area categories and thresholds
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button variant="outline">Manage Categories</Button>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           </div>

@@ -173,4 +173,22 @@ export class GitHubClient {
 // Helper function to create a GitHub client from a session access token
 export function createGitHubClient(accessToken: string): GitHubClient {
   return new GitHubClient(accessToken);
+}
+
+// Debug function to log available organizations for a user
+export async function logGitHubOrgsForUser(accessToken: string): Promise<void> {
+  try {
+    const client = new GitHubClient(accessToken);
+    const orgs = await client.getUserOrganizations();
+    
+    console.log('GitHub orgs available to user:');
+    orgs.forEach(org => {
+      console.log(` - ${org.login} (ID: ${org.id})`);
+    });
+    
+    return;
+  } catch (error) {
+    console.error('Error fetching GitHub orgs for debug:', error);
+    throw error;
+  }
 } 
