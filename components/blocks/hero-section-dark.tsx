@@ -7,8 +7,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PrcatLogo } from "@/components/ui/prcat-logo"
 import { Menu, X } from "lucide-react"
-import { useSession } from "next-auth/react"
+import { useSession, SessionContextValue } from "next-auth/react"
 import Image from "next/image"
+import { Session } from "next-auth"
 
 interface HeroSectionProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string
@@ -33,6 +34,7 @@ interface HeroSectionProps extends React.HTMLAttributes<HTMLDivElement> {
     lightLineColor?: string
     darkLineColor?: string
   }
+  session?: Session | null;
 }
 
 const RetroGrid = ({
@@ -92,18 +94,20 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
         dark: "https://farmui.vercel.app/dashboard.png",
       },
       gridOptions,
+      session: initialSession,
       ...props
     },
     ref,
   ) => {
     const [menuState, setMenuState] = React.useState(false);
-    const { data: session } = useSession();
+    const { data: clientSession } = useSession();
+
+    const currentSession = initialSession !== undefined ? initialSession : clientSession;
 
     return (
       <div className={cn("relative", className)} ref={ref} {...props}>
         <div className="absolute top-0 z-[0] h-screen w-screen bg-zinc-300/10 dark:bg-zinc-700/10 bg-[radial-gradient(ellipse_20%_80%_at_50%_-20%,rgba(140,140,140,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_20%_80%_at_50%_-20%,rgba(80,80,80,0.3),rgba(255,255,255,0))]" />
         
-        {/* Navigation Header - Style from hero-section-9.tsx */}
         <header>
           <nav
             data-state={menuState && 'active'}
@@ -144,7 +148,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
                   </div>
 
                   <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:border-l lg:pl-6">
-                    {session ? (
+                    {currentSession ? (
                       <Button
                         asChild
                         variant="outline"
@@ -154,7 +158,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
                         </Link>
                       </Button>
                     ) : null}
-                    {session ? (
+                    {currentSession ? (
                       <Button
                         asChild
                         variant="outline"
@@ -199,7 +203,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
                 {description}
               </p>
               <div className="items-center justify-center gap-x-4 space-y-3 sm:flex sm:space-y-0">
-                {session ? (
+                {currentSession ? (
                   <Button asChild size="lg" className="px-8">
                     <Link href={ctaHref}>
                       {ctaText}
@@ -207,7 +211,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
                   </Button>
                 ) : null}
                 
-                {secondaryCtaText && !session && (
+                {secondaryCtaText && !currentSession && (
                   <Button asChild variant="outline" size="lg" className="border-gray-300 dark:border-gray-700">
                     <Link href={secondaryCtaHref}>
                       {secondaryCtaText}

@@ -11,7 +11,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section with Linear-style UI */}
-      <PRHeroSection />
+      <PRHeroSection session={session} />
 
       {/* Features */}
       <section id="features" className="py-16 md:py-24 bg-muted/50">

@@ -1,8 +1,14 @@
 import { HeroSection } from "@/components/blocks/hero-section-dark"
+import { Session } from "next-auth";
 
-function PRHeroSection() {
+interface PRHeroSectionProps {
+  session?: Session | null;
+}
+
+function PRHeroSection({ session }: PRHeroSectionProps) {
   return (
     <HeroSection
+      session={session}
       title="based on AI PR categorizer"
       titleHref="#ai-categorizer"
       subtitle={{
