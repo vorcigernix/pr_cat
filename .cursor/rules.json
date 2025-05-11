@@ -11,7 +11,7 @@
       },
       {
         "name": "shadcn/ui",
-        "description": "Component library",
+        "description": "Component library. Always prefer using components from shadcn/ui where available.",
         "canRemove": false
       },
       {
@@ -47,6 +47,17 @@
       ],
       "examples": [
         "export async function GET(request, { params }: { params: Promise<{ slug: string }> }) { const { slug } = await params; }"
+      ]
+    },
+    "shadcnUI": {
+      "description": "Guidelines for using shadcn/ui components.",
+      "rules": [
+        "Always prefer using components from shadcn/ui when a suitable component exists.",
+        "Install new shadcn/ui components using the following command to ensure compatibility and correct project setup:",
+        "pnpm dlx shadcn@latest add [component-name]"
+      ],
+      "examples": [
+        "pnpm dlx shadcn@latest add button card dialog"
       ]
     }
   }

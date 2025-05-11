@@ -18,6 +18,7 @@ import { GitHubOrganizationRepositories } from "@/components/ui/github-organizat
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { IconRefresh } from "@tabler/icons-react"
 import { ReloadOrganizationsButton } from "@/components/ui/reload-organizations-button"
+import { OrganizationSettingsTab } from "@/components/ui/organization-settings-tab"
 
 export default function SettingsPage() {
   // GitHub App installation URL (replace with your app's actual URL if needed)
@@ -84,17 +85,7 @@ export default function SettingsPage() {
                     <GitHubOrganizationRepositories />
                   </TabsContent>
                   <TabsContent value="organizations">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Investment Areas</CardTitle>
-                        <CardDescription>
-                          Customize investment area categories and thresholds for your organizations.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <Button variant="outline">Manage Categories</Button>
-                      </CardContent>
-                    </Card>
+                    <OrganizationSettingsTab />
                   </TabsContent>
                   <TabsContent value="ai">
                     <Card>
