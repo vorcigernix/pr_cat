@@ -10,6 +10,7 @@ import {
   createPullRequestReview,
   setRepositoryTracking,
   findRepositoryById,
+  findRepositoryByGitHubId,
   addUserToOrganization
 } from '@/lib/repositories';
 import { GitHubRepository, GitHubPullRequest, GitHubOrganization, GitHubUser, PRReview } from '@/lib/types';
@@ -194,7 +195,7 @@ export class GitHubService {
   
   async setupRepositoryTracking(repositoryId: number, appUrl: string): Promise<{ success: boolean; webhookId?: number; message: string }> {
     // Find repository in database
-    const repository = await findRepositoryById(repositoryId);
+    const repository = await findRepositoryByGitHubId(repositoryId);
     
     if (!repository) {
       throw new Error('Repository not found');
@@ -241,7 +242,7 @@ export class GitHubService {
   
   async removeRepositoryTracking(repositoryId: number, appUrl: string): Promise<{ success: boolean; message: string }> {
     // Find repository in database
-    const repository = await findRepositoryById(repositoryId);
+    const repository = await findRepositoryByGitHubId(repositoryId);
     
     if (!repository) {
       throw new Error('Repository not found');
