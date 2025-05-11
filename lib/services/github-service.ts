@@ -11,7 +11,8 @@ import {
   setRepositoryTracking,
   findRepositoryById,
   findRepositoryByGitHubId,
-  addUserToOrganization
+  addUserToOrganization,
+  findOrCreateUserByGitHubId
 } from '@/lib/repositories';
 import { GitHubRepository, GitHubPullRequest, GitHubOrganization, GitHubUser, PRReview } from '@/lib/types';
 
@@ -101,6 +102,14 @@ export class GitHubService {
           ? 'merged' 
           : pr.state === 'closed' ? 'closed' : 'open';
         
+        // Ensure author exists in our database
+        const prAuthor = pr.user ? await findOrCreateUserByGitHubId({
+          id: pr.user.id.toString(),
+          login: pr.user.login,
+          avatar_url: pr.user.avatar_url,
+          name: pr.user.name // pr.user might not have 'name', adjust if necessary based on GitHub API response
+        }) : null;
+
         if (existingPR) {
           // Update existing PR
           await updatePullRequest(existingPR.id, {
@@ -111,16 +120,21 @@ export class GitHubService {
             closed_at: pr.closed_at,
             merged_at: pr.merged_at,
             draft: pr.draft,
+            // author_id is not typically updated, but if it could change or be initially null, handle here
           });
         } else {
           // Create new PR
+          if (!prAuthor) {
+            console.warn(`Skipping PR #${pr.number} for repo ${owner}/${repo} due to missing author information from GitHub.`);
+            return; // Skip this PR if author couldn't be processed
+          }
           const newPR = await createPullRequest({
             github_id: pr.id,
             repository_id: repositoryId,
             number: pr.number,
             title: pr.title,
             description: pr.body || null,
-            author_id: pr.user.id.toString(), // This might require creating user records
+            author_id: prAuthor.id, // Use the ID from our users table
             state,
             created_at: pr.created_at,
             updated_at: pr.updated_at,
@@ -154,13 +168,26 @@ export class GitHubService {
         const existingReview = await findReviewByGitHubId(review.id);
         
         if (!existingReview) {
+          // Ensure reviewer exists in our database
+          const reviewAuthor = await findOrCreateUserByGitHubId({
+            id: review.user.id.toString(),
+            login: review.user.login,
+            avatar_url: review.user.avatar_url,
+            name: review.user.name // review.user might not have 'name', adjust if necessary
+          });
+
+          if (!reviewAuthor) {
+            console.warn(`Skipping review for PR #${prNumber} in ${owner}/${repo} by ${review.user.login} due to missing author information.`);
+            return; // Skip this review if author couldn't be processed
+          }
+
           // Map GitHub review state to our enum
           const reviewState = this.mapReviewState(review.state);
           
           await createPullRequestReview({
             github_id: review.id,
             pull_request_id: pullRequestId,
-            reviewer_id: review.user.id.toString(), // This might require creating user records
+            reviewer_id: reviewAuthor.id, // Use the ID from our users table
             state: reviewState,
             submitted_at: review.submitted_at
           });

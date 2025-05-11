@@ -127,4 +127,30 @@ export async function updateOrganizationRole(
     'UPDATE user_organizations SET role = ? WHERE user_id = ? AND organization_id = ?',
     [role, userId, organizationId]
   );
+}
+
+export async function findOrCreateUserByGitHubId(userData: {
+  id: string; // GitHub user ID
+  login: string; // GitHub login/username
+  email?: string | null;
+  avatar_url?: string | null;
+  name?: string | null; // GitHub display name
+}): Promise<User> {
+  const existingUser = await findUserById(userData.id);
+  if (existingUser) {
+    // Optionally update user details if they've changed
+    // For now, just return the existing user
+    return existingUser;
+  }
+
+  // User not found, create a new one
+  // The users table expects 'name', 'email', 'image'
+  // We'll use github login for name if display name is not available
+  // and github avatar_url for image
+  return createUser({
+    id: userData.id,
+    name: userData.name || userData.login,
+    email: userData.email || null,
+    image: userData.avatar_url || null,
+  });
 } 
