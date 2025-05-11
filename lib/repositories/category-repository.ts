@@ -10,16 +10,11 @@ export async function getDefaultCategories(): Promise<Category[]> {
   return query<Category>('SELECT * FROM categories WHERE is_default = 1 ORDER BY name');
 }
 
-export async function getOrganizationCategories(orgId: number): Promise<Category[]> {
-  return query<Category>(
-    `SELECT * FROM categories 
-     WHERE organization_id = ? OR is_default = 1 
-     ORDER BY name`,
-    [orgId]
-  );
+export async function getOrganizationCategories(organizationId: number): Promise<Category[]> {
+  return query<Category>('SELECT * FROM categories WHERE organization_id = ? OR organization_id IS NULL ORDER BY is_default DESC, name ASC', [organizationId]);
 }
 
-export async function createCategory(category: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<Category> {
+export async function createCategory(category: Omit<Category, 'id' | 'created_at' | 'updated_at' | 'is_default'>): Promise<Category> {
   const result = await execute(
     `INSERT INTO categories 
      (organization_id, name, description, color, is_default) 
@@ -29,7 +24,7 @@ export async function createCategory(category: Omit<Category, 'id' | 'created_at
       category.name,
       category.description,
       category.color,
-      category.is_default ? 1 : 0
+      0 // is_default is omitted from the type, so we default to 0
     ]
   );
   
@@ -93,4 +88,25 @@ export async function getUsedCategories(orgId: number): Promise<(Category & { co
      ORDER BY count DESC, c.name ASC`,
     [orgId]
   );
+}
+
+export async function findCategoryByNameAndOrg(organizationId: number, name: string): Promise<Category | null> {
+  // First, try to find an organization-specific category
+  const orgCategories = await query<Category>(
+    'SELECT * FROM categories WHERE organization_id = ? AND name = ? COLLATE NOCASE',
+    [organizationId, name]
+  );
+  if (orgCategories.length > 0) {
+    return orgCategories[0];
+  }
+  // If not found, try to find a default category (organization_id IS NULL)
+  const defaultCategories = await query<Category>(
+    'SELECT * FROM categories WHERE organization_id IS NULL AND name = ? COLLATE NOCASE',
+    [name]
+  );
+  return defaultCategories.length > 0 ? defaultCategories[0] : null;
+}
+
+export async function getCategoriesByOrganization(organizationId: number): Promise<Category[]> {
+  return query<Category>('SELECT * FROM categories WHERE organization_id = ? OR organization_id IS NULL ORDER BY is_default DESC, name ASC', [organizationId]);
 } 

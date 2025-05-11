@@ -36,6 +36,7 @@ export {
   createPullRequestReview,
   findReviewByGitHubId,
   updatePullRequestReview,
+  updatePullRequestCategory,
 } from './pr-repository';
 export { 
   getDefaultCategories, 
@@ -43,8 +44,19 @@ export {
   createCategory, 
   updateCategory, 
   deleteCategory, 
-  findCategoryById
+  findCategoryById,
+  findCategoryByNameAndOrg,
 } from './category-repository';
+
+// Export settings repository functions
+export {
+  getOrganizationAiSettings,
+  updateOrganizationAiSettings,
+  getOrganizationApiKey,
+  type AiSettings,
+  type UpdateAiSettingsPayload,
+} from './settings-repository';
+
 // Commented out sections for missing files remain for user to address
 // export { 
 //   getSettings, 

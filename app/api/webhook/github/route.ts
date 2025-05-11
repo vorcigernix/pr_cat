@@ -8,10 +8,23 @@ import {
   updatePullRequest,
   createPullRequestReview,
   findReviewByGitHubId,
-  updatePullRequestReview
+  updatePullRequestReview,
+  updatePullRequestCategory,
+  getOrganizationCategories,
+  getOrganizationAiSettings,
+  getOrganizationApiKey,
+  findCategoryByNameAndOrg as findCategoryByNameAndOrgFromRepo
 } from '@/lib/repositories';
 import { GitHubClient } from '@/lib/github';
-import { PRReview } from '@/lib/types';
+import { PRReview, Category } from '@/lib/types';
+import { openai } from '@ai-sdk/openai';
+import { generateText, CoreTool } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { allModels } from '@/lib/ai-models'; // Import shared models
+
+export const runtime = 'nodejs';
 
 // GitHub webhook payload types
 interface GitHubWebhookPayload {
@@ -150,9 +163,6 @@ async function handlePullRequestEvent(payload: PullRequestPayload) {
   // Check if PR already exists in our database
   const existingPR = await findPullRequestByNumber(repoInDb.id, pr.number);
   
-  // For synchronization actions, we need to fetch detailed PR data
-  let needsFurtherData = ['opened', 'reopened', 'edited', 'ready_for_review', 'converted_to_draft'].includes(action);
-  
   if (existingPR) {
     // Update existing PR
     await updatePullRequest(existingPR.id, {
@@ -170,9 +180,17 @@ async function handlePullRequestEvent(payload: PullRequestPayload) {
     
     console.log(`Updated PR #${pr.number} in ${repository.full_name}`);
     
-    // If significant action, fetch additional data
-    if (needsFurtherData) {
-      await fetchAdditionalPRData(repository, pr, existingPR.id);
+    // Conditionally call fetchAdditionalPRData ONLY if action is 'opened' 
+    // (even for existing PRs, though 'opened' usually implies a new PR).
+    // This handles cases like a PR being created, then a webhook failing, then succeeding on a retry 
+    // where the PR might now exist but the action is still 'opened' from GitHub's perspective.
+    if (action === 'opened') {
+      console.log(`PR #${pr.number} action is 'opened'. Preparing to fetch additional data.`);
+      if (repoInDb.organization_id !== null) {
+        await fetchAdditionalPRData(repository, pr, existingPR.id, repoInDb.organization_id);
+      } else {
+        console.warn(`Organization ID is null for repository ${repoInDb.full_name}. Skipping AI categorization.`);
+      }
     }
   } else {
     // Create new PR
@@ -198,8 +216,19 @@ async function handlePullRequestEvent(payload: PullRequestPayload) {
     
     console.log(`Created new PR #${pr.number} in ${repository.full_name}`);
     
-    // Fetch additional data for new PRs
-    await fetchAdditionalPRData(repository, pr, newPR.id);
+    // Fetch additional data for new PRs IFF the action was 'opened'
+    if (action === 'opened') {
+      console.log(`New PR #${pr.number} action is 'opened'. Preparing to fetch additional data.`);
+      if (repoInDb.organization_id !== null) {
+        await fetchAdditionalPRData(repository, pr, newPR.id, repoInDb.organization_id);
+      } else {
+        console.warn(`Organization ID is null for new PR in repository ${repoInDb.full_name}. Skipping AI categorization.`);
+      }
+    } else {
+      // This case (new PR but action is not 'opened') should be rare for webhooks 
+      // unless it's a manual trigger or a very delayed/retried event.
+      console.log(`New PR #${pr.number} created, but action was '${action}', not 'opened'. Skipping fetchAdditionalPRData.`);
+    }
   }
 }
 
@@ -249,18 +278,135 @@ async function handlePullRequestReviewEvent(payload: PullRequestReviewPayload) {
   }
 }
 
-async function fetchAdditionalPRData(repository: PullRequestPayload['repository'], pr: PullRequestPayload['pull_request'], prDbId: number) {
-  // We need a GitHub token to fetch additional data
-  // This is a challenge since the webhook doesn't provide a token
-  // For now, we'll log this and handle it in a background job
+async function fetchAdditionalPRData(
+  repository: PullRequestPayload['repository'], 
+  pr: PullRequestPayload['pull_request'], 
+  prDbId: number,
+  organizationId: number
+) {
+  console.log(`Fetching additional data for PR #${pr.number} in org ${organizationId}`);
+
+  if (!organizationId) {
+    console.error('Organization ID not provided to fetchAdditionalPRData. Cannot fetch AI settings.');
+    return;
+  }
+
+  // 1. Fetch Organization's AI Settings
+  const aiSettings = await getOrganizationAiSettings(organizationId);
+  if (!aiSettings || !aiSettings.selectedModelId) {
+    console.log(`AI categorization disabled for organization ${organizationId} (no model selected).`);
+    return;
+  }
+
+  const selectedModelId = aiSettings.selectedModelId;
+  console.log(`Organization ${organizationId} selected AI model: ${selectedModelId}`);
+
+  // 2. Determine Provider and API Key
+  const modelInfo = allModels.find(m => m.id === selectedModelId); // Use imported allModels
+  if (!modelInfo) {
+    console.error(`Selected model ID ${selectedModelId} not found in shared allModels for organization ${organizationId}.`);
+    return;
+  }
+  const provider = modelInfo.provider;
+  console.log(`Determined provider: ${provider} for model ${selectedModelId}`);
+
+  const apiKey = await getOrganizationApiKey(organizationId, provider);
+  if (!apiKey) {
+    console.warn(`API key for provider ${provider} not set for organization ${organizationId}. Skipping AI categorization.`);
+    return;
+  }
+  console.log(`API key found for provider ${provider}.`);
+
+  // 3. Instantiate AI Client
+  let aiClientProvider;
+  try {
+    switch (provider) {
+      case 'openai':
+        aiClientProvider = createOpenAI({ apiKey: apiKey });
+        break;
+      case 'google':
+        aiClientProvider = createGoogleGenerativeAI({ apiKey: apiKey });
+        break;
+      case 'anthropic':
+        aiClientProvider = createAnthropic({ apiKey: apiKey });
+        break;
+      default:
+        console.error(`Unsupported AI provider: ${provider} for organization ${organizationId}`);
+        return;
+    }
+  } catch (error) {
+    console.error(`Error instantiating AI client provider for ${provider}:`, error);
+    return;
+  }
+  console.log(`AI client provider instantiated for: ${provider}`);
   
-  console.log(`Additional data should be fetched for PR #${pr.number} in ${repository.full_name} (DB ID: ${prDbId})`);
-  
-  // In the future, we can implement a background job that uses a service account token to fetch:
-  // 1. PR files
-  // 2. PR commits
-  // 3. PR reviews
-  // 4. Any other detailed data needed for AI processing
+  // Get the specific model instance from the provider
+  const modelInstance = aiClientProvider(selectedModelId);
+  if (!modelInstance) {
+    console.error(`Could not get model instance for ${selectedModelId} from provider ${provider}`);
+    return;
+  }
+
+  // Placeholder for GitHub App authentication to fetch PR diff
+  // This part needs robust auth, e.g., creating an installation token
+  const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
+  if (!githubToken) {
+    console.warn('GitHub token not available, cannot fetch PR diff.');
+    // Potentially proceed without diff, or return if diff is critical
+    return; 
+  }
+  const githubClient = new GitHubClient(githubToken);
+
+  try {
+    console.log(`Fetching PR diff for ${repository.full_name}#${pr.number}`);
+    const diff = await githubClient.getPullRequestDiff(repository.owner.login, repository.name, pr.number);
+    
+    if (!diff) {
+        console.warn(`Could not fetch PR diff for ${repository.full_name}#${pr.number}. Skipping categorization.`);
+        return;
+    }
+
+    const orgCategories = await getOrganizationCategories(organizationId);
+    const categoryNames = orgCategories.map(c => c.name);
+
+    if (categoryNames.length === 0) {
+        console.warn(`No categories found for organization ${organizationId}. Skipping categorization.`);
+        return;
+    }
+
+    const systemPrompt = `You are an expert at categorizing GitHub pull requests. Analyze the pull request title, body, and diff. Respond with the most relevant category from the provided list and a confidence score (0-1). Available categories: ${categoryNames.join(', ')}. Respond in the format: Category: [Selected Category], Confidence: [Score]. Example: Category: Bug Fix, Confidence: 0.9`;
+    const userPrompt = `Title: ${pr.title}\nBody: ${pr.body || ''}\nDiff:\n${diff}`;
+
+    console.log(`Generating text with model ${selectedModelId} for PR #${pr.number}`);
+
+    const { text } = await generateText({
+      model: modelInstance,
+      system: systemPrompt,
+      prompt: userPrompt,
+    });
+
+    console.log(`AI Response for PR #${pr.number}: ${text}`);
+
+    const categoryMatch = text.match(/Category: (.*?), Confidence: (\d\.?\d*)/i);
+    if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
+      const categoryName = categoryMatch[1].trim();
+      const confidence = parseFloat(categoryMatch[2]);
+
+      const category = await findCategoryByNameAndOrgFromRepo(organizationId, categoryName);
+      if (category) {
+        await updatePullRequestCategory(prDbId, category.id, confidence);
+        console.log(`Categorized PR #${pr.number} as '${categoryName}' with confidence ${confidence}`);
+      } else {
+        console.warn(`AI suggested category '${categoryName}' not found for organization ${organizationId}.`);
+      }
+    } else {
+      console.warn(`Could not parse category and confidence from AI response for PR #${pr.number}: ${text}`);
+    }
+
+  } catch (error) {
+    console.error(`Error during AI categorization for PR #${pr.number}:`, error);
+    // Decide if this error should halt further processing or just be logged
+  }
 }
 
 // Helper to map GitHub review state to our enum

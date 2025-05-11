@@ -140,6 +140,19 @@ export class GitHubClient {
     return data as unknown as PullRequestReview[];
   }
   
+  async getPullRequestDiff(owner: string, repo: string, pullNumber: number): Promise<string> {
+    const { data } = await this.octokit.pulls.get({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      mediaType: {
+        format: 'diff'
+      }
+    });
+    // The response for a diff is a string
+    return data as unknown as string;
+  }
+  
   async getRepositoryWebhooks(owner: string, repo: string): Promise<RepositoryWebhook[]> {
     const { data } = await this.octokit.repos.listWebhooks({
       owner,

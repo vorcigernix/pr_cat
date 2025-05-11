@@ -46,8 +46,8 @@ export class GitHubService {
         
         console.log(`Linking user ${userId} to organization ${dbOrg.id} (${org.login})`);
         
-        // Link the user to the organization as a member
-        await addUserToOrganization(userId, dbOrg.id, 'member');
+        // Link the user to the organization as an owner
+        await addUserToOrganization(userId, dbOrg.id, 'owner');
         
         // Fetch and sync repositories for this organization 
         await this.syncOrganizationRepositories(org.login);
@@ -268,38 +268,60 @@ export class GitHubService {
   }
   
   async removeRepositoryTracking(repositoryId: number, appUrl: string): Promise<{ success: boolean; message: string }> {
+    console.log(`[removeRepositoryTracking] Called with repositoryId: ${repositoryId}, appUrl: ${appUrl}`);
     // Find repository in database
     const repository = await findRepositoryByGitHubId(repositoryId);
     
     if (!repository) {
+      console.error(`[removeRepositoryTracking] Repository not found for GitHub ID: ${repositoryId}`);
       throw new Error('Repository not found');
     }
     
-    // Extract owner and repo from full_name (format: owner/repo)
     const [owner, repo] = repository.full_name.split('/');
+    console.log(`[removeRepositoryTracking] Extracted owner: ${owner}, repo: ${repo}`);
     
     if (!owner || !repo) {
+      console.error(`[removeRepositoryTracking] Invalid repository full_name format: ${repository.full_name}`);
       throw new Error('Invalid repository full_name format');
     }
     
     const webhookUrl = `${appUrl}/api/webhook/github`;
+    console.log(`[removeRepositoryTracking] Constructed webhookUrl to match: ${webhookUrl}`);
     
     // Find and delete existing webhooks
     const existingWebhooks = await this.client.getRepositoryWebhooks(owner, repo);
-    const targetWebhooks = existingWebhooks.filter(webhook => 
-      webhook.config.url === webhookUrl || webhook.config.url === `${webhookUrl}/`
-    );
+    console.log(`[removeRepositoryTracking] Found ${existingWebhooks.length} existing webhooks on GitHub for ${owner}/${repo}:`, JSON.stringify(existingWebhooks, null, 2));
     
+    const targetWebhooks = existingWebhooks.filter(webhook => 
+      webhook.config.url === webhookUrl || webhook.config.url === `${webhookUrl}/` // Handle trailing slash
+    );
+    console.log(`[removeRepositoryTracking] Found ${targetWebhooks.length} target webhooks matching URL ${webhookUrl}:`, JSON.stringify(targetWebhooks, null, 2));
+    
+    let deletedCount = 0;
+    if (targetWebhooks.length === 0) {
+      console.warn(`[removeRepositoryTracking] No webhooks found on GitHub matching the URL ${webhookUrl} for repository ${owner}/${repo}. Marking as untracked in DB anyway.`);
+    }
+
     for (const webhook of targetWebhooks) {
-      await this.client.deleteRepositoryWebhook(owner, repo, webhook.id);
+      try {
+        console.log(`[removeRepositoryTracking] Attempting to delete webhook with ID: ${webhook.id} for ${owner}/${repo}`);
+        await this.client.deleteRepositoryWebhook(owner, repo, webhook.id);
+        console.log(`[removeRepositoryTracking] Successfully deleted webhook ID: ${webhook.id} from GitHub for ${owner}/${repo}`);
+        deletedCount++;
+      } catch (error) {
+        console.error(`[removeRepositoryTracking] Failed to delete webhook ID: ${webhook.id} for ${owner}/${repo} from GitHub. Error:`, error);
+        // Decide if you want to throw here or just log and continue to mark as untracked in DB
+        // For now, we'll log and continue, so it still gets marked as untracked in the DB.
+      }
     }
     
     // Mark repository as not tracked
     await setRepositoryTracking(repository.id, false);
+    console.log(`[removeRepositoryTracking] Marked repository ${repository.id} (GitHub ID: ${repository.github_id}) as not tracked in DB.`);
     
     return { 
       success: true, 
-      message: `Removed ${targetWebhooks.length} webhooks and repository is no longer being tracked`
+      message: `Attempted to remove ${targetWebhooks.length} webhooks (successfully deleted ${deletedCount}) and repository is no longer being tracked`
     };
   }
 } 

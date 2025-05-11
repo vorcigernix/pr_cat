@@ -58,7 +58,7 @@ export function OrganizationSettingsTab() {
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="size-8">
-                        <AvatarImage src={org.avatar_url ?? undefined} alt={org.name} />
+                        <AvatarImage src={org.avatar_url || undefined} alt={org.name} />
                         <AvatarFallback>{org.name[0]}</AvatarFallback>
                       </Avatar>
                       <span>{org.name}</span>

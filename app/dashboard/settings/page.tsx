@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { IconRefresh } from "@tabler/icons-react"
 import { ReloadOrganizationsButton } from "@/components/ui/reload-organizations-button"
 import { OrganizationSettingsTab } from "@/components/ui/organization-settings-tab"
+import { AiSettingsTab } from "@/components/ui/ai-settings-tab"
 
 export default function SettingsPage() {
   // GitHub App installation URL (replace with your app's actual URL if needed)
@@ -88,19 +89,7 @@ export default function SettingsPage() {
                     <OrganizationSettingsTab />
                   </TabsContent>
                   <TabsContent value="ai">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>AI Settings (Coming Soon)</CardTitle>
-                        <CardDescription>
-                          Configure AI-powered PR categorization and analytics features.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground text-sm">
-                          More AI and automation options will be available here in the future.
-                        </p>
-                      </CardContent>
-                    </Card>
+                    <AiSettingsTab />
                   </TabsContent>
                 </Tabs>
               </div>
