@@ -5,7 +5,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { InstallGitHubApp } from "@/components/ui/install-github-app";
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, ChevronRight } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 export type OrganizationWithInstallation = {
   id: number; // This is the database ID of the org if synced, or a temporary one
@@ -18,25 +19,42 @@ export type OrganizationWithInstallation = {
 
 interface GitHubOrgSetupItemProps {
   org: OrganizationWithInstallation;
-  onConfigureRepositories: (org: OrganizationWithInstallation) => void;
-  onAppInstallInitiated: () => void; // Callback to refresh status after install attempt
+  isSelected: boolean;
+  onSelectOrganization: (org: OrganizationWithInstallation) => void;
+  onAppInstallInitiated: () => void;
 }
 
 export function GitHubOrgSetupItem({
   org,
-  onConfigureRepositories,
+  isSelected,
+  onSelectOrganization,
   onAppInstallInitiated
 }: GitHubOrgSetupItemProps) {
+  const canBeSelected = org.hasAppInstalled;
+
+  const handleItemClick = () => {
+    if (canBeSelected) {
+      onSelectOrganization(org);
+    }
+  };
+
   return (
-    <div className="flex flex-col p-4 border rounded-lg space-y-3">
+    <div 
+      className={cn(
+        "flex flex-col p-4 border rounded-lg space-y-3",
+        canBeSelected && "hover:bg-muted/50 cursor-pointer",
+        isSelected && canBeSelected && "ring-2 ring-primary bg-muted/30"
+      )}
+      onClick={handleItemClick}
+    >
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-grow min-w-0">
           <Avatar className="h-10 w-10">
             <AvatarImage src={org.avatar_url || undefined} alt={org.name} />
             <AvatarFallback>{org.name.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <div>
-            <p className="font-medium text-lg">{org.name}</p>
+          <div className="flex-grow min-w-0">
+            <p className="font-medium text-lg truncate">{org.name}</p>
             {org.hasAppInstalled ? (
               <Badge variant="outline" className="text-green-600 border-green-600">
                 <CheckCircle2 className="mr-1 h-3 w-3" />
@@ -50,26 +68,25 @@ export function GitHubOrgSetupItem({
             )}
           </div>
         </div>
-        {org.hasAppInstalled ? (
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => onConfigureRepositories(org)}
-          >
-            Configure Repositories
-          </Button>
-        ) : (
-          <InstallGitHubApp 
-            size="sm" 
-            organizationName={org.name} 
-            organizationGitHubId={org.github_id}
-            onClick={onAppInstallInitiated}
-          />
-        )}
+        
+        <div className="flex-shrink-0 ml-2">
+            {!org.hasAppInstalled ? (
+            <InstallGitHubApp 
+                size="sm" 
+                organizationName={org.name} 
+                organizationGitHubId={org.github_id}
+                onClick={onAppInstallInitiated}
+            />
+            ) : isSelected ? (
+                <ChevronRight className="h-6 w-6 text-primary" />
+            ) : (
+                <ChevronRight className="h-6 w-6 text-muted-foreground/50 group-hover:text-muted-foreground" />
+            )}
+        </div>
       </div>
       {!org.hasAppInstalled && (
-        <p className="text-sm text-muted-foreground">
-          Install the GitHub App to sync repositories and configure webhooks for this organization.
+        <p className="text-sm text-muted-foreground pl-13">
+          Install the GitHub App to enable repository configuration for this organization.
         </p>
       )}
     </div>

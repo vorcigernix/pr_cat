@@ -45,30 +45,16 @@ export function GitHubOrganizationManager({
       const fetchedOrgs = data.installations || [];
       setOrganizations(fetchedOrgs);
 
-      // Only update parent's selectedOrganization if its status has critically changed (e.g., app uninstalled)
       if (selectedOrganization) {
         const currentSelectedOrgInNewList = fetchedOrgs.find(
           (o: OrganizationWithInstallation) => o.github_id === selectedOrganization.github_id
         );
-
         if (!currentSelectedOrgInNewList || !currentSelectedOrgInNewList.hasAppInstalled) {
-          // If the currently selected org is no longer found OR the app is no longer installed for it,
-          // then tell the parent to clear the selection.
-          if (selectedOrganization.hasAppInstalled || !currentSelectedOrgInNewList) { // only call if there was a change to not installed or org disappeared
+          if (selectedOrganization.hasAppInstalled || !currentSelectedOrgInNewList) { 
             onOrganizationSelected(null);
           }
         } 
-        // Else, if it exists and is still installed, we don't need to call onOrganizationSelected.
-        // The SettingsPage already has the correct selectedOrganization object reference.
-        // GitHubOrganizationRepositories will handle its own data fetching based on its props.
       }
-      // Removed the auto-selection logic for now to simplify and prevent loops.
-      // else if (fetchedOrgs.length > 0 && !selectedOrganization) {
-      //   const firstInstalled = fetchedOrgs.find((o: OrganizationWithInstallation) => o.hasAppInstalled);
-      //   if (firstInstalled) {
-      //     // onOrganizationSelected(firstInstalled); // Avoid auto-selecting to prevent potential loops
-      //   }
-      // }
 
       if (showToast) {
         toast.success("Installation status updated");
@@ -82,24 +68,23 @@ export function GitHubOrganizationManager({
       setLoading(false);
       setRefreshing(false);
     }
-  }, [session?.accessToken, selectedOrganization, onOrganizationSelected]); // selectedOrganization & onOrganizationSelected are still dependencies for useCallback
+  }, [session?.accessToken, selectedOrganization, onOrganizationSelected]);
 
   useEffect(() => {
     if (session?.accessToken) {
       fetchInstallationStatus();
     }
-  }, [session?.accessToken, fetchInstallationStatus]); // This useEffect runs if fetchInstallationStatus reference changes
+  }, [session?.accessToken, fetchInstallationStatus]);
 
   const handleRefresh = () => {
     fetchInstallationStatus(true);
   };
 
-  const handleConfigureRepositories = (org: OrganizationWithInstallation) => {
+  const handleSelectOrganization = (org: OrganizationWithInstallation) => {
     if (org.hasAppInstalled) {
       onOrganizationSelected(org);
     } else {
-      toast.error("GitHub App not installed for this organization.");
-      onOrganizationSelected(null);
+      toast.info("Please install the GitHub App for this organization to select it.");
     }
   };
 
@@ -130,23 +115,24 @@ export function GitHubOrganizationManager({
           </Button>
         </div>
         <CardDescription>
-          Install the PR Cat GitHub App for your organizations to sync repositories and set up webhooks.
+          Select an organization to configure its repositories, or install the GitHub App if not already active.
         </CardDescription>
       </CardHeader>
       
       <CardContent>
         {organizations.length === 0 && !loading ? (
           <p className="text-muted-foreground">
-            No GitHub organizations found for your account. If you belong to organizations, try syncing your profile on the main GitHub settings card or refresh.
+            No GitHub organizations found for your account. If you belong to organizations, try syncing your profile or refresh.
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {organizations.map((org) => (
               <GitHubOrgSetupItem 
                 key={org.github_id} 
                 org={org} 
-                onConfigureRepositories={handleConfigureRepositories}
-                onAppInstallInitiated={() => setTimeout(() => fetchInstallationStatus(true), 3000)} // Refresh after a delay
+                isSelected={selectedOrganization?.github_id === org.github_id && org.hasAppInstalled}
+                onSelectOrganization={handleSelectOrganization}
+                onAppInstallInitiated={() => setTimeout(() => fetchInstallationStatus(true), 3000)}
               />
             ))}
           </div>

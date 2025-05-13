@@ -224,14 +224,14 @@ export function GitHubOrganizationRepositories({
                     size="sm" 
                     onClick={() => toggleWebhook(repo)}
                     disabled={processingRepoId === repo.id}
-                    className="whitespace-nowrap w-[140px] flex items-center justify-center"
+                    className="whitespace-nowrap w-[100px] flex items-center justify-center"
                 >
                     {processingRepoId === repo.id ? (
                     <IconRefresh className="h-4 w-4 animate-spin" />
                     ) : repo.is_tracked ? (
                     <><IconCheck className="h-4 w-4 mr-2 text-green-600" /> Enabled</>
                     ) : (
-                    <><IconWebhook className="h-4 w-4 mr-2" /> Enable Webhook</>
+                    <><IconWebhook className="h-4 w-4 mr-2" /> Enable</>
                     )}
                 </Button>
                 </div>

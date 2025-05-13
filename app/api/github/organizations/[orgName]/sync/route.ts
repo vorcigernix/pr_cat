@@ -1,22 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { findUserById } from "@/lib/repositories";
 import { syncSingleOrganizationRepositories } from "@/lib/services/github-service";
 import { findOrganizationByNameAndUser } from "@/lib/repositories/organization-repository";
 
-interface RouteParams {
-  params: {
-    orgName: string;
-  };
-}
-
-export async function POST(request: Request, { params }: RouteParams) {
+export async function POST(request: NextRequest, context: any) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { orgName } = params;
+  const { orgName } = context.params;
   if (!orgName) {
     return NextResponse.json({ error: "Organization name is required" }, { status: 400 });
   }

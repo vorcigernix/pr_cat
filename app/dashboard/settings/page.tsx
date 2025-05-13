@@ -17,7 +17,6 @@ import {
 import { GitHubProfileCard } from "@/components/ui/github-profile-card"
 import { GitHubOrganizationRepositories } from "@/components/ui/github-organization-repositories"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { ReloadOrganizationsButton } from "@/components/ui/reload-organizations-button"
 import { OrganizationSettingsTab } from "@/components/ui/organization-settings-tab"
 import { AiSettingsTab } from "@/components/ui/ai-settings-tab"
 import { GitHubOrganizationManager } from "@/components/ui/github-organization-manager"
@@ -55,65 +54,65 @@ export default function SettingsPage() {
                 </TabsList>
                 
                 <TabsContent value="github" className="py-4">
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Column 1: Profile and General Info (takes 1/3 on lg screens) */}
+                    <div className="lg:col-span-1 space-y-6">
                       <GitHubProfileCard />
                       <Card>
                         <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle>Organizations</CardTitle>
-                            <ReloadOrganizationsButton />
-                          </div>
-                          <CardDescription>Your GitHub organizations. Sync if list is outdated.</CardDescription>
+                          <CardTitle>GitHub Integration</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <p className="text-sm text-muted-foreground">
-                            Use the refresh button above to sync your organizations from GitHub if they are not up to date.
-                            Detailed management and app installation is handled below.
+                            Connect your GitHub account to allow PR Cat to access your organization repositories, analyze pull requests, and provide insights.
+                            Install the PR Cat GitHub App on organizations you wish to track.
                           </p>
+                          {/* Add more general info or links here if desired */}
                         </CardContent>
                       </Card>
                     </div>
-                    
-                    <GitHubOrganizationManager 
-                      selectedOrganization={selectedOrganization}
-                      onOrganizationSelected={handleOrganizationSelected}
-                    />
 
-                    {selectedOrganization && selectedOrganization.hasAppInstalled && (
-                      <GitHubOrganizationRepositories 
-                        organizationId={selectedOrganization.github_id} 
-                        organizationName={selectedOrganization.name}
-                        key={selectedOrganization.github_id}
+                    {/* Column 2: Organization Management & Repositories (takes 2/3 on lg screens) */}
+                    <div className="lg:col-span-2 space-y-6">
+                      <GitHubOrganizationManager 
+                        selectedOrganization={selectedOrganization}
+                        onOrganizationSelected={handleOrganizationSelected}
                       />
-                    )}
-                    
-                    {selectedOrganization && !selectedOrganization.hasAppInstalled && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Configure Repositories for {selectedOrganization.name}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-muted-foreground">
-                            Please install the GitHub App for \"{selectedOrganization.name}\" to configure its repositories.
-                          </p>
-                        </CardContent>
-                      </Card>
-                    )}
 
-                    {!selectedOrganization && (
-                       <Card>
-                        <CardHeader>
-                          <CardTitle>Configure Repositories</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-muted-foreground">
-                            Select an organization with the GitHub App installed to configure its repositories.
-                          </p>
-                        </CardContent>
-                      </Card>
-                    )}
+                      {selectedOrganization && selectedOrganization.hasAppInstalled && (
+                        <GitHubOrganizationRepositories 
+                          organizationId={selectedOrganization.github_id} 
+                          organizationName={selectedOrganization.name}
+                          key={selectedOrganization.github_id} // Ensure re-render when org changes
+                        />
+                      )}
+                      
+                      {selectedOrganization && !selectedOrganization.hasAppInstalled && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Configure Repositories for {selectedOrganization.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-muted-foreground">
+                              Please install the GitHub App for \"{selectedOrganization.name}\" to configure its repositories.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
 
+                      {!selectedOrganization && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Configure Repositories</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-muted-foreground">
+                              Select an organization with the GitHub App installed to configure its repositories.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
                   </div>
                 </TabsContent>
                 
