@@ -16,6 +16,7 @@ import {
   findCategoryByNameAndOrg as findCategoryByNameAndOrgFromRepo
 } from '@/lib/repositories';
 import { GitHubClient } from '@/lib/github';
+import { createInstallationClient } from '@/lib/github-app';
 import { PRReview, Category } from '@/lib/types';
 import { openai } from '@ai-sdk/openai';
 import { generateText, CoreTool } from 'ai';
@@ -36,6 +37,9 @@ interface GitHubWebhookPayload {
     owner: {
       id: number;
       login: string;
+    };
+    installation?: {
+      id: number;
     };
   };
   sender: {
@@ -347,17 +351,29 @@ async function fetchAdditionalPRData(
     return;
   }
 
-  // Placeholder for GitHub App authentication to fetch PR diff
-  // This part needs robust auth, e.g., creating an installation token
-  const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
-  if (!githubToken) {
-    console.warn('GitHub token not available, cannot fetch PR diff.');
-    // Potentially proceed without diff, or return if diff is critical
-    return; 
-  }
-  const githubClient = new GitHubClient(githubToken);
-
+  let githubClient;
+  
   try {
+    // Get the installation ID from the webhook payload or DB
+    // For simplicity, assuming it's in the webhook payload (repository.installation.id)
+    // In a real implementation, you would store this in your DB when the webhook is configured
+    const installationId = repository.installation?.id;
+    
+    if (installationId) {
+      console.log(`Using GitHub App installation ID: ${installationId} to fetch PR diff`);
+      // Create a GitHub client authenticated with the installation token
+      githubClient = await createInstallationClient(installationId);
+    } else {
+      // Fallback to token-based authentication (if configured)
+      console.log('Installation ID not found, trying fallback to token authentication');
+      const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
+      if (!githubToken) {
+        console.warn('GitHub token not available and no installation ID found. Cannot fetch PR diff.');
+        return;
+      }
+      githubClient = new GitHubClient(githubToken);
+    }
+
     console.log(`Fetching PR diff for ${repository.full_name}#${pr.number}`);
     const diff = await githubClient.getPullRequestDiff(repository.owner.login, repository.name, pr.number);
     

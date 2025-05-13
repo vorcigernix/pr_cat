@@ -9,6 +9,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { SetupStatusAlert } from "@/components/ui/setup-status-alert"
 import { auth } from "@/auth"
 import { findUserById, findUserByEmail, createUser, updateUser } from "@/lib/repositories"
 import { redirect } from "next/navigation"
@@ -30,6 +31,9 @@ export default async function DashboardPage() {
   
   let userInDb;
   let needsMigration = false;
+  
+  // In a real implementation, check if the user has completed setup
+  const setupIncomplete = session?.hasGithubApp === false; 
   
   try {
     // Check database migration status directly instead of via API
@@ -213,6 +217,11 @@ export default async function DashboardPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
+        {setupIncomplete && (
+          <div className="px-4 pt-4 lg:px-6">
+            <SetupStatusAlert />
+          </div>
+        )}
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">

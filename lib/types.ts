@@ -137,6 +137,9 @@ export interface GitHubRepository {
     login: string;
     type: 'User' | 'Organization';
   };
+  installation?: {
+    id: number;
+  };
   html_url: string;
   description?: string;
   private: boolean;

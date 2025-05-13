@@ -4,9 +4,31 @@ import { Button } from "@/components/ui/button";
 import { PrcatLogo } from "@/components/ui/prcat-logo";
 import { PRHeroSection } from "@/components/blocks/linear-hero-section";
 import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
   const session = await auth();
+  
+  // If user is logged in but has never completed onboarding, redirect to onboarding
+  if (session?.user) {
+    // In a real implementation, we would check if the user has completed onboarding
+    // by querying the database for a user preference or flag
+    // For now, we can use the newUser flag from the session
+    
+    const isNewUser = session.newUser === true;
+    
+    // If this is a new user (first login), redirect to onboarding flow
+    if (isNewUser) {
+      redirect('/onboarding');
+    }
+    
+    // Otherwise, if they're already logged in but not a first-time user
+    // they might want to go directly to the dashboard
+    const needsSetup = session.hasGithubApp === false;
+    if (needsSetup) {
+      // Show a notice that setup is incomplete (handled in PRHeroSection)
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">

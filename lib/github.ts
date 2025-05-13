@@ -182,6 +182,18 @@ export class GitHubClient {
       hook_id: webhookId
     });
   }
+
+  // Method for GitHub App installation token request
+  async createInstallationAccessToken(installationId: number): Promise<string> {
+    const { data } = await this.octokit.request('POST /app/installations/{installation_id}/access_tokens', {
+      installation_id: installationId,
+      headers: {
+        'Accept': 'application/vnd.github+json'
+      }
+    });
+    
+    return data.token;
+  }
 }
 
 // Helper function to create a GitHub client from a session access token

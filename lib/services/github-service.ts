@@ -14,7 +14,8 @@ import {
   addUserToOrganization,
   findOrCreateUserByGitHubId
 } from '@/lib/repositories';
-import { GitHubRepository, GitHubPullRequest, GitHubOrganization, GitHubUser, PRReview } from '@/lib/types';
+import { GitHubRepository, GitHubPullRequest, GitHubOrganization, GitHubUser, PRReview, Repository } from '@/lib/types';
+import { createInstallationClient } from "@/lib/github-app";
 
 export class GitHubService {
   private client: GitHubClient;
@@ -323,5 +324,75 @@ export class GitHubService {
       success: true, 
       message: `Attempted to remove ${targetWebhooks.length} webhooks (successfully deleted ${deletedCount}) and repository is no longer being tracked`
     };
+  }
+}
+
+/**
+ * Syncs repositories for a single specific organization using a GitHub App installation.
+ * @param installationId The GitHub App installation ID for the organization.
+ * @param orgName The GitHub login name of the organization.
+ * @param organizationDbId The internal database ID of the organization.
+ * @returns Counts of new, updated, and total synced repositories.
+ */
+export async function syncSingleOrganizationRepositories(
+  installationId: number,
+  orgName: string,
+  organizationDbId: number
+): Promise<{ newCount: number; updatedCount: number; syncedCount: number; errors: string[] }> {
+  let newCount = 0;
+  let updatedCount = 0;
+  const errors: string[] = [];
+
+  try {
+    console.log(`Syncing repositories for organization '${orgName}' (DB ID: ${organizationDbId}) using installation ID ${installationId}`);
+    const installationClient = await createInstallationClient(installationId);
+    
+    // Fetch repositories from GitHub for the specific organization
+    const githubRepos = await installationClient.getOrganizationRepositories(orgName);
+    console.log(`Found ${githubRepos.length} repositories on GitHub for '${orgName}'`);
+
+    for (const repo of githubRepos) {
+      try {
+        const existingRepo = await findRepositoryByGitHubId(repo.id);
+        
+        const repoData = {
+          github_id: repo.id,
+          organization_id: organizationDbId,
+          name: repo.name,
+          full_name: repo.full_name,
+          description: repo.description || null,
+          private: repo.private,
+          // is_tracked defaults to false in findOrCreateRepository if not specified or existingRepo.is_tracked is undefined
+          is_tracked: existingRepo ? existingRepo.is_tracked : false 
+        };
+
+        const savedRepo = await findOrCreateRepository(repoData);
+
+        if (existingRepo) {
+          if (existingRepo.name !== savedRepo.name || existingRepo.description !== savedRepo.description || existingRepo.private !== savedRepo.private) {
+            updatedCount++;
+          }
+        } else {
+          newCount++;
+        }
+      } catch (repoError) {
+        const errorMessage = `Failed to process repository '${repo.full_name}': ${repoError instanceof Error ? repoError.message : String(repoError)}`;
+        console.error(errorMessage);
+        errors.push(errorMessage);
+      }
+    }
+    
+    const syncedCount = githubRepos.length - errors.length;
+    console.log(`Successfully synced ${syncedCount} repositories for '${orgName}'. New: ${newCount}, Updated: ${updatedCount}. Errors: ${errors.length}`);
+    
+    return { newCount, updatedCount, syncedCount, errors };
+
+  } catch (error) {
+    const errorMessage = `Error syncing repositories for organization '${orgName}': ${error instanceof Error ? error.message : String(error)}`;
+    console.error(errorMessage);
+    // Re-throw or handle as appropriate for the calling API route
+    // For now, let's ensure the API route can catch this and return a 500
+    // We can also return the error count here if preferred.
+    throw new Error(errorMessage); 
   }
 } 

@@ -27,6 +27,9 @@ declare module "next-auth" {
       name: string;
       avatar_url: string | null;
     }[];
+    // Added flags for onboarding and setup status
+    newUser?: boolean;
+    hasGithubApp?: boolean;
   }
 }
 
@@ -104,6 +107,28 @@ export const config = {
             console.error("Error fetching GitHub organizations for session:", error);
             session.organizations = session.organizations || []; 
           }
+        }
+        
+        // Set onboarding status flags
+        // For now, we're using simple logic to determine these values
+        // In a real implementation, these would come from your database
+        try {
+          // Check if user is newly created - this is a simplified example
+          // In production, you would check creation date or a specific flag in your database
+          const user = await findUserById(session.user.id);
+          session.newUser = user?.created_at 
+            ? new Date(user.created_at).getTime() > Date.now() - 5 * 60 * 1000 // Consider new if account less than 5 minutes old
+            : true;
+          
+          // We'll set hasGithubApp to true if user has organizations
+          // This is a simplified approach - in production, you would check if the GitHub App
+          // is actually installed for any of the user's organizations
+          // The actual check is handled by the OrganizationsAppStatus component on the client side
+          session.hasGithubApp = !!session.organizations?.length;
+        } catch (error) {
+          console.error("Error setting session flags:", error);
+          session.newUser = false;
+          session.hasGithubApp = false;
         }
       } else {
         console.warn("Session callback: token.sub is missing for session:", session);

@@ -113,6 +113,52 @@ export class RepositoryService {
   }
   
   /**
+   * Get repositories for a single specific organization accessible to a user.
+   * @param userId The ID of the user.
+   * @param organizationGitHubId The GitHub ID of the organization.
+   * @param options Additional options for fetching repositories.
+   * @returns An object containing the organization details and its repositories, or null if not found/accessible.
+   */
+  static async getRepositoriesForSingleOrganization(
+    userId: string,
+    organizationGitHubId: number,
+    options: {
+      includeTrackedOnly?: boolean;
+      orderBy?: string;
+      orderDir?: 'ASC' | 'DESC';
+    } = {}
+  ): Promise<{organization: {id: number, name: string, github_id: number, avatar_url: string | null}, repositories: Repository[]} | null> {
+    // Find the specific organization by its GitHub ID and ensure the user has access
+    const orgs = await query(`
+      SELECT o.id, o.name, o.github_id, o.avatar_url
+      FROM organizations o
+      JOIN user_organizations uo ON o.id = uo.organization_id
+      WHERE uo.user_id = ? AND o.github_id = ?
+      LIMIT 1
+    `, [userId, organizationGitHubId]);
+
+    if (orgs.length === 0) {
+      // Organization not found for this user or doesn't exist with this github_id
+      return null;
+    }
+
+    const org = orgs[0];
+
+    // Get repositories for this specific organization
+    const repos = await this.getRepositoriesByOrganization(org.id, options);
+    
+    return {
+      organization: {
+        id: org.id,
+        name: org.name,
+        github_id: org.github_id,
+        avatar_url: org.avatar_url
+      },
+      repositories: repos
+    };
+  }
+  
+  /**
    * Get a single repository by ID
    */
   static async getRepositoryById(id: number): Promise<Repository | null> {

@@ -97,4 +97,30 @@ export async function getUserOrganizationsWithRole(userId: string): Promise<(Org
     WHERE uo.user_id = ?
     ORDER BY o.name
   `, [userId]);
+}
+
+/**
+ * Finds an organization by its name and verifies user access.
+ * Also fetches the installation_id for the GitHub App.
+ * @param name The name of the organization (case-insensitive).
+ * @param userId The ID of the user to check for access.
+ * @returns The organization if found and accessible by the user, otherwise null.
+ */
+export async function findOrganizationByNameAndUser(
+  name: string,
+  userId: string
+): Promise<(Organization & { installation_id?: number | null }) | null> {
+  // Query joins organizations with user_organizations to ensure the user is part of the org.
+  // It also directly fetches installation_id from the organizations table.
+  const organizations = await query<
+    Organization & { installation_id?: number | null }
+  >(
+    `SELECT o.*, o.installation_id 
+     FROM organizations o
+     JOIN user_organizations uo ON o.id = uo.organization_id
+     WHERE LOWER(o.name) = LOWER(?) AND uo.user_id = ?
+     LIMIT 1`,
+    [name, userId]
+  );
+  return organizations.length > 0 ? organizations[0] : null;
 } 

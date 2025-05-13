@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { IconRefresh, IconBrandGithub, IconLock, IconLockOpen, IconWebhook, IconCheck, IconX } from "@tabler/icons-react";
 
@@ -31,70 +30,82 @@ interface OrganizationWithRepositories {
   repositories: Repository[];
 }
 
-export function GitHubOrganizationRepositories() {
+interface GitHubOrganizationRepositoriesProps {
+  organizationId: number;
+  organizationName: string;
+}
+
+export function GitHubOrganizationRepositories({
+  organizationId,
+  organizationName,
+}: GitHubOrganizationRepositoriesProps) {
   const { data: session, status } = useSession();
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [organizationsWithRepos, setOrganizationsWithRepos] = useState<OrganizationWithRepositories[]>([]);
+  const [isSyncingSpecific, setIsSyncingSpecific] = useState(false);
+  const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingRepoId, setProcessingRepoId] = useState<number | null>(null);
-  const hasInitialized = useRef(false);
 
-  const fetchOrganizationsWithRepositories = useCallback(async (isInitialFetch = false) => {
-    let fetchedOrgs: OrganizationWithRepositories[] = [];
+  const fetchRepositoriesForOrganization = useCallback(async (isInitialLoad = false) => {
+    if (!organizationId) {
+      setRepositories([]);
+      setLoading(false);
+      return;
+    }
+    console.log(`Fetching repositories for orgId: ${organizationId}, orgName: ${organizationName}, initial: ${isInitialLoad}`);
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/github/organizations/repositories");
+      const response = await fetch(`/api/github/organizations/repositories?orgId=${organizationId}`);
       if (!response.ok) {
-        throw new Error("Failed to fetch organization repositories");
+        const errorData = await response.json().catch(() => ({ message: "Failed to fetch repositories for " + organizationName }));
+        throw new Error(errorData.message || `Failed to fetch repositories for ${organizationName}`);
       }
       const data = await response.json();
-      fetchedOrgs = data.organizationsWithRepositories || [];
-      setOrganizationsWithRepos(fetchedOrgs);
-
-      if (isInitialFetch && fetchedOrgs.length === 0 && status === "authenticated" && !error) {
-        console.log("Initial fetch found no organizations, triggering automatic sync...");
-        syncRepositories();
-      }
-
-    } catch (fetchError) {
-      if (fetchError instanceof Error && fetchError.message.includes("Failed to fetch")) {
-         setError("Failed to load organization repositories. Please try syncing manually.");
+      if (data.repositories) {
+        setRepositories(data.repositories);
+      } else if (data.organizationsWithRepositories && data.organizationsWithRepositories.length > 0) {
+        const orgData = data.organizationsWithRepositories.find((o: any) => o.organization.id === organizationId || o.organization.name === organizationName);
+        setRepositories(orgData ? orgData.repositories : []);
       } else {
-        setError("An unexpected error occurred while fetching repositories.");
+        setRepositories([]);
       }
-      console.error("Error in fetchOrganizationsWithRepositories:", fetchError);
+    } catch (fetchError) {
+      const defaultMessage = `Failed to load repositories for ${organizationName}. Please try syncing manually.`;
+      if (fetchError instanceof Error && fetchError.message.includes("Failed to fetch")) {
+         setError(defaultMessage);
+      } else {
+        setError(fetchError instanceof Error ? fetchError.message : "An unexpected error occurred.");
+      }
+      console.error(`Error fetching repositories for ${organizationName}:`, fetchError);
     } finally {
-      if (!(isInitialFetch && fetchedOrgs.length === 0 && status === "authenticated" && !error)) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  }, [status, error]);
+  }, [organizationId, organizationName]);
 
-  const syncRepositories = async () => {
-    setIsSyncing(true);
+  const syncSpecificOrganizationRepositories = async () => {
+    setIsSyncingSpecific(true);
     setLoading(true);
     setError(null);
-    toast.info("Syncing organizations and repositories from GitHub...");
+    toast.info(`Syncing repositories for ${organizationName} from GitHub...`);
     try {
-      const response = await fetch("/api/github/organizations/sync", {
+      const response = await fetch(`/api/github/organizations/${organizationName}/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to sync organizations and repositories");
+        throw new Error(errorData.message || `Failed to sync ${organizationName}`);
       }
-      toast.success("Sync complete! Fetching updated data...");
-      await fetchOrganizationsWithRepositories(false);
+      toast.success(`Sync complete for ${organizationName}! Fetching updated data...`);
+      await fetchRepositoriesForOrganization(false);
     } catch (syncError) {
-      const errorMessage = syncError instanceof Error ? syncError.message : "Failed to sync data";
+      const errorMessage = syncError instanceof Error ? syncError.message : `Failed to sync ${organizationName}`;
       setError(errorMessage);
       toast.error(errorMessage);
-      setLoading(false);
     } finally {
-      setIsSyncing(false);
+      setIsSyncingSpecific(false);
+      setLoading(false);
     }
   };
 
@@ -110,13 +121,10 @@ export function GitHubOrganizationRepositories() {
         const errorData = await response.json();
         throw new Error(errorData.error || `Failed to ${newState ? "enable" : "disable"} webhook`);
       }
-      setOrganizationsWithRepos((prev) =>
-        prev.map((org) => ({
-          ...org,
-          repositories: org.repositories.map((repo) =>
+      setRepositories((prevRepos) =>
+        prevRepos.map((repo) =>
             repo.id === repository.id ? { ...repo, is_tracked: newState } : repo
-          ),
-        }))
+        )
       );
       toast.success(`Webhook ${newState ? "enabled" : "disabled"} for ${repository.name}`);
     } catch (error) {
@@ -127,21 +135,20 @@ export function GitHubOrganizationRepositories() {
   };
 
   useEffect(() => {
-    if (status === "authenticated" && !hasInitialized.current) {
-      hasInitialized.current = true;
-      fetchOrganizationsWithRepositories(true);
+    if (status === "authenticated" && organizationId) {
+      fetchRepositoriesForOrganization(true);
     }
-  }, [status, fetchOrganizationsWithRepositories]);
+  }, [status, organizationId, organizationName, fetchRepositoriesForOrganization]);
 
-  if (status === "loading" || loading) {
+  if (status === "loading" || (loading && !isSyncingSpecific)) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Organization Repositories</CardTitle>
-          <CardDescription>Your GitHub organization repositories</CardDescription>
+          <CardTitle>Repositories for {organizationName}</CardTitle>
+          <CardDescription>Loading repositories...</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-muted-foreground">Loading repositories...</div>
+        <CardContent className="flex items-center justify-center p-6">
+          <IconRefresh className="h-6 w-6 text-muted-foreground animate-spin" />
         </CardContent>
       </Card>
     );
@@ -151,43 +158,16 @@ export function GitHubOrganizationRepositories() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Organization Repositories</CardTitle>
-          <CardDescription>Your GitHub organization repositories</CardDescription>
+          <CardTitle>Repositories for {organizationName}</CardTitle>
+          <CardDescription className="text-destructive">Error loading repositories</CardDescription>
         </CardHeader>
         <CardContent className="pb-2">
           <div className="text-destructive">{error}</div>
         </CardContent>
         <CardFooter>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => fetchOrganizationsWithRepositories(true)}>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => fetchRepositoriesForOrganization(false)}>
             Retry Fetch
             <IconRefresh className="ml-2 h-4 w-4" />
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-
-  if (!organizationsWithRepos || organizationsWithRepos.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Organization Repositories</CardTitle>
-          <CardDescription>Your GitHub organization repositories</CardDescription>
-        </CardHeader>
-        <CardContent className="pb-2">
-          <div className="text-muted-foreground mb-4">
-            No organization repositories found. Add PR Cat to your GitHub organizations to see repositories here.
-          </div>
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
-            <p className="text-sm text-amber-800">
-              <strong>Note:</strong> Personal repositories are not supported. PR Cat requires organization repositories to function.
-            </p>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button variant="outline" size="sm" className="w-full" onClick={syncRepositories} disabled={isSyncing}>
-            {isSyncing ? "Syncing..." : "Sync Repositories"}
-            {!isSyncing && <IconRefresh className="ml-2 h-4 w-4" />}
           </Button>
         </CardFooter>
       </Card>
@@ -199,93 +179,70 @@ export function GitHubOrganizationRepositories() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Organization Repositories</CardTitle>
-            <CardDescription>Configure webhooks for your GitHub organization repositories</CardDescription>
+            <CardTitle>Repositories for {organizationName}</CardTitle>
+            <CardDescription>Configure webhooks for repositories in {organizationName}</CardDescription>
           </div>
-          <Button variant="ghost" size="icon" onClick={syncRepositories} disabled={isSyncing} className="h-8 w-8" title="Sync repositories">
-            <IconRefresh className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+          <Button variant="outline" size="sm" onClick={syncSpecificOrganizationRepositories} disabled={isSyncingSpecific} title={`Sync repositories for ${organizationName}`}>
+            <IconRefresh className={`h-4 w-4 mr-2 ${isSyncingSpecific ? "animate-spin" : ""}`} />
+            Sync Repos
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 p-3 bg-muted rounded-md">
-          <p className="text-sm">
-            <strong>Webhooks:</strong> Enable webhooks for repositories you want PR Cat to track. This allows PR Cat to receive real-time notifications when pull requests are created, updated, or reviewed.
+        {repositories.length === 0 ? (
+            <div className="text-muted-foreground mb-4 p-4 border border-dashed rounded-md">
+                No repositories found for {organizationName}. Try syncing or ensure repositories exist in this organization on GitHub.
+            </div>
+        ) : (
+            <div className="space-y-3">
+            {repositories.map((repo) => (
+                <div key={repo.id} className="flex items-center justify-between gap-3 p-3 rounded-md border hover:shadow-sm">
+                <div className="flex items-center gap-3 flex-grow min-w-0">
+                    <IconBrandGithub className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-grow min-w-0">
+                    <div className="flex items-center gap-2">
+                        <h4 className="font-medium truncate" title={repo.name}>{repo.name}</h4>
+                        {repo.private ? (
+                        <Badge variant="outline" className="text-xs whitespace-nowrap">
+                            <IconLock className="h-3 w-3 mr-1" />
+                            Private
+                        </Badge>
+                        ) : (
+                        <Badge variant="outline" className="text-xs whitespace-nowrap">
+                            <IconLockOpen className="h-3 w-3 mr-1" />
+                            Public
+                        </Badge>
+                        )}
+                    </div>
+                    {repo.description && (
+                        <p className="text-xs text-muted-foreground truncate" title={repo.description}>{repo.description}</p>
+                    )}
+                    </div>
+                </div>
+                <Button 
+                    variant={repo.is_tracked ? "secondary" : "outline"} 
+                    size="sm" 
+                    onClick={() => toggleWebhook(repo)}
+                    disabled={processingRepoId === repo.id}
+                    className="whitespace-nowrap w-[140px] flex items-center justify-center"
+                >
+                    {processingRepoId === repo.id ? (
+                    <IconRefresh className="h-4 w-4 animate-spin" />
+                    ) : repo.is_tracked ? (
+                    <><IconCheck className="h-4 w-4 mr-2 text-green-600" /> Enabled</>
+                    ) : (
+                    <><IconWebhook className="h-4 w-4 mr-2" /> Enable Webhook</>
+                    )}
+                </Button>
+                </div>
+            ))}
+            </div>
+        )}
+        <div className="mt-4 p-3 bg-muted/50 rounded-md">
+          <p className="text-xs text-muted-foreground">
+            <strong>Webhooks:</strong> Enable webhooks for repositories you want PR Cat to track. This allows PR Cat to receive real-time notifications for pull request events.
           </p>
         </div>
-        <Accordion type="multiple" className="w-full">
-          {organizationsWithRepos.map((orgWithRepos) => (
-            <AccordionItem key={orgWithRepos.organization.id} value={orgWithRepos.organization.id.toString()}>
-              <AccordionTrigger>
-                <div className="flex items-center gap-2">
-                  {orgWithRepos.organization.name}
-                  <Badge variant="outline" className="ml-2">
-                    {orgWithRepos.repositories.length} repos
-                  </Badge>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="flex flex-col gap-3 py-2">
-                  {orgWithRepos.repositories.length === 0 ? (
-                    <div className="text-muted-foreground text-sm">No repositories found in this organization.</div>
-                  ) : (
-                    orgWithRepos.repositories.map((repo) => (
-                      <div key={repo.id} className="flex items-center justify-between gap-3 p-3 rounded-md border">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-shrink-0">
-                            <IconBrandGithub className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium truncate">{repo.name}</h4>
-                              {repo.private ? (
-                                <Badge variant="outline" className="ml-1">
-                                  <IconLock className="h-3 w-3 mr-1" />
-                                  Private
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="ml-1">
-                                  <IconLockOpen className="h-3 w-3 mr-1" />
-                                  Public
-                                </Badge>
-                              )}
-                            </div>
-                            {repo.description && (
-                              <p className="text-muted-foreground text-sm truncate">{repo.description}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {repo.is_tracked ? (
-                            <Badge variant="outline" className="flex items-center gap-1 mr-2 bg-green-100 text-green-800 border-green-200">
-                              <IconCheck className="h-3 w-3" />
-                              Tracking
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="flex items-center gap-1 mr-2">
-                              <IconX className="h-3 w-3" />
-                              Not Tracked
-                            </Badge>
-                          )}
-                          <Button variant={repo.is_tracked ? "destructive" : "default"} size="sm" onClick={() => toggleWebhook(repo)} disabled={processingRepoId === repo.id} className="min-w-[90px]">
-                            {processingRepoId === repo.id ? (
-                              <IconRefresh className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <IconWebhook className="h-4 w-4 mr-2" />
-                                {repo.is_tracked ? "Disable" : "Enable"}
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
       </CardContent>
     </Card>
   );
