@@ -16,6 +16,7 @@ import {
   findCategoryByNameAndOrg as findCategoryByNameAndOrgFromRepo,
   findOrCreateUserByGitHubId
 } from '@/lib/repositories';
+import { findOrganizationByNameAndUser } from '@/lib/repositories/organization-repository';
 import { GitHubClient } from '@/lib/github';
 import { createInstallationClient } from '@/lib/github-app';
 import { PRReview, Category } from '@/lib/types';
@@ -108,30 +109,49 @@ interface PullRequestReviewPayload extends GitHubWebhookPayload {
 }
 
 export async function POST(request: NextRequest) {
-  // Verify webhook signature if secret is configured
-  const signature = request.headers.get('x-hub-signature-256');
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
-  const eventType = request.headers.get('x-github-event');
+  console.log("WEBHOOK: Received GitHub webhook event");
   
-  console.log(`Received GitHub webhook event type: ${eventType}`);
-  
-  if (webhookSecret && signature) {
-    const payload = await request.text();
-    const hmac = crypto.createHmac('sha256', webhookSecret);
-    const digest = 'sha256=' + hmac.update(payload).digest('hex');
+  try {
+    const body = await request.json();
     
-    if (signature !== digest) {
-      console.warn('GitHub webhook signature verification failed');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
+    // Log installation data from the webhook payload
+    console.log("WEBHOOK: Full installation data in payload:", JSON.stringify(body.installation, null, 2));
+    console.log("WEBHOOK: Repository installation data:", JSON.stringify(body.repository?.installation, null, 2));
+    
+    // Log event type
+    console.log(`WEBHOOK: Event type ${body.action} on ${body.repository?.full_name}`);
+
+    // Verify webhook signature if secret is configured
+    const signature = request.headers.get('x-hub-signature-256');
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+    const eventType = request.headers.get('x-github-event');
+    
+    console.log(`Received GitHub webhook event type: ${eventType}`);
+    
+    if (webhookSecret && signature) {
+      const payload = await request.text();
+      const hmac = crypto.createHmac('sha256', webhookSecret);
+      const digest = 'sha256=' + hmac.update(payload).digest('hex');
+      
+      if (signature !== digest) {
+        console.warn('GitHub webhook signature verification failed');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
+      }
+      
+      // Parse the payload back to JSON
+      const data = JSON.parse(payload);
+      return handleWebhookEvent(data, eventType || 'unknown');
+    } else {
+      // If no secret is configured, or GitHub didn't send a signature, process without verification
+      const data = await request.json();
+      return handleWebhookEvent(data, eventType || 'unknown');
     }
-    
-    // Parse the payload back to JSON
-    const data = JSON.parse(payload);
-    return handleWebhookEvent(data, eventType || 'unknown');
-  } else {
-    // If no secret is configured, or GitHub didn't send a signature, process without verification
-    const data = await request.json();
-    return handleWebhookEvent(data, eventType || 'unknown');
+  } catch (error) {
+    console.error('Error handling webhook:', error);
+    return NextResponse.json(
+      { error: `Failed to process webhook: ${error instanceof Error ? error.message : 'Unknown error'}` }, 
+      { status: 500 }
+    );
   }
 }
 
@@ -520,9 +540,8 @@ async function fetchAdditionalPRData(
     let githubClient;
     
     try {
-      // Get the installation ID from the webhook payload or DB
-      // For simplicity, assuming it's in the webhook payload (repository.installation.id)
-      // In a real implementation, you would store this in your DB when the webhook is configured
+      // Get the installation ID - check multiple possible locations in the payload
+      // The PR payload can have either a global installation ID or a repository-specific one
       const installationId = repository.installation?.id;
       
       if (installationId) {
@@ -530,14 +549,34 @@ async function fetchAdditionalPRData(
         // Create a GitHub client authenticated with the installation token
         githubClient = await createInstallationClient(installationId);
       } else {
-        // Fallback to token-based authentication (if configured)
-        console.log('WEBHOOK WARNING: Installation ID not found, trying fallback to token authentication');
-        const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
-        if (!githubToken) {
-          console.warn('WEBHOOK WARNING: GitHub token not available and no installation ID found. Cannot fetch PR diff.');
-          return;
+        // Try to lookup the installation ID from the database using the organization name from the repository
+        console.log(`WEBHOOK INSTALLATION ID: Not found in webhook payload, trying to find installation_id in database for org: ${repository.owner.login}`);
+        try {
+          const orgFromDB = await findOrganizationByNameAndUser(repository.owner.login, "system");
+          if (orgFromDB?.installation_id) {
+            console.log(`WEBHOOK INSTALLATION ID: Found in database: ${orgFromDB.installation_id}`);
+            githubClient = await createInstallationClient(orgFromDB.installation_id);
+          } else {
+            // Fallback to token-based authentication (if configured)
+            console.log('WEBHOOK WARNING: Installation ID not found in database, trying fallback to token authentication');
+            const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
+            if (!githubToken) {
+              console.warn('WEBHOOK WARNING: GitHub token not available and no installation ID found. Cannot fetch PR diff.');
+              return;
+            }
+            githubClient = new GitHubClient(githubToken);
+          }
+        } catch (dbError) {
+          console.error('WEBHOOK ERROR: Error looking up installation_id from database:', dbError);
+          // Fallback to token-based authentication (if configured)
+          console.log('WEBHOOK WARNING: Error finding installation ID in database, trying fallback to token authentication');
+          const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
+          if (!githubToken) {
+            console.warn('WEBHOOK WARNING: GitHub token not available and no installation ID found. Cannot fetch PR diff.');
+            return;
+          }
+          githubClient = new GitHubClient(githubToken);
         }
-        githubClient = new GitHubClient(githubToken);
       }
 
       console.log(`WEBHOOK FETCHING PR DIFF: Fetching PR diff for ${repository.full_name}#${pr.number}`);
