@@ -16,6 +16,7 @@ export interface Organization {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  installation_id?: number | null;
 }
 
 export interface UserOrganization {
@@ -69,6 +70,8 @@ export interface PullRequest {
   category_id: number | null;
   category_confidence: number | null;
   embedding_id: number | null;
+  ai_status?: 'pending' | 'processing' | 'completed' | 'error' | 'skipped' | string | null;
+  error_message?: string | null;
 }
 
 export interface PRReview {

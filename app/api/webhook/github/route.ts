@@ -27,6 +27,11 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { allModels } from '@/lib/ai-models'; // Import shared models
+import * as OrganizationRepository from '@/lib/repositories/organization-repository';
+import { Octokit } from '@octokit/rest';
+import * as PullRequestRepository from '@/lib/repositories/pr-repository';
+import * as UserRepository from '@/lib/repositories/user-repository';
+import { User } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
@@ -52,6 +57,13 @@ interface GitHubWebhookPayload {
   action: string;
   installation?: {
     id: number;
+    // Add account details for installation events
+    account?: {
+      id: number;
+      login: string;
+      type: string; // "Organization" or "User"
+      avatar_url?: string;
+    };
   };
   repository: {
     id: number;
@@ -110,6 +122,29 @@ interface PullRequestReviewPayload extends GitHubWebhookPayload {
     submitted_at: string;
     commit_id: string;
   };
+}
+
+// Interface for Installation event payload
+interface InstallationPayload extends GitHubWebhookPayload {
+  action: 'created' | 'deleted' | 'suspend' | 'unsuspend' | 'new_permissions_accepted';
+  installation: {
+    id: number;
+    account: {
+      id: number; // This is the GitHub ID of the organization or user
+      login: string;
+      type: string; // "Organization" or "User"
+      avatar_url?: string;
+      // ... other account details if needed
+    };
+    // ... other installation details if needed
+  };
+  // repositories field might be present if action is 'created' and it's a selective installation
+  repositories?: Array<{
+    id: number;
+    name: string;
+    full_name: string;
+    private: boolean;
+  }>;
 }
 
 export async function POST(request: NextRequest) {
@@ -181,6 +216,9 @@ async function handleWebhookEvent(payload: any, eventType: string) {
         break;
       case 'pull_request_review':
         await handlePullRequestReviewEvent(payload as PullRequestReviewPayload);
+        break;
+      case 'installation': // Add new case for installation events
+        await handleInstallationEvent(payload as InstallationPayload);
         break;
       case 'ping':
         // This is a test ping from GitHub when setting up the webhook
@@ -475,6 +513,118 @@ async function handlePullRequestReviewEvent(payload: PullRequestReviewPayload) {
   }
 }
 
+// New handler for installation events
+async function handleInstallationEvent(payload: InstallationPayload) {
+  const { action, installation } = payload;
+  const installationId = installation.id;
+  const account = installation.account;
+
+  // We are primarily interested in installations on Organizations
+  if (account.type !== 'Organization') {
+    console.log(`WEBHOOK INSTALLATION: Skipping installation event for non-organization account type: ${account.type}, login: ${account.login}`);
+    return;
+  }
+
+  const orgGitHubId = account.id;
+  const orgLogin = account.login;
+  const orgAvatarUrl = account.avatar_url || null;
+
+  console.log(`WEBHOOK INSTALLATION: Action: ${action} for organization ${orgLogin} (GitHub ID: ${orgGitHubId}), Installation ID: ${installationId}`);
+
+  try {
+    // Find the organization by its GitHub ID.
+    // It's possible the organization isn't in our DB yet if the app is installed on a new org.
+    // findOrCreateOrganization will handle this.
+    // It expects: github_id, name, avatar_url
+    
+    // First, ensure the org exists or create it
+    let org = await OrganizationRepository.findOrganizationByGitHubId(orgGitHubId);
+
+    if (!org && action === 'created') {
+        console.log(`WEBHOOK INSTALLATION: Organization ${orgLogin} (GitHub ID: ${orgGitHubId}) not found. Creating.`);
+        try {
+            org = await OrganizationRepository.createOrganization({
+                github_id: orgGitHubId,
+                name: orgLogin,
+                avatar_url: orgAvatarUrl
+            });
+            console.log(`WEBHOOK INSTALLATION: Created organization ${org.name} with DB ID ${org.id}`);
+        } catch (createError) {
+            logError("handleInstallationEvent - createOrganization", createError, { orgGitHubId, orgLogin });
+            return; // Stop if creation fails
+        }
+    } else if (!org) {
+        console.log(`WEBHOOK INSTALLATION: Organization ${orgLogin} (GitHub ID: ${orgGitHubId}) not found for action '${action}'. Skipping update.`);
+        return;
+    }
+
+
+    if (action === 'created') {
+      // Update the organization with the new installation_id
+      const updatedOrg = await OrganizationRepository.updateOrganization(org.id, {
+        installation_id: installationId,
+        // Optionally update name/avatar if they can change and are in payload
+        name: orgLogin, 
+        avatar_url: orgAvatarUrl
+      });
+      if (updatedOrg) {
+        console.log(`WEBHOOK INSTALLATION: Stored installation_id ${installationId} for organization ${orgLogin} (DB ID: ${org.id})`);
+      } else {
+        console.error(`WEBHOOK INSTALLATION: Failed to update organization ${orgLogin} with installation_id ${installationId}`);
+      }
+
+      // If repositories are explicitly listed (e.g. selective installation)
+      if (payload.repositories && payload.repositories.length > 0) {
+        console.log(`WEBHOOK INSTALLATION: Processing ${payload.repositories.length} repositories for new installation on ${orgLogin}`);
+        for (const repoData of payload.repositories) {
+          try {
+            // Use findOrCreateRepository to add these to our system, linking them to the organization
+            // Assuming findOrCreateRepository can link to org.id if it's not already doing so.
+            // This might require findOrCreateRepository to accept org.id or for you to have a separate step.
+            // For now, just logging and ensuring findOrCreateRepository is robust.
+            await findOrCreateRepository({ 
+              github_id: repoData.id, 
+              name: repoData.name, 
+              full_name: repoData.full_name,
+              private: repoData.private,
+              organization_id: org.id, // Crucial link
+              description: null, // Default value
+              is_tracked: true   // Default value, assume tracked upon installation
+            });
+            console.log(`WEBHOOK INSTALLATION: Ensured repository ${repoData.full_name} is in DB and linked to org ${org.id}.`);
+          } catch (repoError) {
+            logError("handleInstallationEvent - findOrCreateRepository", repoError, { repo_full_name: repoData.full_name, org_id: org.id });
+          }
+        }
+      }
+
+
+    } else if (action === 'deleted') {
+      // Clear the installation_id
+      const updatedOrg = await OrganizationRepository.updateOrganization(org.id, {
+        installation_id: null,
+      });
+      if (updatedOrg) {
+        console.log(`WEBHOOK INSTALLATION: Cleared installation_id for organization ${orgLogin} (DB ID: ${org.id}) due to app uninstallation.`);
+      } else {
+        console.error(`WEBHOOK INSTALLATION: Failed to clear installation_id for organization ${orgLogin}`);
+      }
+    } else if (action === 'suspend') {
+        // Optionally handle suspension, e.g., by setting installation_id to null or a special status
+        console.log(`WEBHOOK INSTALLATION: App suspended for organization ${orgLogin}. Installation ID ${installationId} might be invalid.`);
+        await OrganizationRepository.updateOrganization(org.id, { installation_id: null }); // Example: clear it
+    } else if (action === 'unsuspend') {
+        // App unsuspended, restore installation_id
+        console.log(`WEBHOOK INSTALLATION: App unsuspended for organization ${orgLogin}. Restoring Installation ID ${installationId}.`);
+        await OrganizationRepository.updateOrganization(org.id, { installation_id: installationId });
+    } else {
+      console.log(`WEBHOOK INSTALLATION: Unhandled action '${action}' for organization ${orgLogin}.`);
+    }
+  } catch (error) {
+    logError("handleInstallationEvent", error, { action, orgGitHubId, orgLogin, installationId });
+  }
+}
+
 async function fetchAdditionalPRData(
   repository: PullRequestPayload['repository'], 
   pr: PullRequestPayload['pull_request'], 
@@ -485,50 +635,62 @@ async function fetchAdditionalPRData(
   console.log(`WEBHOOK ADDITIONAL DATA: Fetching additional data for PR #${pr.number} in org ${organizationId}, PR DB ID=${prDbId}`);
   console.log(`WEBHOOK DEBUG: Repository owner: ${repository.owner.login}, Repository name: ${repository.name}`);
   
-  // Log the installation object from multiple sources in the payload
-  console.log(`WEBHOOK INSTALLATION DATA: Repository installation data:`, 
-              JSON.stringify(repository.installation, null, 2));
-  if (fullPayload?.installation) {
-    console.log(`WEBHOOK INSTALLATION DATA: Top-level installation data:`, 
-                JSON.stringify(fullPayload.installation, null, 2));
-  }
-
   if (!organizationId) {
-    console.error('WEBHOOK ERROR: Organization ID not provided to fetchAdditionalPRData. Cannot fetch AI settings.');
+    console.error('WEBHOOK ERROR: Organization ID not provided to fetchAdditionalPRData. Cannot proceed.');
     return;
   }
 
   try {
-    // 1. Get organization details to ensure installation_id is available
-    try {
-      const orgDetails = await findOrganizationById(organizationId);
-      console.log(`WEBHOOK DEBUG: Organization details from DB:`, JSON.stringify({
-        id: orgDetails?.id,
-        name: orgDetails?.name,
-        github_id: orgDetails?.github_id,
-        installation_id: (orgDetails as any)?.installation_id // Type assertion to bypass TypeScript check
-      }, null, 2));
-    } catch (orgErr) {
-      console.error(`WEBHOOK ERROR: Failed to get organization details for ID ${organizationId}:`, orgErr);
+    let installationIdToUse: number | undefined;
+    const orgDetails = await findOrganizationById(organizationId);
+
+    if (orgDetails) {
+      // Use the installation_id from the DB if available (this is the most reliable source)
+      installationIdToUse = orgDetails.installation_id ?? undefined; 
+      if (installationIdToUse) {
+        console.log(`WEBHOOK DEBUG: Found installation_id in DB for organization_id ${organizationId}: ${installationIdToUse}`);
+      } else {
+        console.warn(`WEBHOOK WARNING: installation_id was not found or was null in database for organization_id: ${organizationId}.`);
+      }
+    } else {
+      console.error(`WEBHOOK ERROR: Organization with ID ${organizationId} NOT FOUND in database.`);
+      // Update PR status to indicate an error if org not found
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Organization not found in DB for AI processing' });
+      return; 
     }
 
-    // 2. Fetch Organization's AI Settings
+    // If DB didn't have it, try to get it from the current webhook payload as a fallback
+    // This might happen if the installation event is processed slightly after a PR event.
+    if (!installationIdToUse) {
+      const payloadInstallId = fullPayload?.installation?.id || repository?.installation?.id;
+      if (payloadInstallId) {
+        installationIdToUse = payloadInstallId;
+        console.log(`WEBHOOK DEBUG: Using installation_id from current payload as fallback: ${installationIdToUse} (org_id: ${organizationId})`);
+        // Optionally, you could consider updating the org record here if a payload ID is found and DB was null,
+        // but handleInstallationEvent should be the primary source of truth for storing it.
+      } else {
+        console.warn(`WEBHOOK WARNING: No installation_id in DB and no installation_id in current payload for org ${organizationId}.`);
+      }
+    }
+    
+    // 1. Fetch Organization's AI Settings (using organizationId)
     const aiSettings = await getOrganizationAiSettings(organizationId);
     console.log(`WEBHOOK AI SETTINGS: Organization ${organizationId} AI settings:`, 
                 aiSettings ? `model=${aiSettings.selectedModelId}` : "No settings found");
                 
     if (!aiSettings || !aiSettings.selectedModelId) {
       console.log(`WEBHOOK INFO: AI categorization disabled for organization ${organizationId} (no model selected).`);
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: 'AI categorization disabled for organization' });
       return;
     }
 
     const selectedModelId = aiSettings.selectedModelId;
     console.log(`WEBHOOK AI MODEL: Organization ${organizationId} selected AI model: ${selectedModelId}`);
 
-    // 3. Determine Provider and API Key
     const modelInfo = allModels.find(m => m.id === selectedModelId);
     if (!modelInfo) {
       console.error(`WEBHOOK ERROR: Selected model ID ${selectedModelId} not found in allModels for organization ${organizationId}.`);
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: `Selected AI model ${selectedModelId} not configured` });
       return;
     }
     const provider = modelInfo.provider;
@@ -537,11 +699,12 @@ async function fetchAdditionalPRData(
     const apiKey = await getOrganizationApiKey(organizationId, provider);
     if (!apiKey) {
       console.warn(`WEBHOOK WARNING: API key for provider ${provider} not set for organization ${organizationId}. Skipping AI categorization.`);
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: `API key for ${provider} not set for organization` });
       return;
     }
     console.log(`WEBHOOK API KEY: API key found for provider ${provider}.`);
 
-    // 4. Instantiate AI Client
+    // 2. Instantiate AI Client (using apiKey)
     let aiClientProvider;
     try {
       switch (provider) {
@@ -556,108 +719,102 @@ async function fetchAdditionalPRData(
           break;
         default:
           console.error(`WEBHOOK ERROR: Unsupported AI provider: ${provider} for organization ${organizationId}`);
+          await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: `Unsupported AI provider: ${provider}` });
           return;
       }
     } catch (error) {
       console.error(`WEBHOOK ERROR: Error instantiating AI client provider for ${provider}:`, error);
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: `Error instantiating AI client for ${provider}` });
       return;
     }
     console.log(`WEBHOOK AI CLIENT: AI client provider instantiated for: ${provider}`);
     
-    // Get the specific model instance from the provider
     const modelInstance = aiClientProvider(selectedModelId);
     if (!modelInstance) {
       console.error(`WEBHOOK ERROR: Could not get model instance for ${selectedModelId} from provider ${provider}`);
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: `Could not get AI model instance ${selectedModelId}` });
       return;
     }
 
-    let githubClient;
+    // 3. Create GitHub Client
+    let githubClient: GitHubClient | Octokit | undefined;
+
+    if (installationIdToUse) {
+      try {
+        console.log(`WEBHOOK INSTALLATION ID: Attempting to use GitHub App installation ID: ${installationIdToUse}`);
+        githubClient = await createInstallationClient(installationIdToUse);
+        console.log(`WEBHOOK CLIENT: Successfully created GitHub client with installation ID ${installationIdToUse}`);
+      } catch (clientError) {
+        console.error(`WEBHOOK ERROR: Failed to create GitHub client with installation ID ${installationIdToUse}:`, clientError);
+        // githubClient remains undefined, will fall through to system token if configured
+      }
+    }
     
+    // If githubClient is still not created (either no installationIdToUse or client creation failed), fall back to system token
+    if (!githubClient) {
+      console.warn('WEBHOOK WARNING: No valid installation client. Attempting system token fallback (if configured).');
+      // Prioritize GITHUB_APP_INSTALLATION_TOKEN if available, then GITHUB_SYSTEM_TOKEN
+      const githubSystemToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
+      if (githubSystemToken) {
+        githubClient = new GitHubClient(githubSystemToken); // Assuming GitHubClient can be Octokit or your custom client
+        console.log('WEBHOOK CLIENT: Created GitHub client with system token.');
+      } else {
+        console.error('WEBHOOK ERROR: No installation ID available and no system token configured. Cannot fetch PR diff.');
+        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'GitHub authentication failed (no installation ID or system token)' });
+        return; 
+      }
+    }
+
+    // 4. Fetch PR Diff and Categorize (using githubClient)
+    console.log(`WEBHOOK FETCHING PR DIFF: Fetching PR diff for ${repository.full_name}#${pr.number}`);
+    
+    let diff: string | null = null;
     try {
-      // Strategy 1: Check for installation ID in the webhook payload
-      let installationId = repository.installation?.id;
-      console.log(`WEBHOOK INSTALLATION ID (FROM PAYLOAD): ${installationId || 'NOT_FOUND'}`);
-
-      // Strategy 2: If not in payload, try to get it from the database using org ID
-      if (!installationId) {
-        try {
-          const orgDetails = await findOrganizationById(organizationId);
-          // Access installation_id using a type assertion that bypasses the strict type checking
-          // This is safe because we know the DB schema includes this field
-          const dbInstallationId = orgDetails ? (orgDetails as any).installation_id : undefined;
-          if (dbInstallationId) {
-            installationId = dbInstallationId;
-            console.log(`WEBHOOK INSTALLATION ID (FROM DB BY ID): ${installationId}`);
-          }
-        } catch (dbError) {
-          console.error('WEBHOOK ERROR: Error fetching installation_id from DB by org ID:', dbError);
-        }
+      if (githubClient instanceof GitHubClient) { // Your custom client
+         diff = await githubClient.getPullRequestDiff(repository.owner.login, repository.name, pr.number);
+      } else if (githubClient instanceof Octokit) { // Octokit instance from createInstallationClient
+         const diffResponse = await githubClient.pulls.get({
+            owner: repository.owner.login,
+            repo: repository.name,
+            pull_number: pr.number,
+            mediaType: { format: 'diff' },
+          });
+          diff = diffResponse.data as unknown as string; // GitHub API returns diff as string with this media type
+      } else {
+         console.error('WEBHOOK ERROR: githubClient is of an unknown type. Cannot fetch diff.');
+         await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'GitHub client type unknown for diff fetch' });
+         return;
       }
+    } catch (diffError) {
+        console.error(`WEBHOOK ERROR: Failed to fetch PR diff for ${repository.full_name}#${pr.number}:`, diffError);
+        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Failed to fetch PR diff' });
+        return;
+    }
+    
+    if (!diff) {
+        console.warn(`WEBHOOK WARNING: Could not fetch PR diff for ${repository.full_name}#${pr.number}. Skipping categorization.`);
+        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: 'Could not fetch PR diff' });
+        return;
+    }
 
-      // Strategy 3: Try to find it by organization name
-      if (!installationId) {
-        try {
-          console.log(`WEBHOOK DEBUG: Looking up org by name: ${repository.owner.login}`);
-          const orgFromDB = await findOrganizationByNameAndUser(repository.owner.login, "system");
-          // Use type assertion for installation_id
-          const nameBasedInstallId = orgFromDB ? (orgFromDB as any).installation_id : undefined;
-          if (nameBasedInstallId) {
-            installationId = nameBasedInstallId;
-            console.log(`WEBHOOK INSTALLATION ID (FROM DB BY NAME): ${installationId}`);
-          }
-        } catch (dbError) {
-          console.error('WEBHOOK ERROR: Error looking up installation_id by org name:', dbError);
-        }
-      }
-      
-      // Now use the installation ID if found
-      if (installationId) {
-        console.log(`WEBHOOK INSTALLATION ID: Using GitHub App installation ID: ${installationId} to fetch PR diff`);
-        
-        // Test the validity of the installation ID
-        try {
-          githubClient = await createInstallationClient(installationId);
-          console.log(`WEBHOOK CLIENT: Successfully created GitHub client with installation ID ${installationId}`);
-        } catch (clientError) {
-          console.error(`WEBHOOK ERROR: Failed to create GitHub client with installation ID ${installationId}:`, clientError);
-          // Mark as undefined instead of null to satisfy TypeScript
-          installationId = undefined;
-        }
-      }
+    const orgCategories = await getOrganizationCategories(organizationId);
+    const categoryNames = orgCategories.map(c => c.name);
+    console.log(`WEBHOOK CATEGORIES: Organization ${organizationId} has ${categoryNames.length} categories:`, categoryNames);
 
-      // Final fallback to token-based authentication
-      if (!installationId || !githubClient) {
-        console.log('WEBHOOK WARNING: No valid installation ID found, trying fallback to token authentication');
-        const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
-        if (!githubToken) {
-          console.warn('WEBHOOK WARNING: GitHub token not available and no installation ID found. Cannot fetch PR diff.');
-          return;
-        }
-        githubClient = new GitHubClient(githubToken);
-      }
+    if (categoryNames.length === 0) {
+        console.warn(`WEBHOOK WARNING: No categories found for organization ${organizationId}. Skipping categorization.`);
+        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: 'No categories configured for organization' });
+        return;
+    }
 
-      console.log(`WEBHOOK FETCHING PR DIFF: Fetching PR diff for ${repository.full_name}#${pr.number}`);
-      const diff = await githubClient.getPullRequestDiff(repository.owner.login, repository.name, pr.number);
-      
-      if (!diff) {
-          console.warn(`WEBHOOK WARNING: Could not fetch PR diff for ${repository.full_name}#${pr.number}. Skipping categorization.`);
-          return;
-      }
+    await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'processing' });
 
-      const orgCategories = await getOrganizationCategories(organizationId);
-      const categoryNames = orgCategories.map(c => c.name);
-      console.log(`WEBHOOK CATEGORIES: Organization ${organizationId} has ${categoryNames.length} categories:`, categoryNames);
+    const systemPrompt = `You are an expert at categorizing GitHub pull requests. Analyze the pull request title, body, and diff. Respond with the most relevant category from the provided list and a confidence score (0-1). Available categories: ${categoryNames.join(', ')}. Respond in the format: Category: [Selected Category], Confidence: [Score]. Example: Category: Bug Fix, Confidence: 0.9`;
+    const userPrompt = `Title: ${pr.title}\\nBody: ${pr.body || ''}\\nDiff:\\n${diff}`;
 
-      if (categoryNames.length === 0) {
-          console.warn(`WEBHOOK WARNING: No categories found for organization ${organizationId}. Skipping categorization.`);
-          return;
-      }
+    console.log(`WEBHOOK GENERATING TEXT: Generating text with model ${selectedModelId} for PR #${pr.number}`);
 
-      const systemPrompt = `You are an expert at categorizing GitHub pull requests. Analyze the pull request title, body, and diff. Respond with the most relevant category from the provided list and a confidence score (0-1). Available categories: ${categoryNames.join(', ')}. Respond in the format: Category: [Selected Category], Confidence: [Score]. Example: Category: Bug Fix, Confidence: 0.9`;
-      const userPrompt = `Title: ${pr.title}\nBody: ${pr.body || ''}\nDiff:\n${diff}`;
-
-      console.log(`WEBHOOK GENERATING TEXT: Generating text with model ${selectedModelId} for PR #${pr.number}`);
-
+    try {
       const { text } = await generateText({
         model: modelInstance,
         system: systemPrompt,
@@ -666,7 +823,7 @@ async function fetchAdditionalPRData(
 
       console.log(`WEBHOOK AI RESPONSE: AI Response for PR #${pr.number}: ${text}`);
 
-      const categoryMatch = text.match(/Category: (.*?), Confidence: (\d\.?\d*)/i);
+      const categoryMatch = text.match(/Category: (.*?), Confidence: (\\d\\.?\\d*)/i);
       if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
         const categoryName = categoryMatch[1].trim();
         const confidence = parseFloat(categoryMatch[2]);
@@ -686,6 +843,7 @@ async function fetchAdditionalPRData(
             logOperation("updatePullRequestCategory", updateCategoryParams);
             
             await updatePullRequestCategory(prDbId, category.id, confidence);
+            await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'completed', state: 'open' }); // Changed status to state
             console.log(`WEBHOOK CATEGORY ASSIGNED: PR #${pr.number} categorized as '${categoryName}' (ID: ${category.id}) with confidence ${confidence}`);
           } catch (categoryError) {
             logError("updatePullRequestCategory", categoryError, {
@@ -694,32 +852,37 @@ async function fetchAdditionalPRData(
               category_name: categoryName,
               confidence: confidence
             });
-            throw categoryError;
+            await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Failed to update PR with category' });
           }
         } else {
           console.warn(`WEBHOOK CATEGORY ERROR: AI suggested category '${categoryName}' not found for organization ${organizationId}.`);
+          await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: `AI suggested category '${categoryName}' not found` });
         }
       } else {
         console.warn(`WEBHOOK PARSE ERROR: Could not parse category and confidence from AI response for PR #${pr.number}: ${text}`);
+        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Could not parse AI category response' });
       }
-
-    } catch (error) {
-      logError("fetchAdditionalPRData", error, {
-        repo_name: repository.full_name, 
-        pr_number: pr.number,
-        pr_id: prDbId,
-        org_id: organizationId
+    } catch (aiError) {
+      logError("AI Text Generation", aiError, {
+         pr_id: prDbId,
+         model: selectedModelId
       });
-      throw error;
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'AI text generation failed' });
     }
+
   } catch (error) {
-    logError("fetchAdditionalPRData", error, {
+    logError("fetchAdditionalPRData main try-catch", error, {
       repo_name: repository.full_name, 
       pr_number: pr.number,
       pr_id: prDbId,
       org_id: organizationId
     });
-    throw error;
+    // Attempt to update PR status to error if not already handled
+    try {
+        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Critical error in fetchAdditionalPRData' });
+    } catch (updateErr) {
+        logError("fetchAdditionalPRData - final PR status update error", updateErr, { pr_id: prDbId });
+    }
   }
 }
 

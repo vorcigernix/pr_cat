@@ -123,4 +123,23 @@ export async function findOrganizationByNameAndUser(
     [name, userId]
   );
   return organizations.length > 0 ? organizations[0] : null;
+}
+
+export async function findOrganizationByLogin(
+  login: string
+): Promise<(Organization & { installation_id?: number | null }) | null> {
+  console.log(`findOrganizationByLogin: Searching for organization with login (name): ${login}`);
+  const organizations = await query<
+    Organization & { installation_id?: number | null }
+  >(
+    'SELECT *, installation_id FROM organizations WHERE LOWER(name) = LOWER(?) LIMIT 1',
+    [login] // SQL's LOWER() function will handle case-insensitivity for the parameter as well
+  );
+  if (organizations.length > 0) {
+    console.log(`findOrganizationByLogin: Found organization: ${organizations[0].name}, installation_id: ${(organizations[0] as any).installation_id}`);
+    return organizations[0];
+  } else {
+    console.log(`findOrganizationByLogin: Organization with login ${login} not found.`);
+    return null;
+  }
 } 
