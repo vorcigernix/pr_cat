@@ -29,7 +29,7 @@ export interface UpdateAiSettingsPayload {
 
 async function getOrganizationSetting(organizationId: number, key: string): Promise<string | null> {
   const settings = await query<Setting>(
-    'SELECT value FROM settings WHERE organization_id = ? AND key = ?',
+    'SELECT value FROM settings WHERE organization_id = ? AND key = ? AND user_id IS NULL',
     [organizationId, key]
   );
   return settings.length > 0 ? settings[0].value : null;
@@ -41,9 +41,9 @@ async function updateOrganizationSetting(organizationId: number, key: string, va
   // Storing NULL allows distinguishing between "never set" and "explicitly cleared".
   // For simplicity, current behavior is upsert, so null will store NULL.
   await execute(
-    `INSERT INTO settings (organization_id, key, value, created_at, updated_at) 
-     VALUES (?, ?, ?, datetime('now'), datetime('now'))
-     ON CONFLICT(organization_id, key) DO UPDATE SET 
+    `INSERT INTO settings (user_id, organization_id, key, value, created_at, updated_at) 
+     VALUES (NULL, ?, ?, ?, datetime('now'), datetime('now'))
+     ON CONFLICT(user_id, organization_id, key) DO UPDATE SET 
        value = excluded.value,
        updated_at = datetime('now')`,
     [organizationId, key, value]
