@@ -112,39 +112,49 @@ export async function POST(request: NextRequest) {
   console.log("WEBHOOK: Received GitHub webhook event");
   
   try {
-    const body = await request.json();
-    
-    // Log installation data from the webhook payload
-    console.log("WEBHOOK: Full installation data in payload:", JSON.stringify(body.installation, null, 2));
-    console.log("WEBHOOK: Repository installation data:", JSON.stringify(body.repository?.installation, null, 2));
-    
-    // Log event type
-    console.log(`WEBHOOK: Event type ${body.action} on ${body.repository?.full_name}`);
-
-    // Verify webhook signature if secret is configured
+    // Get headers first
     const signature = request.headers.get('x-hub-signature-256');
     const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
     const eventType = request.headers.get('x-github-event');
     
     console.log(`Received GitHub webhook event type: ${eventType}`);
     
+    // Clone the request to read the body in different ways
+    const requestClone = request.clone();
+    
+    // Read the body as text first (for signature verification)
+    const bodyText = await request.text();
+    let bodyJson;
+    
+    try {
+      bodyJson = JSON.parse(bodyText);
+      
+      // Log installation data from the webhook payload
+      console.log("WEBHOOK: Full installation data in payload:", 
+                 JSON.stringify(bodyJson.installation, null, 2));
+      console.log("WEBHOOK: Repository installation data:", 
+                 JSON.stringify(bodyJson.repository?.installation, null, 2));
+      
+      // Log event type
+      console.log(`WEBHOOK: Event type ${bodyJson.action} on ${bodyJson.repository?.full_name}`);
+    } catch (parseError) {
+      console.error("WEBHOOK: Error parsing webhook body as JSON:", parseError);
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
+    
     if (webhookSecret && signature) {
-      const payload = await request.text();
       const hmac = crypto.createHmac('sha256', webhookSecret);
-      const digest = 'sha256=' + hmac.update(payload).digest('hex');
+      const digest = 'sha256=' + hmac.update(bodyText).digest('hex');
       
       if (signature !== digest) {
         console.warn('GitHub webhook signature verification failed');
         return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
       }
       
-      // Parse the payload back to JSON
-      const data = JSON.parse(payload);
-      return handleWebhookEvent(data, eventType || 'unknown');
+      return handleWebhookEvent(bodyJson, eventType || 'unknown');
     } else {
       // If no secret is configured, or GitHub didn't send a signature, process without verification
-      const data = await request.json();
-      return handleWebhookEvent(data, eventType || 'unknown');
+      return handleWebhookEvent(bodyJson, eventType || 'unknown');
     }
   } catch (error) {
     console.error('Error handling webhook:', error);
