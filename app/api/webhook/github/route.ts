@@ -506,7 +506,7 @@ async function fetchAdditionalPRData(
         id: orgDetails?.id,
         name: orgDetails?.name,
         github_id: orgDetails?.github_id,
-        installation_id: orgDetails?.installation_id
+        installation_id: (orgDetails as any)?.installation_id // Type assertion to bypass TypeScript check
       }, null, 2));
     } catch (orgErr) {
       console.error(`WEBHOOK ERROR: Failed to get organization details for ID ${organizationId}:`, orgErr);
