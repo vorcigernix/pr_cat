@@ -14,12 +14,13 @@ import {
   getOrganizationAiSettings,
   getOrganizationApiKey,
   findCategoryByNameAndOrg as findCategoryByNameAndOrgFromRepo,
-  findOrCreateUserByGitHubId
+  findOrCreateUserByGitHubId,
+  findOrganizationById
 } from '@/lib/repositories';
 import { findOrganizationByNameAndUser } from '@/lib/repositories/organization-repository';
 import { GitHubClient } from '@/lib/github';
 import { createInstallationClient } from '@/lib/github-app';
-import { PRReview, Category } from '@/lib/types';
+import { PRReview, Category, Organization } from '@/lib/types';
 import { openai } from '@ai-sdk/openai';
 import { generateText, CoreTool } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
@@ -49,6 +50,9 @@ function logError(context: string, error: any, extraData?: any) {
 // GitHub webhook payload types
 interface GitHubWebhookPayload {
   action: string;
+  installation?: {
+    id: number;
+  };
   repository: {
     id: number;
     name: string;
@@ -272,7 +276,7 @@ async function handlePullRequestEvent(payload: PullRequestPayload) {
         console.log(`WEBHOOK ADDITIONAL DATA: PR #${pr.number} action is 'opened'. Preparing to fetch additional data.`);
         if (repoInDb.organization_id !== null) {
           try {
-            await fetchAdditionalPRData(repository, pr, existingPR.id, repoInDb.organization_id);
+            await fetchAdditionalPRData(repository, pr, existingPR.id, repoInDb.organization_id, payload);
           } catch (additionalDataError) {
             logError("fetchAdditionalPRData for existing PR", additionalDataError, { 
               pr_id: existingPR.id, 
@@ -343,7 +347,7 @@ async function handlePullRequestEvent(payload: PullRequestPayload) {
           console.log(`WEBHOOK ADDITIONAL DATA: New PR #${pr.number} action is 'opened'. Preparing to fetch additional data.`);
           if (repoInDb.organization_id !== null) {
             try {
-              await fetchAdditionalPRData(repository, pr, newPR.id, repoInDb.organization_id);
+              await fetchAdditionalPRData(repository, pr, newPR.id, repoInDb.organization_id, payload);
             } catch (additionalDataError) {
               logError("fetchAdditionalPRData for new PR", additionalDataError, { 
                 pr_id: newPR.id, 
@@ -475,12 +479,19 @@ async function fetchAdditionalPRData(
   repository: PullRequestPayload['repository'], 
   pr: PullRequestPayload['pull_request'], 
   prDbId: number,
-  organizationId: number
+  organizationId: number,
+  fullPayload?: PullRequestPayload
 ) {
   console.log(`WEBHOOK ADDITIONAL DATA: Fetching additional data for PR #${pr.number} in org ${organizationId}, PR DB ID=${prDbId}`);
+  console.log(`WEBHOOK DEBUG: Repository owner: ${repository.owner.login}, Repository name: ${repository.name}`);
   
-  // Log the installation object from the repository payload
-  console.log(`WEBHOOK INSTALLATION DATA: Repository installation data: ${JSON.stringify(repository.installation, null, 2)}`);
+  // Log the installation object from multiple sources in the payload
+  console.log(`WEBHOOK INSTALLATION DATA: Repository installation data:`, 
+              JSON.stringify(repository.installation, null, 2));
+  if (fullPayload?.installation) {
+    console.log(`WEBHOOK INSTALLATION DATA: Top-level installation data:`, 
+                JSON.stringify(fullPayload.installation, null, 2));
+  }
 
   if (!organizationId) {
     console.error('WEBHOOK ERROR: Organization ID not provided to fetchAdditionalPRData. Cannot fetch AI settings.');
@@ -488,7 +499,20 @@ async function fetchAdditionalPRData(
   }
 
   try {
-    // 1. Fetch Organization's AI Settings
+    // 1. Get organization details to ensure installation_id is available
+    try {
+      const orgDetails = await findOrganizationById(organizationId);
+      console.log(`WEBHOOK DEBUG: Organization details from DB:`, JSON.stringify({
+        id: orgDetails?.id,
+        name: orgDetails?.name,
+        github_id: orgDetails?.github_id,
+        installation_id: orgDetails?.installation_id
+      }, null, 2));
+    } catch (orgErr) {
+      console.error(`WEBHOOK ERROR: Failed to get organization details for ID ${organizationId}:`, orgErr);
+    }
+
+    // 2. Fetch Organization's AI Settings
     const aiSettings = await getOrganizationAiSettings(organizationId);
     console.log(`WEBHOOK AI SETTINGS: Organization ${organizationId} AI settings:`, 
                 aiSettings ? `model=${aiSettings.selectedModelId}` : "No settings found");
@@ -501,7 +525,7 @@ async function fetchAdditionalPRData(
     const selectedModelId = aiSettings.selectedModelId;
     console.log(`WEBHOOK AI MODEL: Organization ${organizationId} selected AI model: ${selectedModelId}`);
 
-    // 2. Determine Provider and API Key
+    // 3. Determine Provider and API Key
     const modelInfo = allModels.find(m => m.id === selectedModelId);
     if (!modelInfo) {
       console.error(`WEBHOOK ERROR: Selected model ID ${selectedModelId} not found in allModels for organization ${organizationId}.`);
@@ -517,7 +541,7 @@ async function fetchAdditionalPRData(
     }
     console.log(`WEBHOOK API KEY: API key found for provider ${provider}.`);
 
-    // 3. Instantiate AI Client
+    // 4. Instantiate AI Client
     let aiClientProvider;
     try {
       switch (provider) {
@@ -550,43 +574,66 @@ async function fetchAdditionalPRData(
     let githubClient;
     
     try {
-      // Get the installation ID - check multiple possible locations in the payload
-      // The PR payload can have either a global installation ID or a repository-specific one
-      const installationId = repository.installation?.id;
-      
-      if (installationId) {
-        console.log(`WEBHOOK INSTALLATION ID: Using GitHub App installation ID: ${installationId} to fetch PR diff`);
-        // Create a GitHub client authenticated with the installation token
-        githubClient = await createInstallationClient(installationId);
-      } else {
-        // Try to lookup the installation ID from the database using the organization name from the repository
-        console.log(`WEBHOOK INSTALLATION ID: Not found in webhook payload, trying to find installation_id in database for org: ${repository.owner.login}`);
+      // Strategy 1: Check for installation ID in the webhook payload
+      let installationId = repository.installation?.id;
+      console.log(`WEBHOOK INSTALLATION ID (FROM PAYLOAD): ${installationId || 'NOT_FOUND'}`);
+
+      // Strategy 2: If not in payload, try to get it from the database using org ID
+      if (!installationId) {
         try {
-          const orgFromDB = await findOrganizationByNameAndUser(repository.owner.login, "system");
-          if (orgFromDB?.installation_id) {
-            console.log(`WEBHOOK INSTALLATION ID: Found in database: ${orgFromDB.installation_id}`);
-            githubClient = await createInstallationClient(orgFromDB.installation_id);
-          } else {
-            // Fallback to token-based authentication (if configured)
-            console.log('WEBHOOK WARNING: Installation ID not found in database, trying fallback to token authentication');
-            const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
-            if (!githubToken) {
-              console.warn('WEBHOOK WARNING: GitHub token not available and no installation ID found. Cannot fetch PR diff.');
-              return;
-            }
-            githubClient = new GitHubClient(githubToken);
+          const orgDetails = await findOrganizationById(organizationId);
+          // Access installation_id using a type assertion that bypasses the strict type checking
+          // This is safe because we know the DB schema includes this field
+          const dbInstallationId = orgDetails ? (orgDetails as any).installation_id : undefined;
+          if (dbInstallationId) {
+            installationId = dbInstallationId;
+            console.log(`WEBHOOK INSTALLATION ID (FROM DB BY ID): ${installationId}`);
           }
         } catch (dbError) {
-          console.error('WEBHOOK ERROR: Error looking up installation_id from database:', dbError);
-          // Fallback to token-based authentication (if configured)
-          console.log('WEBHOOK WARNING: Error finding installation ID in database, trying fallback to token authentication');
-          const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
-          if (!githubToken) {
-            console.warn('WEBHOOK WARNING: GitHub token not available and no installation ID found. Cannot fetch PR diff.');
-            return;
-          }
-          githubClient = new GitHubClient(githubToken);
+          console.error('WEBHOOK ERROR: Error fetching installation_id from DB by org ID:', dbError);
         }
+      }
+
+      // Strategy 3: Try to find it by organization name
+      if (!installationId) {
+        try {
+          console.log(`WEBHOOK DEBUG: Looking up org by name: ${repository.owner.login}`);
+          const orgFromDB = await findOrganizationByNameAndUser(repository.owner.login, "system");
+          // Use type assertion for installation_id
+          const nameBasedInstallId = orgFromDB ? (orgFromDB as any).installation_id : undefined;
+          if (nameBasedInstallId) {
+            installationId = nameBasedInstallId;
+            console.log(`WEBHOOK INSTALLATION ID (FROM DB BY NAME): ${installationId}`);
+          }
+        } catch (dbError) {
+          console.error('WEBHOOK ERROR: Error looking up installation_id by org name:', dbError);
+        }
+      }
+      
+      // Now use the installation ID if found
+      if (installationId) {
+        console.log(`WEBHOOK INSTALLATION ID: Using GitHub App installation ID: ${installationId} to fetch PR diff`);
+        
+        // Test the validity of the installation ID
+        try {
+          githubClient = await createInstallationClient(installationId);
+          console.log(`WEBHOOK CLIENT: Successfully created GitHub client with installation ID ${installationId}`);
+        } catch (clientError) {
+          console.error(`WEBHOOK ERROR: Failed to create GitHub client with installation ID ${installationId}:`, clientError);
+          // Mark as undefined instead of null to satisfy TypeScript
+          installationId = undefined;
+        }
+      }
+
+      // Final fallback to token-based authentication
+      if (!installationId || !githubClient) {
+        console.log('WEBHOOK WARNING: No valid installation ID found, trying fallback to token authentication');
+        const githubToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
+        if (!githubToken) {
+          console.warn('WEBHOOK WARNING: GitHub token not available and no installation ID found. Cannot fetch PR diff.');
+          return;
+        }
+        githubClient = new GitHubClient(githubToken);
       }
 
       console.log(`WEBHOOK FETCHING PR DIFF: Fetching PR diff for ${repository.full_name}#${pr.number}`);
