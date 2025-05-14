@@ -5,6 +5,7 @@ import { findUserByEmail, createUser, updateUser, getUserOrganizations, findUser
 import { createGitHubClient } from "@/lib/github"
 import type { JWT } from "next-auth/jwt"
 import { execute } from "@/lib/db"
+import { GitHubService } from "@/lib/services"
 
 // Extend the Session interface to include accessToken and organizations
 // and GitHub profile fields
@@ -182,6 +183,19 @@ export const config = {
         console.log(`SignIn: Upsert result for ${githubNumericId}, rowsAffected: ${rowsAffected}`);
 
         user.id = githubNumericId;
+        
+        // Sync GitHub organizations for this user if we have an access token
+        if (account && account.access_token) {
+          try {
+            console.log(`SignIn: Syncing GitHub organizations for user ${githubNumericId}`);
+            const githubService = new GitHubService(account.access_token);
+            await githubService.syncUserOrganizations(githubNumericId);
+            console.log(`SignIn: Successfully synced GitHub organizations for user ${githubNumericId}`);
+          } catch (syncError) {
+            // Log the error but don't fail the sign-in process
+            console.error(`SignIn: Error syncing GitHub organizations for user ${githubNumericId}:`, syncError);
+          }
+        }
         
         return true;
       } catch (error) {
