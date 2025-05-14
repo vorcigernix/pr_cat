@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS organizations (
   github_id INTEGER UNIQUE,
   name TEXT NOT NULL,
   avatar_url TEXT,
+  installation_id INTEGER NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
