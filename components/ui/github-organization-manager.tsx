@@ -121,8 +121,10 @@ export function GitHubOrganizationManager({
       
       <CardContent>
         {organizations.length === 0 && !loading ? (
-          <p className="text-muted-foreground">
-            No GitHub organizations found for your account. If you belong to organizations, try syncing your profile or refresh.
+          <p className="text-sm text-muted-foreground">
+            No organizations found. Ensure your GitHub organization membership is public. 
+            You can manage visibility at <a href="https://github.com/settings/organizations" target="_blank" rel="noopener noreferrer" className="underline">GitHub Organization Settings</a>. 
+            Try syncing again.
           </p>
         ) : (
           <div className="space-y-2">
