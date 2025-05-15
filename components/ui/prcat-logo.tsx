@@ -19,7 +19,7 @@ export function PrcatLogo({
   return (
     <div className={cn("inline-flex flex-row items-center", className)}>
       <div className="flex flex-row items-center">
-        <span className={cn("inline-block", fontSize, dark ? "text-white" : "text-foreground")}>pr</span>
+        <span className={cn("inline-block font-bold", fontSize, dark ? "text-white" : "text-foreground")}>PR</span>
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
           fill="none" 
@@ -37,7 +37,7 @@ export function PrcatLogo({
             clipRule="evenodd"
           />
         </svg>
-        <span className={cn("inline-block", fontSize, dark ? "text-white" : "text-foreground")}>cat</span>
+        <span className={cn("inline-block font-bold", fontSize, dark ? "text-white" : "text-foreground")}>Cat</span>
       </div>
     </div>
   );

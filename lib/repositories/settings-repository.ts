@@ -1,18 +1,19 @@
 import { query, execute } from '@/lib/db';
 import { Setting } from '@/lib/types';
 
-// Old keys (will be replaced or unused for AI settings)
-// const AI_PROVIDER_KEY = 'ai_provider';
-// const AI_MODEL_ID_KEY = 'ai_model_id';
-
-// New keys for AI settings
+// Keys for AI settings
+const AI_PROVIDER_KEY = 'ai_provider';
 const AI_SELECTED_MODEL_ID_KEY = 'ai_selected_model_id';
 const AI_OPENAI_API_KEY_KEY = 'ai_openai_api_key';
-const AI_GOOGLE_API_KEY_KEY = 'ai_google_api_key'; // Or GEMINI_API_KEY if that naming is preferred
+const AI_GOOGLE_API_KEY_KEY = 'ai_google_api_key';
 const AI_ANTHROPIC_API_KEY_KEY = 'ai_anthropic_api_key';
 
+// Valid AI provider values
+export type AIProvider = 'openai' | 'google' | 'anthropic' | null;
+
 // Interface for data returned to the client (keys are not sent)
-export interface AiSettings { // Renamed from GetAiSettingsResponse for brevity in frontend
+export interface AiSettings {
+  provider: AIProvider;
   selectedModelId: string | null;
   isOpenAiKeySet: boolean;
   isGoogleKeySet: boolean;
@@ -21,8 +22,9 @@ export interface AiSettings { // Renamed from GetAiSettingsResponse for brevity 
 
 // Interface for payload when updating settings (actual keys are sent)
 export interface UpdateAiSettingsPayload {
-  selectedModelId?: string | null;    // To change the model or disable AI (null)
-  openaiApiKey?: string | null;    // To set or clear/remove a key. Null to clear.
+  provider?: AIProvider;
+  selectedModelId?: string | null;
+  openaiApiKey?: string | null;
   googleApiKey?: string | null;
   anthropicApiKey?: string | null;
 }
@@ -51,14 +53,16 @@ async function updateOrganizationSetting(organizationId: number, key: string, va
 }
 
 export async function getOrganizationAiSettings(organizationId: number): Promise<AiSettings> {
+  const provider = await getOrganizationSetting(organizationId, AI_PROVIDER_KEY) as AIProvider;
   const selectedModelId = await getOrganizationSetting(organizationId, AI_SELECTED_MODEL_ID_KEY);
   const openAiKey = await getOrganizationSetting(organizationId, AI_OPENAI_API_KEY_KEY);
   const googleKey = await getOrganizationSetting(organizationId, AI_GOOGLE_API_KEY_KEY);
   const anthropicKey = await getOrganizationSetting(organizationId, AI_ANTHROPIC_API_KEY_KEY);
 
   return {
+    provider: provider || null,
     selectedModelId,
-    isOpenAiKeySet: !!openAiKey, // True if key exists and is not empty string (could refine if empty string is valid)
+    isOpenAiKeySet: !!openAiKey,
     isGoogleKeySet: !!googleKey,
     isAnthropicKeySet: !!anthropicKey,
   };
@@ -68,6 +72,9 @@ export async function updateOrganizationAiSettings(
   organizationId: number, 
   payload: UpdateAiSettingsPayload
 ): Promise<void> {
+  if (payload.provider !== undefined) {
+    await updateOrganizationSetting(organizationId, AI_PROVIDER_KEY, payload.provider);
+  }
   if (payload.selectedModelId !== undefined) {
     await updateOrganizationSetting(organizationId, AI_SELECTED_MODEL_ID_KEY, payload.selectedModelId);
   }
@@ -82,8 +89,10 @@ export async function updateOrganizationAiSettings(
   }
 }
 
-// New function to get a specific API key for an organization and provider
-export async function getOrganizationApiKey(organizationId: number, provider: 'openai' | 'google' | 'anthropic'): Promise<string | null> {
+// Get a specific API key for an organization and provider
+export async function getOrganizationApiKey(organizationId: number, provider: AIProvider): Promise<string | null> {
+  if (!provider) return null;
+  
   let apiKeyDBKey = '';
   switch (provider) {
     case 'openai':
@@ -96,7 +105,6 @@ export async function getOrganizationApiKey(organizationId: number, provider: 'o
       apiKeyDBKey = AI_ANTHROPIC_API_KEY_KEY;
       break;
     default:
-      // Should not happen with TypeScript, but good for safety
       console.error(`Invalid provider specified for getOrganizationApiKey: ${provider}`);
       return null;
   }

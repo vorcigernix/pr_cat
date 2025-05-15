@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     
     console.log(`DEBUG: Starting categorization for PR #${pullRequest.number} (ID: ${prId}) in ${repository.full_name}`);
     
-    // Get AI settings for organization
+    // Get API settings for organization
     const aiSettings = await getOrganizationAiSettings(organizationId);
     if (!aiSettings.selectedModelId || aiSettings.selectedModelId === '__none__') {
       return NextResponse.json({ 
@@ -66,11 +66,17 @@ export async function GET(request: NextRequest) {
     }
     
     // Get provider and model info
+    const provider = aiSettings.provider;
     const selectedModelId = aiSettings.selectedModelId;
-    const [provider] = selectedModelId.split('/');
+    
+    if (!provider) {
+      return NextResponse.json({ 
+        error: 'AI provider not set for organization'
+      }, { status: 400 });
+    }
     
     // Get API key for provider
-    const apiKey = await getOrganizationApiKey(organizationId, provider as 'openai' | 'google' | 'anthropic');
+    const apiKey = await getOrganizationApiKey(organizationId, provider);
     
     if (!apiKey) {
       return NextResponse.json({ 

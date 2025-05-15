@@ -673,29 +673,27 @@ async function fetchAdditionalPRData(
       }
     }
     
-    // 1. Fetch Organization's AI Settings (using organizationId)
+    // 1. Get API settings (model + API key)
+    console.log(`WEBHOOK AI SETTINGS: Getting AI settings for organization ${organizationId}`);
     const aiSettings = await getOrganizationAiSettings(organizationId);
-    console.log(`WEBHOOK AI SETTINGS: Organization ${organizationId} AI settings:`, 
-                aiSettings ? `model=${aiSettings.selectedModelId}` : "No settings found");
-                
-    if (!aiSettings || !aiSettings.selectedModelId) {
+    const selectedModelId = aiSettings.selectedModelId;
+    
+    if (!selectedModelId || selectedModelId === '__none__') {
       console.log(`WEBHOOK INFO: AI categorization disabled for organization ${organizationId} (no model selected).`);
       await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: 'AI categorization disabled for organization' });
       return;
     }
-
-    const selectedModelId = aiSettings.selectedModelId;
-    console.log(`WEBHOOK AI MODEL: Organization ${organizationId} selected AI model: ${selectedModelId}`);
-
-    const modelInfo = allModels.find(m => m.id === selectedModelId);
-    if (!modelInfo) {
-      console.error(`WEBHOOK ERROR: Selected model ID ${selectedModelId} not found in allModels for organization ${organizationId}.`);
-      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: `Selected AI model ${selectedModelId} not configured` });
+    
+    const provider = aiSettings.provider;
+    
+    if (!provider) {
+      console.log(`WEBHOOK INFO: AI provider not set for organization ${organizationId}.`);
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: 'AI provider not set for organization' });
       return;
     }
-    const provider = modelInfo.provider;
-    console.log(`WEBHOOK AI PROVIDER: Determined provider: ${provider} for model ${selectedModelId}`);
-
+    
+    console.log(`WEBHOOK MODEL: Using AI model ${selectedModelId} with provider ${provider}`);
+    
     const apiKey = await getOrganizationApiKey(organizationId, provider);
     if (!apiKey) {
       console.warn(`WEBHOOK WARNING: API key for provider ${provider} not set for organization ${organizationId}. Skipping AI categorization.`);

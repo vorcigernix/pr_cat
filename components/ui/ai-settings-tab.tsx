@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { AiSettings as FetchedAiSettings, UpdateAiSettingsPayload } from '@/lib/repositories';
+import { AiSettings as FetchedAiSettings, UpdateAiSettingsPayload, AIProvider } from '@/lib/repositories';
 import { Organization } from '@/lib/types';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
-import { allModels, ModelDefinition } from '@/lib/ai-models'; // Import shared models and definition
+import { allModels, ModelDefinition } from '@/lib/ai-models';
 
 export function AiSettingsTab() {
   const { data: session, status: sessionStatus } = useSession();
@@ -20,6 +20,7 @@ export function AiSettingsTab() {
 
   const [fetchedSettings, setFetchedSettings] = useState<FetchedAiSettings | null>(null);
   
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [openaiApiKeyInput, setOpenaiApiKeyInput] = useState('');
   const [googleApiKeyInput, setGoogleApiKeyInput] = useState('');
@@ -27,6 +28,11 @@ export function AiSettingsTab() {
 
   const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Filter models by selected provider
+  const availableModels = selectedProvider 
+    ? allModels.filter(model => model.provider === selectedProvider)
+    : [];
 
   useEffect(() => {
     if (session?.organizations && Array.isArray(session.organizations)) {
@@ -39,6 +45,7 @@ export function AiSettingsTab() {
       if (!selectedOrganization) return;
       setIsLoadingSettings(true);
       setFetchedSettings(null);
+      setSelectedProvider(null);
       setSelectedModelId(null);
       setOpenaiApiKeyInput('');
       setGoogleApiKeyInput('');
@@ -50,6 +57,7 @@ export function AiSettingsTab() {
         }
         const data: FetchedAiSettings = await response.json();
         setFetchedSettings(data);
+        setSelectedProvider(data.provider);
         setSelectedModelId(data.selectedModelId);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Could not load AI settings.');
@@ -61,6 +69,7 @@ export function AiSettingsTab() {
       fetchSettings();
     } else {
       setFetchedSettings(null);
+      setSelectedProvider(null);
       setSelectedModelId(null);
       setOpenaiApiKeyInput('');
       setGoogleApiKeyInput('');
@@ -69,24 +78,36 @@ export function AiSettingsTab() {
     }
   }, [selectedOrganization]);
 
-  const currentSelectedModelDetails = selectedModelId ? allModels.find(m => m.id === selectedModelId) : null;
+  // When provider changes, reset model selection
+  useEffect(() => {
+    if (selectedProvider) {
+      // Check if current selected model is from the new provider
+      const currentModelMatchesProvider = selectedModelId && 
+        allModels.some(m => m.id === selectedModelId && m.provider === selectedProvider);
+      
+      // If not, clear the model selection
+      if (!currentModelMatchesProvider) {
+        setSelectedModelId(null);
+      }
+    }
+  }, [selectedProvider, selectedModelId]);
 
   const handleSave = async () => {
     if (!selectedOrganization) return;
     setIsSaving(true);
 
     const payload: UpdateAiSettingsPayload = {
+      provider: selectedProvider,
       selectedModelId: selectedModelId,
     };
 
-    const modelDetails = selectedModelId ? allModels.find(m => m.id === selectedModelId) : null;
-
-    if (modelDetails) {
+    // Handle API key changes based on provider
+    if (selectedProvider) {
       let currentInput = '';
       let apiKeyCurrentlySet = false;
       let apiKeyPayloadKey: keyof UpdateAiSettingsPayload | null = null;
 
-      switch (modelDetails.provider) {
+      switch (selectedProvider) {
         case 'openai':
           currentInput = openaiApiKeyInput;
           apiKeyCurrentlySet = !!fetchedSettings?.isOpenAiKeySet;
@@ -137,6 +158,7 @@ export function AiSettingsTab() {
       const fetchResponse = await fetch(`/api/organizations/${selectedOrganization.id}/ai-settings`);
       const data: FetchedAiSettings = await fetchResponse.json();
       setFetchedSettings(data);
+      setSelectedProvider(data.provider);
       setSelectedModelId(data.selectedModelId);
       setOpenaiApiKeyInput(''); 
       setGoogleApiKeyInput('');
@@ -247,69 +269,107 @@ export function AiSettingsTab() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Provider Selection */}
               <div className="space-y-2">
-                <Label htmlFor="ai-model-select">AI Model</Label>
+                <Label htmlFor="provider-select">AI Provider</Label>
                 <Select
-                  value={selectedModelId === null ? '__none__' : selectedModelId}
+                  value={selectedProvider || ''}
                   onValueChange={(value) => {
-                    const newModelId = value === '__none__' ? null : value;
-                    setSelectedModelId(newModelId);
-                    setOpenaiApiKeyInput('');
-                    setGoogleApiKeyInput('');
-                    setAnthropicApiKeyInput('');
+                    if (value === '') {
+                      setSelectedProvider(null);
+                    } else {
+                      setSelectedProvider(value as AIProvider);
+                    }
                   }}
                 >
-                  <SelectTrigger id="ai-model-select">
-                    <SelectValue placeholder="Select a model (or None)" />
+                  <SelectTrigger id="provider-select">
+                    <SelectValue placeholder="Select an AI provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">None (Disable AI Categorization)</SelectItem>
-                    {allModels.map(model => (
-                      <SelectItem key={model.id} value={model.id}>
-                        {model.providerName}: {model.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="">None (Disable AI Categorization)</SelectItem>
+                    <SelectItem value="openai">OpenAI</SelectItem>
+                    <SelectItem value="google">Google (Gemini)</SelectItem>
+                    <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              {currentSelectedModelDetails && (
+              
+              {/* Model Selection - only shown when provider is selected */}
+              {selectedProvider && (
                 <div className="space-y-2">
-                  <Label htmlFor={`api-key-${currentSelectedModelDetails.provider}`}>
-                    {currentSelectedModelDetails.providerName} API Key
-                  </Label>
-                  <Input
-                    id={`api-key-${currentSelectedModelDetails.provider}`}
-                    type="password"
-                    value={getApiKeyInputProps(currentSelectedModelDetails.provider).value}
-                    onChange={getApiKeyInputProps(currentSelectedModelDetails.provider).onChange}
-                    placeholder={getApiKeyInputProps(currentSelectedModelDetails.provider).placeholder}
-                  />
-                  {getApiKeyInputProps(currentSelectedModelDetails.provider).isSet && 
-                   !getApiKeyInputProps(currentSelectedModelDetails.provider).value && (
-                    <p className="text-xs text-muted-foreground">
-                      An API key is currently set for {currentSelectedModelDetails.providerName}.
-                      To update it, enter the new key. 
-                      To clear this key, leave this field blank and click "Save AI Settings".
-                    </p>
-                  )}
-                   {!getApiKeyInputProps(currentSelectedModelDetails.provider).isSet && 
-                    currentSelectedModelDetails.provider && ( // Ensure provider exists to show specific message
-                     <p className="text-xs text-muted-foreground">
-                      Enter your {currentSelectedModelDetails.providerName} API key.
-                    </p>
-                   )
-                   }
+                  <Label htmlFor="model-select">AI Model</Label>
+                  <Select
+                    value={selectedModelId || ''} 
+                    onValueChange={(value) => setSelectedModelId(value || null)}
+                  >
+                    <SelectTrigger id="model-select">
+                      <SelectValue placeholder={`Select ${selectedProvider} model`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableModels.map(model => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
-              
-              {selectedModelId && !currentSelectedModelDetails && (
-                <p className="text-destructive text-xs">Error: Selected model details not found. Please re-select.</p>
+
+              {/* API key input - show based on selected provider */}
+              {selectedProvider === 'openai' && (
+                <div className="space-y-2">
+                  <Label htmlFor="openai-key">
+                    OpenAI API Key
+                    {fetchedSettings?.isOpenAiKeySet && <span className="ml-2 text-xs text-muted-foreground">(Already set)</span>}
+                  </Label>
+                  <Input
+                    id="openai-key"
+                    type="password"
+                    placeholder={getApiKeyInputProps('openai').placeholder}
+                    value={openaiApiKeyInput}
+                    onChange={getApiKeyInputProps('openai').onChange}
+                  />
+                  <p className="text-xs text-muted-foreground">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI dashboard</a>.</p>
+                </div>
               )}
 
+              {selectedProvider === 'google' && (
+                <div className="space-y-2">
+                  <Label htmlFor="google-key">
+                    Google AI API Key
+                    {fetchedSettings?.isGoogleKeySet && <span className="ml-2 text-xs text-muted-foreground">(Already set)</span>}
+                  </Label>
+                  <Input
+                    id="google-key"
+                    type="password"
+                    placeholder={getApiKeyInputProps('google').placeholder}
+                    value={googleApiKeyInput}
+                    onChange={getApiKeyInputProps('google').onChange}
+                  />
+                  <p className="text-xs text-muted-foreground">Get your API key from <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="underline">Google AI Studio</a>.</p>
+                </div>
+              )}
+
+              {selectedProvider === 'anthropic' && (
+                <div className="space-y-2">
+                  <Label htmlFor="anthropic-key">
+                    Anthropic API Key
+                    {fetchedSettings?.isAnthropicKeySet && <span className="ml-2 text-xs text-muted-foreground">(Already set)</span>}
+                  </Label>
+                  <Input
+                    id="anthropic-key"
+                    type="password"
+                    placeholder={getApiKeyInputProps('anthropic').placeholder}
+                    value={anthropicApiKeyInput}
+                    onChange={getApiKeyInputProps('anthropic').onChange}
+                  />
+                  <p className="text-xs text-muted-foreground">Get your API key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="underline">Anthropic Console</a>.</p>
+                </div>
+              )}
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSave} disabled={isSaving || isLoadingSettings || !selectedOrganization}>
+              <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? 'Saving...' : 'Save AI Settings'}
               </Button>
             </CardFooter>
