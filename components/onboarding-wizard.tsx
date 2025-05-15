@@ -219,6 +219,29 @@ export function OnboardingWizard() {
   // Go to next step
   const handleNext = async () => {
     if (currentStep < STEPS.COMPLETE) {
+      // When moving from GitHub App installation to AI setup,
+      // sync GitHub organizations to create user-organization mappings
+      if (currentStep === STEPS.GITHUB_APP && githubAppInstalled) {
+        try {
+          // Call the backend API to sync organizations and create proper user-org mappings
+          const response = await fetch('/api/github/organizations/sync', {
+            method: 'POST',
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to sync organizations');
+          }
+          
+          const data = await response.json();
+          toast.success(`Successfully synced ${data.organizations?.length || 0} organizations`);
+        } catch (error) {
+          console.error('Error syncing organizations:', error);
+          toast.error('Failed to sync GitHub organizations. You may need to re-sync in settings.');
+          // Continue anyway to not block user progress
+        }
+      }
+
       // Validate AI settings before proceeding
       if (currentStep === STEPS.AI_SETUP) {
         if (!selectedProvider) {

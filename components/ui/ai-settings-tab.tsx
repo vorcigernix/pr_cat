@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { AiSettings as FetchedAiSettings, UpdateAiSettingsPayload, AIProvider } from '@/lib/repositories';
+import { AiSettings as FetchedAiSettings, UpdateAiSettingsPayload } from '@/lib/repositories';
+import { AIProvider } from '@/lib/repositories/settings-repository';
 import { Organization } from '@/lib/types';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 import { allModels, ModelDefinition } from '@/lib/ai-models';
@@ -273,9 +274,9 @@ export function AiSettingsTab() {
               <div className="space-y-2">
                 <Label htmlFor="provider-select">AI Provider</Label>
                 <Select
-                  value={selectedProvider || ''}
+                  value={selectedProvider || 'none'}
                   onValueChange={(value) => {
-                    if (value === '') {
+                    if (value === 'none') {
                       setSelectedProvider(null);
                     } else {
                       setSelectedProvider(value as AIProvider);
@@ -286,7 +287,7 @@ export function AiSettingsTab() {
                     <SelectValue placeholder="Select an AI provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None (Disable AI Categorization)</SelectItem>
+                    <SelectItem value="none">None (Disable AI Categorization)</SelectItem>
                     <SelectItem value="openai">OpenAI</SelectItem>
                     <SelectItem value="google">Google (Gemini)</SelectItem>
                     <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
@@ -299,13 +300,14 @@ export function AiSettingsTab() {
                 <div className="space-y-2">
                   <Label htmlFor="model-select">AI Model</Label>
                   <Select
-                    value={selectedModelId || ''} 
-                    onValueChange={(value) => setSelectedModelId(value || null)}
+                    value={selectedModelId || 'none'} 
+                    onValueChange={(value) => setSelectedModelId(value === 'none' ? null : value)}
                   >
                     <SelectTrigger id="model-select">
                       <SelectValue placeholder={`Select ${selectedProvider} model`} />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">Select a model</SelectItem>
                       {availableModels.map(model => (
                         <SelectItem key={model.id} value={model.id}>
                           {model.name}

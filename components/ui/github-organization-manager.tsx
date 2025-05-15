@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { GitHubOrgSetupItem, OrganizationWithInstallation } from '@/components/ui/github-org-setup-item';
 
@@ -21,6 +21,7 @@ export function GitHubOrganizationManager({
   const [organizations, setOrganizations] = useState<OrganizationWithInstallation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const fetchInstallationStatus = useCallback(async (showToast = false) => {
     if (!session?.accessToken) {
@@ -80,6 +81,39 @@ export function GitHubOrganizationManager({
     fetchInstallationStatus(true);
   };
 
+  const handleSyncOrganizations = async () => {
+    if (!session?.accessToken) {
+      toast.error('GitHub authorization required');
+      return;
+    }
+
+    setSyncing(true);
+    toast.info("Syncing GitHub organizations...");
+
+    try {
+      // Call the backend API to sync organizations
+      const response = await fetch('/api/github/organizations/sync', {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync organizations');
+      }
+      
+      const data = await response.json();
+      toast.success(`Successfully synced ${data.organizations?.length || 0} organizations`);
+      
+      // Refresh the installation status after sync
+      await fetchInstallationStatus(true);
+    } catch (error) {
+      console.error('Error syncing organizations:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to sync organizations');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleSelectOrganization = (org: OrganizationWithInstallation) => {
     if (org.hasAppInstalled) {
       onOrganizationSelected(org);
@@ -109,10 +143,17 @@ export function GitHubOrganizationManager({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Manage GitHub Organizations</CardTitle>
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing || loading}>
-            <RefreshCw className={(refreshing || loading) ? "h-4 w-4 animate-spin" : "h-4 w-4 mr-2"} />
-            Refresh Status
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleSyncOrganizations} disabled={syncing}>
+              <RotateCw className={syncing ? "h-4 w-4 animate-spin" : "h-4 w-4 mr-2"} />
+              {!syncing && "Sync Organizations"}
+              {syncing && "Syncing..."}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing || loading}>
+              <RefreshCw className={(refreshing || loading) ? "h-4 w-4 animate-spin" : "h-4 w-4 mr-2"} />
+              Refresh Status
+            </Button>
+          </div>
         </div>
         <CardDescription>
           Select an organization to configure its repositories, or install the GitHub App if not already active.
