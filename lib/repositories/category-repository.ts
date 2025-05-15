@@ -11,7 +11,7 @@ export async function getDefaultCategories(): Promise<Category[]> {
 }
 
 export async function getOrganizationCategories(organizationId: number): Promise<Category[]> {
-  return query<Category>('SELECT * FROM categories WHERE organization_id = ? OR organization_id IS NULL ORDER BY is_default DESC, name ASC', [organizationId]);
+  return query<Category>('SELECT * FROM categories WHERE organization_id = ? OR is_default = 1 ORDER BY is_default DESC, name ASC', [organizationId]);
 }
 
 export async function createCategory(category: Omit<Category, 'id' | 'created_at' | 'updated_at' | 'is_default'>): Promise<Category> {
