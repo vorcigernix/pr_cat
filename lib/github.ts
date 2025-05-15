@@ -74,6 +74,25 @@ export class GitHubClient {
     return data as GitHubRepository;
   }
   
+  async checkRepositoryAccess(owner: string, repo: string): Promise<boolean> {
+    try {
+      // Try to access webhooks API - this requires admin permissions
+      // which is a good test for proper app installation access
+      await this.octokit.repos.listWebhooks({
+        owner,
+        repo,
+        per_page: 1
+      });
+      return true; // Repository is accessible with webhook permissions
+    } catch (error: any) {
+      if (error.status === 404 || error.status === 403) {
+        console.log(`Repository ${owner}/${repo} is not accessible for webhooks: ${error.message}`);
+        return false; // No admin access
+      }
+      throw error; // Other errors should be handled by caller
+    }
+  }
+  
   async getPullRequests(owner: string, repo: string, state: 'open' | 'closed' | 'all' = 'all', page = 1, perPage = 100): Promise<GitHubPullRequest[]> {
     const { data } = await this.octokit.pulls.list({
       owner,

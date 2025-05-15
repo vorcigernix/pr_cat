@@ -221,6 +221,34 @@ export class GitHubService {
     return this.client.getUserRepositories();
   }
   
+  async getAccessibleRepositories(organizationName: string): Promise<Set<string>> {
+    try {
+      // Get all repos for the organization
+      const repos = await this.client.getOrganizationRepositories(organizationName);
+      
+      // Create a set of accessible repo full_names
+      const accessibleRepos = new Set<string>();
+      
+      // Check each repository for webhook access
+      for (const repo of repos) {
+        try {
+          const hasAccess = await this.client.checkRepositoryAccess(organizationName, repo.name);
+          if (hasAccess) {
+            accessibleRepos.add(repo.full_name);
+          }
+        } catch (error) {
+          console.error(`Error checking access for ${repo.full_name}:`, error);
+          // Don't add to the set if we encounter an error
+        }
+      }
+      
+      return accessibleRepos;
+    } catch (error) {
+      console.error(`Error getting accessible repositories for ${organizationName}:`, error);
+      return new Set<string>();
+    }
+  }
+  
   async setupRepositoryTracking(repositoryId: number, appUrl: string): Promise<{ success: boolean; webhookId?: number; message: string }> {
     // Find repository in database
     const repository = await findRepositoryByGitHubId(repositoryId);

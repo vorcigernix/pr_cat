@@ -1,0 +1,1 @@
+-- Add ai_status and error_message columns to pull_requests table

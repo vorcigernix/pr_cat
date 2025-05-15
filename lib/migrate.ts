@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS pull_requests (
   category_id INTEGER,
   category_confidence REAL,
   embedding_id INTEGER,
+  ai_status TEXT DEFAULT NULL, -- Status of AI categorization processing
+  error_message TEXT DEFAULT NULL, -- Error message if AI processing fails
   FOREIGN KEY (repository_id) REFERENCES repositories(id) ON DELETE CASCADE,
   FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
