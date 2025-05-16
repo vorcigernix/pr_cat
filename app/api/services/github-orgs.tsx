@@ -2,6 +2,8 @@ import { OrganizationWithInstallation } from '@/components/ui/github-org-setup-i
 import { cookies } from 'next/headers';
 import { auth } from '@/auth';
 
+// This file is for server components only - it uses next/headers
+
 // Get base URL for server-side API calls
 function getBaseUrl() {
   // When running on the server, we need an absolute URL

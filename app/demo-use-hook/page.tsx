@@ -1,16 +1,14 @@
-"use client";
+import { getOrganizationInstallations } from '@/app/api/services/github-orgs';
+import { Suspense } from 'react';
+import { SettingsContent } from '@/components/settings-content';
 
-import { useState } from 'react';
-import { OrganizationWithInstallation } from '@/components/ui/github-org-setup-item';
-import OrganizationManagerWrapper from '@/app/components/organization-manager-wrapper';
+// Mark this route as dynamic since it uses headers() via getOrganizationInstallations
+export const dynamic = 'force-dynamic';
 
-export default function UseHookDemoPage() {
-  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithInstallation | null>(null);
-
-  const handleOrganizationSelected = (org: OrganizationWithInstallation | null) => {
-    setSelectedOrganization(org);
-  };
-
+export default async function UseHookDemoPage() {
+  // Fetch data in the server component - don't await
+  const organizationsPromise = getOrganizationInstallations();
+  
   return (
     <div className="container mx-auto py-10 space-y-8">
       <div>
@@ -21,19 +19,9 @@ export default function UseHookDemoPage() {
         </p>
       </div>
 
-      <OrganizationManagerWrapper 
-        onOrganizationSelected={handleOrganizationSelected}
-        selectedOrganization={selectedOrganization}
-      />
-
-      {selectedOrganization && (
-        <div className="p-4 border rounded-lg">
-          <h2 className="text-xl font-semibold mb-2">Selected Organization</h2>
-          <pre className="bg-muted p-4 rounded overflow-auto">
-            {JSON.stringify(selectedOrganization, null, 2)}
-          </pre>
-        </div>
-      )}
+      <Suspense fallback={<div>Loading organizations...</div>}>
+        <SettingsContent organizationsPromise={organizationsPromise} />
+      </Suspense>
     </div>
   );
 } 

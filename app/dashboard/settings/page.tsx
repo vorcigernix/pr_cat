@@ -9,6 +9,10 @@ import {
 import { getOrganizationInstallations } from '@/app/api/services/github-orgs';
 import { SettingsContent } from "@/components/settings-content";
 
+// Mark this route as dynamic since it uses headers() via getOrganizationInstallations
+export const dynamic = 'force-dynamic';
+
+// This is a Server Component - it can use getOrganizationInstallations
 export default async function SettingsPage() {
   // Fetch data in the server component - don't await
   const organizationsPromise = getOrganizationInstallations();
