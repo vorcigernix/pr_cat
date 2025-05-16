@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -12,68 +12,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { MetricsSummary } from "@/app/api/services/metrics-data";
 
-type MetricsSummary = {
-  codingTime: {
-    value: number;
-    change: number;
-    trend: string;
-  };
-  prSize: {
-    value: number;
-    change: number;
-    trend: string;
-  };
-  cycleTime: {
-    value: number;
-    change: number;
-    trend: string;
-  };
-  reviewTime: {
-    value: number;
-    change: number;
-    trend: string;
-  };
+// Default fallback metrics to use when no props are provided
+const defaultMetrics: MetricsSummary = {
+  codingTime: { value: 4.6, change: 0, trend: "up" },
+  prSize: { value: 359, change: -55, trend: "up" },
+  cycleTime: { value: 77.8, change: -5.4, trend: "up" },
+  reviewTime: { value: 39.1, change: -5.9, trend: "up" }
 };
 
-export function SectionCardsEngineering() {
-  const [metrics, setMetrics] = useState<MetricsSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+interface SectionCardsEngineeringProps {
+  initialMetrics?: MetricsSummary; // Make this optional
+}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // In a real app, this would be an API call
-        const data = await import("@/app/dashboard/metrics-summary.json");
-        setMetrics(data.default as MetricsSummary);
-      } catch (error) {
-        console.error("Failed to load metrics data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+export function SectionCardsEngineering({ initialMetrics = defaultMetrics }: SectionCardsEngineeringProps) {
+  // Initialize state with server-fetched data or default values
+  const [metrics, setMetrics] = useState<MetricsSummary>(initialMetrics);
 
-    fetchData();
-  }, []);
-
-  if (loading || !metrics) {
-    return (
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-        {Array(4).fill(0).map((_, i) => (
-          <Card key={i} className="@container/card animate-pulse">
-            <CardHeader>
-              <div className="h-4 w-24 bg-muted rounded"></div>
-              <div className="h-8 w-16 bg-muted rounded mt-2"></div>
-            </CardHeader>
-            <CardFooter className="flex-col items-start gap-1.5">
-              <div className="h-4 w-32 bg-muted rounded"></div>
-              <div className="h-4 w-40 bg-muted rounded"></div>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+  // No need for loading state or useEffect fetch anymore since data is passed as prop
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

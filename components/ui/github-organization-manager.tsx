@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,33 +9,27 @@ import { toast } from 'sonner';
 import { GitHubOrgSetupItem, OrganizationWithInstallation } from '@/components/ui/github-org-setup-item';
 
 interface GitHubOrganizationManagerProps {
+  initialOrganizations: OrganizationWithInstallation[];
   onOrganizationSelected: (org: OrganizationWithInstallation | null) => void;
   selectedOrganization: OrganizationWithInstallation | null;
 }
 
 export function GitHubOrganizationManager({
+  initialOrganizations = [],  // Provide a default empty array
   onOrganizationSelected,
   selectedOrganization
 }: GitHubOrganizationManagerProps) {
   const { data: session } = useSession();
-  const [organizations, setOrganizations] = useState<OrganizationWithInstallation[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Ensure organizations is always an array even if initialOrganizations is undefined
+  const [organizations, setOrganizations] = useState<OrganizationWithInstallation[]>(initialOrganizations || []);
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  const fetchInstallationStatus = useCallback(async (showToast = false) => {
-    if (!session?.accessToken) {
-      setLoading(false);
-      return;
-    }
-
-    if (showToast) {
-      setRefreshing(true);
-      toast.info("Checking GitHub App installation status...");
-    } else {
-      setLoading(true);
-    }
-
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    toast.info("Checking GitHub App installation status...");
+    
     try {
       const response = await fetch('/api/github/organizations/installation-status');
       if (!response.ok) {
@@ -56,29 +50,14 @@ export function GitHubOrganizationManager({
           }
         } 
       }
-
-      if (showToast) {
-        toast.success("Installation status updated");
-      }
+      
+      toast.success("Installation status updated");
     } catch (error) {
       console.error('Error fetching GitHub App installation status:', error);
-      if (showToast) {
-        toast.error(error instanceof Error ? error.message : 'Failed to check installation status');
-      }
+      toast.error(error instanceof Error ? error.message : 'Failed to check installation status');
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  }, [session?.accessToken, selectedOrganization, onOrganizationSelected]);
-
-  useEffect(() => {
-    if (session?.accessToken) {
-      fetchInstallationStatus();
-    }
-  }, [session?.accessToken, fetchInstallationStatus]);
-
-  const handleRefresh = () => {
-    fetchInstallationStatus(true);
   };
 
   const handleSyncOrganizations = async () => {
@@ -104,8 +83,8 @@ export function GitHubOrganizationManager({
       const data = await response.json();
       toast.success(`Successfully synced ${data.organizations?.length || 0} organizations`);
       
-      // Refresh the installation status after sync
-      await fetchInstallationStatus(true);
+      // Refresh the data after sync
+      await handleRefresh();
     } catch (error) {
       console.error('Error syncing organizations:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to sync organizations');
@@ -122,22 +101,6 @@ export function GitHubOrganizationManager({
     }
   };
 
-  if (loading && !refreshing) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>GitHub Organizations</CardTitle>
-          <CardDescription>
-            Loading your GitHub organizations and app installation status...
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center p-8">
-          <RefreshCw className="h-8 w-8 text-muted-foreground animate-spin" />
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -149,8 +112,8 @@ export function GitHubOrganizationManager({
               {!syncing && "Sync Organizations"}
               {syncing && "Syncing..."}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing || loading}>
-              <RefreshCw className={(refreshing || loading) ? "h-4 w-4 animate-spin" : "h-4 w-4 mr-2"} />
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={refreshing ? "h-4 w-4 animate-spin" : "h-4 w-4 mr-2"} />
               Refresh Status
             </Button>
           </div>
@@ -161,7 +124,7 @@ export function GitHubOrganizationManager({
       </CardHeader>
       
       <CardContent>
-        {organizations.length === 0 && !loading ? (
+        {!organizations || organizations.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No organizations found. Ensure your GitHub organization membership is public. 
             You can manage visibility at <a href="https://github.com/settings/organizations" target="_blank" rel="noopener noreferrer" className="underline">GitHub Organization Settings</a>. 
@@ -175,7 +138,7 @@ export function GitHubOrganizationManager({
                 org={org} 
                 isSelected={selectedOrganization?.github_id === org.github_id && org.hasAppInstalled}
                 onSelectOrganization={handleSelectOrganization}
-                onAppInstallInitiated={() => setTimeout(() => fetchInstallationStatus(true), 3000)}
+                onAppInstallInitiated={() => setTimeout(() => handleRefresh(), 3000)}
               />
             ))}
           </div>

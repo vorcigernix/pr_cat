@@ -27,38 +27,60 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
+import { TimeSeriesDataPoint } from "@/app/api/services/metrics-data"
 
-type TimeSeriesDataPoint = {
-  date: string;
-  prThroughput: number;
-  cycleTime: number;
-  reviewTime: number;
-  codingHours: number;
-};
+// Default sample data for when the component is used without providing data
+const defaultChartData: TimeSeriesDataPoint[] = [
+  {
+    date: "2025-04-20",
+    prThroughput: 2,
+    cycleTime: 45.2,
+    reviewTime: 16.8,
+    codingHours: 4.7
+  },
+  {
+    date: "2025-04-21",
+    prThroughput: 3,
+    cycleTime: 52.1,
+    reviewTime: 18.3,
+    codingHours: 5.2
+  },
+  {
+    date: "2025-04-22",
+    prThroughput: 1,
+    cycleTime: 48.5,
+    reviewTime: 22.1,
+    codingHours: 4.9
+  },
+  {
+    date: "2025-04-23",
+    prThroughput: 2,
+    cycleTime: 43.2,
+    reviewTime: 15.7,
+    codingHours: 5.5
+  },
+  {
+    date: "2025-04-24",
+    prThroughput: 4,
+    cycleTime: 39.8,
+    reviewTime: 12.3,
+    codingHours: 6.1
+  }
+];
 
-export function ChartAreaEngineering() {
+interface ChartAreaEngineeringProps {
+  initialChartData?: TimeSeriesDataPoint[]; // Make this optional
+}
+
+export function ChartAreaEngineering({ initialChartData = defaultChartData }: ChartAreaEngineeringProps) {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("30d")
-  const [chartData, setChartData] = React.useState<TimeSeriesDataPoint[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  // Initialize state with server-fetched data or default values
+  const [chartData, setChartData] = React.useState<TimeSeriesDataPoint[]>(initialChartData);
   const [metrics, setMetrics] = React.useState<string[]>(["prThroughput", "cycleTime", "codingHours"]);
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // In a real app, this would be an API call
-        const response = await import("@/app/dashboard/time-series.json");
-        setChartData(response.default);
-      } catch (error) {
-        console.error("Failed to load time series data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
+  // No need for loading state or data fetching useEffect
+  
   React.useEffect(() => {
     if (isMobile) {
       setTimeRange("7d")
@@ -122,20 +144,6 @@ export function ChartAreaEngineering() {
       setMetrics([...metrics, value]);
     }
   };
-
-  if (loading) {
-    return (
-      <Card className="@container/card">
-        <CardHeader>
-          <CardTitle>Team Flow Metrics</CardTitle>
-          <CardDescription>Loading data...</CardDescription>
-        </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
-          <div className="animate-pulse w-full h-2/3 bg-muted rounded"></div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="@container/card">
@@ -281,5 +289,5 @@ export function ChartAreaEngineering() {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 } 
