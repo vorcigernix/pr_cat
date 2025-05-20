@@ -80,7 +80,7 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
   const [metrics, setMetrics] = React.useState<string[]>(["prThroughput", "cycleTime", "codingHours"]);
 
   // No need for loading state or data fetching useEffect
-  
+
   React.useEffect(() => {
     if (isMobile) {
       setTimeRange("7d")

@@ -491,9 +491,9 @@ export function OnboardingWizard() {
                 </div>
               )}
               
-              <p className="text-sm text-muted-foreground mt-4">
-                You can configure these settings in detail later from the Settings page.
-              </p>
+                <p className="text-sm text-muted-foreground mt-4">
+                  You can configure these settings in detail later from the Settings page.
+                </p>
             </div>
           )}
           
@@ -509,8 +509,8 @@ export function OnboardingWizard() {
                   <p>Loading your GitHub organizations...</p>
                 </div>
               ) : organizations.length === 0 ? (
-                <div className="p-4 bg-muted/50 rounded-md">
-                  <p className="text-sm text-center">
+              <div className="p-4 bg-muted/50 rounded-md">
+                <p className="text-sm text-center">
                     No GitHub organizations found. Please make sure you've installed the PR Cat GitHub App and have access to GitHub organizations.
                   </p>
                 </div>
@@ -574,8 +574,8 @@ export function OnboardingWizard() {
                       )}
                       <p className="text-xs text-muted-foreground">
                         Selected {selectedRepoIds.size} repositories for tracking
-                      </p>
-                    </div>
+                </p>
+              </div>
                   )}
                 </div>
               )}

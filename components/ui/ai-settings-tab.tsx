@@ -294,7 +294,7 @@ export function AiSettingsTab() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {/* Model Selection - only shown when provider is selected */}
               {selectedProvider && (
                 <div className="space-y-2">
@@ -335,7 +335,7 @@ export function AiSettingsTab() {
                   <p className="text-xs text-muted-foreground">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI dashboard</a>.</p>
                 </div>
               )}
-
+              
               {selectedProvider === 'google' && (
                 <div className="space-y-2">
                   <Label htmlFor="google-key">

@@ -249,40 +249,40 @@ export function GitHubOrganizationRepositories({
                 const isAccessible = accessibleRepos.has(repo.full_name);
                 
                 return (
-                  <div key={repo.id} className="flex items-center justify-between gap-3 p-3 rounded-md border hover:shadow-sm">
-                    <div className="flex items-center gap-3 flex-grow min-w-0">
+                <div key={repo.id} className="flex items-center justify-between gap-3 p-3 rounded-md border hover:shadow-sm">
+                <div className="flex items-center gap-3 flex-grow min-w-0">
                       <IconBrandGithub className="h-5 w-5" />
                       <div className="truncate">
                         <span className="font-medium">{repo.name}</span>
                         {!isAccessible && (
                           <Badge variant="secondary" className="ml-2">
                             No Access
-                          </Badge>
+                        </Badge>
                         )}
                         <p className="text-sm text-muted-foreground truncate">{repo.description || "No description"}</p>
-                      </div>
+                    </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={repo.private ? "default" : "secondary"} className="hidden md:flex">
                         {repo.private ? <><IconLock className="h-3 w-3 mr-1" /> Private</> : <><IconLockOpen className="h-3 w-3 mr-1" /> Public</>}
                       </Badge>
                       
-                      <Button
+                <Button 
                         variant="ghost"
-                        size="sm" 
+                    size="sm" 
                         disabled={processingRepoId === repo.id || !isAccessible}
-                        onClick={() => toggleWebhook(repo)}
+                    onClick={() => toggleWebhook(repo)}
                         className={`${repo.is_tracked ? "text-primary" : "text-muted-foreground"} ${!isAccessible ? "opacity-50 cursor-not-allowed" : ""}`}
-                      >
-                        {processingRepoId === repo.id ? (
-                          <IconRefresh className="h-4 w-4 animate-spin" />
-                        ) : repo.is_tracked ? (
+                >
+                    {processingRepoId === repo.id ? (
+                    <IconRefresh className="h-4 w-4 animate-spin" />
+                    ) : repo.is_tracked ? (
                           <><IconCheck className="h-4 w-4 mr-2" /> Disable</>
-                        ) : (
+                    ) : (
                           <>{isAccessible ? <><IconWebhook className="h-4 w-4 mr-2" /> Enable</> : <><IconX className="h-4 w-4 mr-2" /> No Access</>}</>
-                        )}
-                      </Button>
-                    </div>
+                    )}
+                </Button>
+                </div>
                   </div>
                 );
               })}

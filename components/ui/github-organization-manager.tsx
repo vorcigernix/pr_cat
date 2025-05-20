@@ -27,9 +27,9 @@ export function GitHubOrganizationManager({
   const [syncing, setSyncing] = useState(false);
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    toast.info("Checking GitHub App installation status...");
-    
+      setRefreshing(true);
+      toast.info("Checking GitHub App installation status...");
+
     try {
       const response = await fetch('/api/github/organizations/installation-status');
       if (!response.ok) {
@@ -50,11 +50,11 @@ export function GitHubOrganizationManager({
           }
         } 
       }
-      
-      toast.success("Installation status updated");
+
+        toast.success("Installation status updated");
     } catch (error) {
       console.error('Error fetching GitHub App installation status:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to check installation status');
+        toast.error(error instanceof Error ? error.message : 'Failed to check installation status');
     } finally {
       setRefreshing(false);
     }
@@ -78,7 +78,7 @@ export function GitHubOrganizationManager({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to sync organizations');
-      }
+    }
       
       const data = await response.json();
       toast.success(`Successfully synced ${data.organizations?.length || 0} organizations`);
@@ -114,8 +114,8 @@ export function GitHubOrganizationManager({
             </Button>
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={refreshing ? "h-4 w-4 animate-spin" : "h-4 w-4 mr-2"} />
-              Refresh Status
-            </Button>
+            Refresh Status
+          </Button>
           </div>
         </div>
         <CardDescription>

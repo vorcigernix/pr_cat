@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export default async function SettingsPage() {
   // Fetch data in the server component - don't await
   const organizationsPromise = getOrganizationInstallations();
-  
+
   return (
     <SidebarProvider
       style={{

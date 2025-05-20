@@ -677,13 +677,13 @@ async function fetchAdditionalPRData(
     console.log(`WEBHOOK AI SETTINGS: Getting AI settings for organization ${organizationId}`);
     const aiSettings = await getOrganizationAiSettings(organizationId);
     const selectedModelId = aiSettings.selectedModelId;
-    
+                
     if (!selectedModelId || selectedModelId === '__none__') {
       console.log(`WEBHOOK INFO: AI categorization disabled for organization ${organizationId} (no model selected).`);
       await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: 'AI categorization disabled for organization' });
       return;
     }
-    
+
     const provider = aiSettings.provider;
     
     if (!provider) {
@@ -693,7 +693,7 @@ async function fetchAdditionalPRData(
     }
     
     console.log(`WEBHOOK MODEL: Using AI model ${selectedModelId} with provider ${provider}`);
-    
+
     const apiKey = await getOrganizationApiKey(organizationId, provider);
     if (!apiKey) {
       console.warn(`WEBHOOK WARNING: API key for provider ${provider} not set for organization ${organizationId}. Skipping AI categorization.`);
@@ -735,7 +735,7 @@ async function fetchAdditionalPRData(
     }
 
     // 3. Create GitHub Client
-    let githubClient: GitHubClient | Octokit | undefined;
+    let githubClient: GitHubClient;
 
     if (installationIdToUse) {
       try {
@@ -744,23 +744,13 @@ async function fetchAdditionalPRData(
         console.log(`WEBHOOK CLIENT: Successfully created GitHub client with installation ID ${installationIdToUse}`);
       } catch (clientError) {
         console.error(`WEBHOOK ERROR: Failed to create GitHub client with installation ID ${installationIdToUse}:`, clientError);
-        // githubClient remains undefined, will fall through to system token if configured
+        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Failed to create GitHub client with installation ID' });
+        return;
       }
-    }
-    
-    // If githubClient is still not created (either no installationIdToUse or client creation failed), fall back to system token
-    if (!githubClient) {
-      console.warn('WEBHOOK WARNING: No valid installation client. Attempting system token fallback (if configured).');
-      // Prioritize GITHUB_APP_INSTALLATION_TOKEN if available, then GITHUB_SYSTEM_TOKEN
-      const githubSystemToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
-      if (githubSystemToken) {
-        githubClient = new GitHubClient(githubSystemToken); // Assuming GitHubClient can be Octokit or your custom client
-        console.log('WEBHOOK CLIENT: Created GitHub client with system token.');
-      } else {
-        console.error('WEBHOOK ERROR: No installation ID available and no system token configured. Cannot fetch PR diff.');
-        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'GitHub authentication failed (no installation ID or system token)' });
-        return; 
-      }
+    } else {
+      console.error('WEBHOOK ERROR: No installation ID available for organization. Cannot fetch PR diff.');
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'GitHub authentication failed (no installation ID)' });
+      return;
     }
 
     // 4. Fetch PR Diff and Categorize (using githubClient)
@@ -768,31 +758,44 @@ async function fetchAdditionalPRData(
     
     let diff: string | null = null;
     try {
-      if (githubClient instanceof GitHubClient) { // Your custom client
-         diff = await githubClient.getPullRequestDiff(repository.owner.login, repository.name, pr.number);
-      } else if (githubClient instanceof Octokit) { // Octokit instance from createInstallationClient
-         const diffResponse = await githubClient.pulls.get({
-            owner: repository.owner.login,
-            repo: repository.name,
-            pull_number: pr.number,
-            mediaType: { format: 'diff' },
-          });
-          diff = diffResponse.data as unknown as string; // GitHub API returns diff as string with this media type
+      // Try to fetch the PR diff
+      diff = await githubClient.getPullRequestDiff(repository.owner.login, repository.name, pr.number);
+    } catch (diffError: any) {
+      // Check if it's a token expiration error
+      if (diffError.message && (
+          diffError.message.includes('expired') || 
+          diffError.message.includes('GitHub token expired') || 
+          diffError.message.includes('invalid') ||
+          diffError.message.includes('Bad credentials') ||
+          diffError.status === 401)
+      ) {
+        console.warn(`WEBHOOK TOKEN ERROR: Installation token for ${installationIdToUse} appears to be expired or invalid. Attempting to create a new client.`);
+        
+        // Try once more with a fresh client
+        try {
+          // Create fresh client - the token cache will return a new token since the old one was cleared
+          githubClient = await createInstallationClient(installationIdToUse);
+          console.log(`WEBHOOK CLIENT RECREATED: Successfully created new GitHub client with installation ID ${installationIdToUse}`);
+          
+          // Retry the diff fetch
+          diff = await githubClient.getPullRequestDiff(repository.owner.login, repository.name, pr.number);
+          console.log(`WEBHOOK DIFF RETRY: Successfully fetched PR diff on second attempt for ${repository.full_name}#${pr.number}`);
+        } catch (retryError) {
+          console.error(`WEBHOOK ERROR: Failed to fetch PR diff even after token refresh:`, retryError);
+          await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Failed to fetch PR diff even after token refresh' });
+          return;
+        }
       } else {
-         console.error('WEBHOOK ERROR: githubClient is of an unknown type. Cannot fetch diff.');
-         await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'GitHub client type unknown for diff fetch' });
-         return;
-      }
-    } catch (diffError) {
         console.error(`WEBHOOK ERROR: Failed to fetch PR diff for ${repository.full_name}#${pr.number}:`, diffError);
         await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Failed to fetch PR diff' });
         return;
+      }
     }
     
     if (!diff) {
-        console.warn(`WEBHOOK WARNING: Could not fetch PR diff for ${repository.full_name}#${pr.number}. Skipping categorization.`);
-        await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: 'Could not fetch PR diff' });
-        return;
+      console.warn(`WEBHOOK WARNING: Could not fetch PR diff for ${repository.full_name}#${pr.number}. Skipping categorization.`);
+      await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'skipped', error_message: 'Could not fetch PR diff' });
+      return;
     }
 
     const orgCategories = await getOrganizationCategories(organizationId);

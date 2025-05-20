@@ -15,6 +15,7 @@ import { generateText } from 'ai';
 import { GitHubClient } from '@/lib/github';
 import { createInstallationClient } from '@/lib/github-app';
 import { Octokit } from '@octokit/rest';
+import { findOrganizationById } from '@/lib/repositories/organization-repository';
 
 export async function GET(request: NextRequest) {
   // Check authentication
@@ -116,26 +117,64 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Create GitHub client using system token (for testing)
-    const githubSystemToken = process.env.GITHUB_APP_INSTALLATION_TOKEN || process.env.GITHUB_SYSTEM_TOKEN;
-    if (!githubSystemToken) {
+    // Create GitHub client using installation token from the organization
+    const organization = await findOrganizationById(organizationId);
+    if (!organization || !organization.installation_id) {
       return NextResponse.json({
-        error: 'No system GitHub token configured for PR diff access'
+        error: 'Organization has no GitHub App installation configured'
       }, { status: 500 });
     }
     
-    const githubClient = new GitHubClient(githubSystemToken);
+    // Create GitHub client using the organization's installation ID
+    let githubClient;
+    try {
+      githubClient = await createInstallationClient(organization.installation_id);
+      console.log(`DEBUG: Created GitHub client with installation ID ${organization.installation_id}`);
+    } catch (error) {
+      console.error(`DEBUG ERROR: Failed to create installation client:`, error);
+      return NextResponse.json({
+        error: `Failed to authenticate with GitHub App installation: ${error instanceof Error ? error.message : String(error)}`
+      }, { status: 500 });
+    }
     
     // Fetch PR diff
     console.log(`DEBUG: Fetching PR diff for ${repository.full_name}#${pullRequest.number}`);
     let diff: string;
     try {
+      // Try to fetch the PR diff
       diff = await githubClient.getPullRequestDiff(owner, repo, pullRequest.number);
-    } catch (diffError) {
-      console.error(`DEBUG ERROR: Failed to fetch PR diff:`, diffError);
-      return NextResponse.json({
-        error: 'Failed to fetch PR diff'
-      }, { status: 500 });
+    } catch (diffError: any) {
+      // Check if it's a token expiration error
+      if (diffError.message && (
+          diffError.message.includes('expired') || 
+          diffError.message.includes('GitHub token expired') || 
+          diffError.message.includes('invalid') ||
+          diffError.message.includes('Bad credentials') ||
+          diffError.status === 401)
+      ) {
+        console.warn(`DEBUG TOKEN ERROR: Installation token for ${organization.installation_id} appears to be expired or invalid. Attempting to create a new client.`);
+        
+        // Try once more with a fresh client
+        try {
+          // Create fresh client - the token cache will return a new token since the old one was cleared
+          githubClient = await createInstallationClient(organization.installation_id);
+          console.log(`DEBUG CLIENT RECREATED: Successfully created new GitHub client with installation ID ${organization.installation_id}`);
+          
+          // Retry the diff fetch
+          diff = await githubClient.getPullRequestDiff(owner, repo, pullRequest.number);
+          console.log(`DEBUG DIFF RETRY: Successfully fetched PR diff on second attempt for ${repository.full_name}#${pullRequest.number}`);
+        } catch (retryError) {
+          console.error(`DEBUG ERROR: Failed to fetch PR diff even after token refresh:`, retryError);
+          return NextResponse.json({
+            error: 'Failed to fetch PR diff even after token refresh'
+          }, { status: 500 });
+        }
+      } else {
+        console.error(`DEBUG ERROR: Failed to fetch PR diff:`, diffError);
+        return NextResponse.json({
+          error: 'Failed to fetch PR diff'
+        }, { status: 500 });
+      }
     }
     
     // Get organization categories
