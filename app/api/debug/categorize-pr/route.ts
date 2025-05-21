@@ -223,7 +223,9 @@ export async function GET(request: NextRequest) {
         
         if (category) {
           // Update PR with category
-          await updatePullRequestCategory(pullRequest.id, category.id, confidence);
+          console.log(`DEBUG: Calling updatePullRequestCategory with PR id: ${pullRequest.id}, category id: ${category.id}, confidence: ${confidence}`);
+          const updatedPR = await updatePullRequestCategory(pullRequest.id, category.id, confidence);
+          console.log(`DEBUG: updatePullRequestCategory result:`, updatedPR);
           await updatePullRequestRecord(pullRequest.id, { ai_status: 'completed' });
           
           return NextResponse.json({
@@ -233,6 +235,7 @@ export async function GET(request: NextRequest) {
               name: category.name,
               confidence: confidence
             },
+            updatedPR,
             message: `PR #${pullRequest.number} categorized as '${categoryName}' with confidence ${confidence}`
           });
         } else {
