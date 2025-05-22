@@ -10,20 +10,59 @@ import {
 } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
-const data = [
-  { name: "New Features", value: 35, color: "#3b82f6" },
-  { name: "Bug Squashing", value: 25, color: "#ef4444" },
-  { name: "Code Health", value: 20, color: "#f97316" },
-  { name: "UX Improvements", value: 15, color: "#a855f7" },
-  { name: "Exploration", value: 5, color: "#14b8a6" },
-];
+type CategoryData = {
+  name: string;
+  value: number;
+  color: string;
+};
 
 export function InvestmentAreaDistribution() {
-  const [loading] = useState(false);
+  const [data, setData] = useState<CategoryData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // In a real app, this would fetch data from an API
   useEffect(() => {
-    // Placeholder for future API integration
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch real category distribution data
+        const response = await fetch('/api/pull-requests/category-distribution');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch category distribution: ${response.status} ${response.statusText}`);
+        }
+        
+        const categoryData = await response.json();
+        
+        // Map the API response to the format needed for the chart
+        const colors = [
+          "#3b82f6", // Blue
+          "#ef4444", // Red
+          "#f97316", // Orange
+          "#a855f7", // Purple
+          "#14b8a6", // Teal
+          "#eab308", // Yellow
+          "#ec4899"  // Pink
+        ];
+        
+        const formattedData = categoryData.map((item: any, index: number) => ({
+          name: item.category_name,
+          value: item.count,
+          color: colors[index % colors.length]
+        }));
+        
+        setData(formattedData);
+      } catch (error) {
+        console.error("Failed to load category distribution:", error);
+        setError(error instanceof Error ? error.message : "An unknown error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   if (loading) {
@@ -35,6 +74,42 @@ export function InvestmentAreaDistribution() {
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full animate-pulse bg-muted"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Focus Distribution</CardTitle>
+          <CardDescription className="text-red-500">Error loading data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-500">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Focus Distribution</CardTitle>
+          <CardDescription>No category data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            No PR categories found. Categories will appear here once PRs are categorized.
+          </p>
         </CardContent>
       </Card>
     );

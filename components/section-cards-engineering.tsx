@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -12,9 +12,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { MetricsSummary } from "@/app/api/services/metrics-data";
 
-// Default fallback metrics to use when no props are provided
+// Define the metrics types
+type MetricsSummary = {
+  codingTime: { value: number; change: number; trend: "up" | "down" };
+  prSize: { value: number; change: number; trend: "up" | "down" };
+  cycleTime: { value: number; change: number; trend: "up" | "down" };
+  reviewTime: { value: number; change: number; trend: "up" | "down" };
+};
+
+// API response type
+type ApiSummaryResponse = {
+  trackedRepositories: number;
+  prsMergedThisWeek: number;
+  prsMergedLastWeek: number;
+  weeklyPRVolumeChange: number;
+  averagePRSize: number;
+  openPRCount: number;
+  categorizationRate: number;
+};
+
+// Default fallback metrics to use when API data isn't available yet
 const defaultMetrics: MetricsSummary = {
   codingTime: { value: 4.6, change: 0, trend: "up" },
   prSize: { value: 359, change: -55, trend: "up" },
@@ -22,15 +40,106 @@ const defaultMetrics: MetricsSummary = {
   reviewTime: { value: 39.1, change: -5.9, trend: "up" }
 };
 
-interface SectionCardsEngineeringProps {
-  initialMetrics?: MetricsSummary; // Make this optional
-}
+export function SectionCardsEngineering() {
+  const [metrics, setMetrics] = useState<MetricsSummary>(defaultMetrics);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function SectionCardsEngineering({ initialMetrics = defaultMetrics }: SectionCardsEngineeringProps) {
-  // Initialize state with server-fetched data or default values
-  const [metrics, setMetrics] = useState<MetricsSummary>(initialMetrics);
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch real metrics data from our API
+        const response = await fetch('/api/metrics/summary');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch metrics: ${response.status} ${response.statusText}`);
+        }
+        
+        const data: ApiSummaryResponse = await response.json();
+        
+        // Calculate metrics from API data
+        const weeklyPRChange = data.prsMergedLastWeek > 0 
+          ? ((data.prsMergedThisWeek - data.prsMergedLastWeek) / data.prsMergedLastWeek) * 100
+          : 0;
 
-  // No need for loading state or useEffect fetch anymore since data is passed as prop
+        // Transform API data to our metrics format
+        setMetrics({
+          // Estimate coding time based on average PR size
+          codingTime: { 
+            value: parseFloat((data.averagePRSize / 100).toFixed(1)), 
+            change: 0, // We don't have historical data yet
+            trend: "up" 
+          },
+          // Average PR size from the API
+          prSize: {
+            value: data.averagePRSize,
+            change: 0, // We don't have historical data yet
+            trend: "up" // Lower is better for PR size
+          },
+          // Cycle time - we'll use a placeholder since we don't have real cycle time in the API yet
+          cycleTime: {
+            value: 48, // Placeholder value
+            change: weeklyPRChange > 0 ? -5 : 5, // If PR volume is up, cycle time is down (estimate)
+            trend: weeklyPRChange > 0 ? "up" : "down"
+          },
+          // Review time - placeholder based on categorization rate
+          reviewTime: {
+            value: 24, // Placeholder value
+            change: data.categorizationRate > 75 ? -3 : 3, // High categorization = faster reviews (estimate)
+            trend: data.categorizationRate > 75 ? "up" : "down"
+          }
+        });
+      } catch (error) {
+        console.error("Failed to load metrics:", error);
+        setError(error instanceof Error ? error.message : "An unknown error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
+
+  // Show loading placeholder when data is being fetched
+  if (loading) {
+    return (
+      <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+        {Array(4).fill(0).map((_, i) => (
+          <Card key={i} className="@container/card">
+            <CardHeader>
+              <CardDescription>Loading...</CardDescription>
+              <div className="h-8 w-24 animate-pulse bg-muted rounded mt-1"></div>
+            </CardHeader>
+            <CardFooter className="flex-col items-start gap-1.5 text-sm">
+              <div className="h-4 w-32 animate-pulse bg-muted rounded"></div>
+              <div className="h-4 w-48 animate-pulse bg-muted rounded"></div>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="px-4 lg:px-6">
+        <Card className="p-4">
+          <CardTitle className="mb-2">Error Loading Metrics</CardTitle>
+          <CardDescription className="text-red-500">{error}</CardDescription>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

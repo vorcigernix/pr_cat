@@ -24,7 +24,7 @@ type PullRequest = {
   title: string;
   number: number;
   developer: {
-    id: number;
+    id: number | string;
     name: string;
   };
   repository: {
@@ -33,39 +33,37 @@ type PullRequest = {
   };
   status: string;
   createdAt: string;
-  reviewStartedAt: string;
   mergedAt: string;
-  deployedAt: string;
-  reviewers: Array<{ id: number; name: string }>;
-  linesAdded: number;
-  linesRemoved: number;
-  files: number;
-  commentCount: number;
-  approvalCount: number;
-  reviewThoroughness: number;
-  timeToFirstReview: number;
-  reviewTime: number;
   cycleTime: number;
-  qualityScore: number;
   investmentArea?: string;
+  linesAdded?: number;
+  linesRemoved?: number;
+  files?: number;
 };
 
 export function PRActivityTable() {
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // In a real app, this would be an API call
-        const data = await import("@/app/dashboard/pull-requests.json");
-        // Get the 10 most recent PRs
-        const sortedPRs = [...data.default]
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 10);
-        setPullRequests(sortedPRs);
+        setLoading(true);
+        setError(null);
+        
+        // Fetch real PR data from our API
+        const response = await fetch('/api/pull-requests/recent');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch pull requests: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setPullRequests(data);
       } catch (error) {
         console.error("Failed to load pull request data:", error);
+        setError(error instanceof Error ? error.message : "An unknown error occurred");
       } finally {
         setLoading(false);
       }
@@ -75,6 +73,7 @@ export function PRActivityTable() {
   }, []);
 
   function formatDate(dateString: string) {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
@@ -97,13 +96,24 @@ export function PRActivityTable() {
     
     switch (area.toLowerCase()) {
       case "bug fixes":
+      case "bug fix":
+      case "bugs":
         return <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900">{area}</Badge>;
       case "technical debt":
+      case "tech debt":
+      case "refactoring":
         return <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900">{area}</Badge>;
       case "new features":
+      case "feature":
+      case "enhancement":
         return <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900">{area}</Badge>;
       case "product debt":
+      case "ux improvement":
+      case "ui":
         return <Badge variant="outline" className="bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-900">{area}</Badge>;
+      case "documentation":
+      case "docs":
+        return <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900">{area}</Badge>;
       default:
         return <Badge variant="outline">{area}</Badge>;
     }
@@ -118,6 +128,42 @@ export function PRActivityTable() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="h-[400px] w-full animate-pulse bg-muted"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="mx-4 lg:mx-6">
+        <CardHeader>
+          <CardTitle>Recent Pull Requests</CardTitle>
+          <CardDescription className="text-red-500">Error loading data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-500">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (pullRequests.length === 0) {
+    return (
+      <Card className="mx-4 lg:mx-6">
+        <CardHeader>
+          <CardTitle>Recent Pull Requests</CardTitle>
+          <CardDescription>No pull requests found</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            No recent pull request activity. Pull requests will appear here once they're created in your repositories.
+          </p>
         </CardContent>
       </Card>
     );
@@ -174,7 +220,7 @@ export function PRActivityTable() {
                       <span>{pr.cycleTime.toFixed(1)} hrs</span>
                     </div>
                   </TableCell>
-                  <TableCell>{getInvestmentAreaBadge(pr.investmentArea || randomInvestmentArea())}</TableCell>
+                  <TableCell>{getInvestmentAreaBadge(pr.investmentArea)}</TableCell>
                   <TableCell>{formatDate(pr.createdAt)}</TableCell>
                 </TableRow>
               ))}
@@ -184,10 +230,4 @@ export function PRActivityTable() {
       </CardContent>
     </Card>
   );
-}
-
-// Helper function to randomly assign investment areas for demo purposes
-function randomInvestmentArea() {
-  const areas = ["Bug Fixes", "Technical Debt", "New Features", "Product Debt"];
-  return areas[Math.floor(Math.random() * areas.length)];
 } 

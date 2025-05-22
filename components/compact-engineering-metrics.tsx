@@ -22,15 +22,26 @@ type TimeSeriesDataPoint = {
 export function CompactEngineeringMetrics() {
   const [chartData, setChartData] = React.useState<TimeSeriesDataPoint[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        // In a real app, this would be an API call
-        const response = await import("@/app/dashboard/time-series.json");
-        setChartData(response.default);
+        setLoading(true);
+        setError(null);
+        
+        // Fetch real metrics data from our API
+        const response = await fetch('/api/metrics/time-series');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch metrics: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setChartData(data);
       } catch (error) {
         console.error("Failed to load time series data:", error);
+        setError(error instanceof Error ? error.message : "An unknown error occurred");
       } finally {
         setLoading(false);
       }
@@ -55,31 +66,28 @@ export function CompactEngineeringMetrics() {
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
     
-    // Show only last 14 days
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - 14);
-    
-    const filtered = sortedData.filter(item => {
-      const date = new Date(item.date);
-      return date >= startDate;
-    });
+    // Already filtered to last 14 days by the API
+    const filtered = sortedData;
 
     // Calculate metrics
     const latest = filtered[filtered.length - 1] || { prThroughput: 0, cycleTime: 0, reviewTime: 0, codingHours: 0 };
     const previous = filtered[filtered.length - 2] || { prThroughput: 0, cycleTime: 0, reviewTime: 0, codingHours: 0 };
     
     const prCurrent = latest.prThroughput;
-    const prChange = ((prCurrent - previous.prThroughput) / previous.prThroughput) * 100;
+    const prChange = previous.prThroughput === 0 ? 0 : 
+                    ((prCurrent - previous.prThroughput) / previous.prThroughput) * 100;
     
     const cycleCurrent = latest.cycleTime;
-    const cycleChange = ((cycleCurrent - previous.cycleTime) / previous.cycleTime) * 100;
+    const cycleChange = previous.cycleTime === 0 ? 0 : 
+                       ((cycleCurrent - previous.cycleTime) / previous.cycleTime) * 100;
     
     const reviewCurrent = latest.reviewTime;
-    const reviewChange = ((reviewCurrent - previous.reviewTime) / previous.reviewTime) * 100;
+    const reviewChange = previous.reviewTime === 0 ? 0 : 
+                        ((reviewCurrent - previous.reviewTime) / previous.reviewTime) * 100;
     
     const codingCurrent = latest.codingHours;
-    const codingChange = ((codingCurrent - previous.codingHours) / previous.codingHours) * 100;
+    const codingChange = previous.codingHours === 0 ? 0 : 
+                        ((codingCurrent - previous.codingHours) / previous.codingHours) * 100;
 
     return { 
       filteredData: filtered,
@@ -147,6 +155,25 @@ export function CompactEngineeringMetrics() {
       </Card>
     );
   }
+  
+  if (error) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Team Flow Metrics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-500">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -161,7 +188,7 @@ export function CompactEngineeringMetrics() {
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">{metric.name}</div>
                   <div className="flex items-center">
-                    <span className="text-sm font-bold mr-1">{metric.value}{metric.unit}</span>
+                    <span className="text-sm font-bold mr-1">{metric.value.toFixed(1)}{metric.unit}</span>
                     <span className={`text-xs font-medium flex items-center ${
                       metric.isReversed ? 
                         (metric.change < 0 ? 'text-green-500' : metric.change > 0 ? 'text-red-500' : 'text-muted-foreground') :
