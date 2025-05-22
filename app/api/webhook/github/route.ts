@@ -811,7 +811,10 @@ async function fetchAdditionalPRData(
     await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'processing' });
 
     const systemPrompt = `You are an expert at categorizing GitHub pull requests. Analyze the pull request title, body, and diff. Respond with the most relevant category from the provided list and a confidence score (0-1). Available categories: ${categoryNames.join(', ')}. Respond in the format: Category: [Selected Category], Confidence: [Score]. Example: Category: Bug Fix, Confidence: 0.9`;
-    const userPrompt = `Title: ${pr.title}\\nBody: ${pr.body || ''}\\nDiff:\\n${diff}`;
+    const userPrompt = `Title: ${pr.title}
+Body: ${pr.body || ''}
+Diff:
+${diff}`;
 
     console.log(`WEBHOOK GENERATING TEXT: Generating text with model ${selectedModelId} for PR #${pr.number}`);
 
@@ -824,7 +827,7 @@ async function fetchAdditionalPRData(
 
       console.log(`WEBHOOK AI RESPONSE: AI Response for PR #${pr.number}: ${text}`);
 
-      const categoryMatch = text.match(/Category: (.*?), Confidence: (\\d\\.?\\d*)/i);
+      const categoryMatch = text.match(/Category: (.*?), Confidence: (\d\.?\d*)/i);
       if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
         const categoryName = categoryMatch[1].trim();
         const confidence = parseFloat(categoryMatch[2]);
