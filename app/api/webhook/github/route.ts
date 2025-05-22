@@ -376,9 +376,43 @@ async function handlePullRequestEvent(payload: PullRequestPayload) {
  
         logOperation("createPullRequest", newPrParams);
  
-        const newPR = await createPullRequest(newPrParams);
-        
-        console.log(`WEBHOOK PR CREATED: New PR #${pr.number} in ${repository.full_name} with DB ID ${newPR.id}`);
+        let newPR;
+        try {
+          newPR = await createPullRequest(newPrParams);
+          console.log(`WEBHOOK PR CREATED: New PR #${pr.number} in ${repository.full_name} with DB ID ${newPR.id}`);
+        } catch (prCreateError: any) {
+          // If UNIQUE constraint error, fallback to update
+          if (prCreateError.message && prCreateError.message.includes('UNIQUE constraint failed: pull_requests.repository_id, pull_requests.number')) {
+            console.warn(`WEBHOOK PR CREATE: PR already exists (race condition). Falling back to update for PR #${pr.number} in ${repository.full_name}`);
+            const fallbackExistingPR = await findPullRequestByNumber(repoInDb.id, pr.number);
+            if (fallbackExistingPR) {
+              await updatePullRequest(fallbackExistingPR.id, {
+                title: pr.title,
+                description: pr.body,
+                state: typedState,
+                updated_at: pr.updated_at,
+                closed_at: pr.closed_at,
+                merged_at: pr.merged_at,
+                draft: pr.draft,
+                additions: pr.additions,
+                deletions: pr.deletions,
+                changed_files: pr.changed_files
+              });
+              newPR = fallbackExistingPR;
+              console.log(`WEBHOOK PR UPDATED (fallback): PR #${pr.number} in ${repository.full_name}`);
+            } else {
+              throw prCreateError;
+            }
+          } else {
+            logError("PR Creation", prCreateError, { 
+              repo_full_name: repository.full_name, 
+              repo_id: repoInDb?.id, 
+              pr_number: pr.number,
+              author_github_id: authorGitHubData.id
+            });
+            throw prCreateError;
+          }
+        }
         
         // Fetch additional data for new PRs IFF the action was 'opened'
         if (action === 'opened') {
