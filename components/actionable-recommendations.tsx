@@ -89,13 +89,13 @@ export function ActionableRecommendations() {
   const getImpactGradient = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'from-red-50/80 to-red-100/40 dark:from-red-950/30 dark:to-red-900/20';
+        return 'from-red-100 via-red-200/50 to-red-50/30 dark:from-red-950/60 dark:via-red-800/10 dark:to-red-900/5';
       case 'medium':
-        return 'from-amber-50/80 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/20';
+        return 'from-amber-100 via-amber-200/50 to-amber-50/30 dark:from-amber-950/60 dark:via-amber-800/10 dark:to-amber-900/5';
       case 'low':
-        return 'from-blue-50/80 to-blue-100/40 dark:from-blue-950/30 dark:to-blue-900/20';
+        return 'from-blue-100 via-blue-200/50 to-blue-50/30 dark:from-blue-950/60 dark:via-blue-800/10 dark:to-blue-900/5';
       default:
-        return 'from-gray-50/80 to-gray-100/40 dark:from-gray-950/30 dark:to-gray-900/20';
+        return 'from-gray-100 to-gray-50/30 dark:from-gray-950/60 dark:to-gray-900/10';
     }
   };
 
@@ -225,7 +225,7 @@ export function ActionableRecommendations() {
               {groupedRecs.high.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-br ${getImpactGradient(rec.priority)} border-red-200/60 dark:border-red-800/30`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-red-200/60 dark:border-red-800/30`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
@@ -274,7 +274,7 @@ export function ActionableRecommendations() {
               {groupedRecs.medium.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-br ${getImpactGradient(rec.priority)} border-amber-200/60 dark:border-amber-800/30`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-amber-200/60 dark:border-amber-800/30`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
@@ -323,7 +323,7 @@ export function ActionableRecommendations() {
               {groupedRecs.low.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-br ${getImpactGradient(rec.priority)} border-blue-200/60 dark:border-blue-800/30`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-blue-200/60 dark:border-blue-800/30`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
