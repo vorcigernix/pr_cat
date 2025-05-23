@@ -844,7 +844,22 @@ async function fetchAdditionalPRData(
 
     await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'processing' });
 
-    const systemPrompt = `You are an expert at categorizing GitHub pull requests. Analyze the pull request title, body, and diff. Respond with the most relevant category from the provided list and a confidence score (0-1). Available categories: ${categoryNames.join(', ')}. Respond in the format: Category: [Selected Category], Confidence: [Score]. Example: Category: Bug Fix, Confidence: 0.9`;
+    // Create a more restrictive prompt with numbered options
+    const categoryOptions = categoryNames.map((name, index) => `${index + 1}. ${name}`).join('\n');
+    
+    const systemPrompt = `You are an expert at categorizing GitHub pull requests. You MUST select EXACTLY ONE category from the numbered list below. Do not create new categories or modify the category names.
+
+AVAILABLE CATEGORIES:
+${categoryOptions}
+
+Analyze the pull request and respond in this EXACT format:
+Category: [EXACT CATEGORY NAME FROM LIST]
+Confidence: [NUMBER BETWEEN 0.0 AND 1.0]
+
+Example: Category: Bug Fix, Confidence: 0.85
+
+IMPORTANT: The category name must match EXACTLY one of the categories listed above. Do not abbreviate, modify, or create new category names.`;
+
     const userPrompt = `Title: ${pr.title}
 Body: ${pr.body || ''}
 Diff:
@@ -863,12 +878,50 @@ ${diff}`;
 
       const categoryMatch = text.match(/Category: (.*?), Confidence: (\d\.?\d*)/i);
       if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
-        const categoryName = categoryMatch[1].trim();
+        const suggestedCategoryName = categoryMatch[1].trim();
         const confidence = parseFloat(categoryMatch[2]);
 
-        const category = await findCategoryByNameAndOrgFromRepo(organizationId, categoryName);
-        console.log(`WEBHOOK CATEGORY LOOKUP: Category '${categoryName}' found in DB? ${!!category}`,
+        // First, try exact match
+        let category = await findCategoryByNameAndOrgFromRepo(organizationId, suggestedCategoryName);
+        console.log(`WEBHOOK CATEGORY LOOKUP: Category '${suggestedCategoryName}' found in DB? ${!!category}`,
                     category ? `id=${category.id}, org_id=${category.organization_id}` : "NOT FOUND");
+        
+        // If no exact match, try fuzzy matching as fallback
+        if (!category) {
+          console.log(`WEBHOOK FUZZY MATCHING: Attempting fuzzy match for '${suggestedCategoryName}' in categories: ${categoryNames.join(', ')}`);
+          
+          // Simple fuzzy matching - find closest match
+          let bestMatch = null;
+          let bestScore = 0;
+          
+          for (const categoryName of categoryNames) {
+            // Calculate similarity score (simple case-insensitive contains check + length similarity)
+            const suggested = suggestedCategoryName.toLowerCase().trim();
+            const candidate = categoryName.toLowerCase().trim();
+            
+            let score = 0;
+            if (suggested === candidate) {
+              score = 1.0; // Perfect match
+            } else if (suggested.includes(candidate) || candidate.includes(suggested)) {
+              score = 0.8; // Contains match
+            } else {
+              // Levenshtein-like simple scoring
+              const maxLength = Math.max(suggested.length, candidate.length);
+              const commonChars = suggested.split('').filter(char => candidate.includes(char)).length;
+              score = commonChars / maxLength;
+            }
+            
+            if (score > bestScore && score > 0.6) { // Minimum threshold
+              bestScore = score;
+              bestMatch = categoryName;
+            }
+          }
+          
+          if (bestMatch) {
+            console.log(`WEBHOOK FUZZY MATCH: Found fuzzy match '${bestMatch}' for '${suggestedCategoryName}' with score ${bestScore}`);
+            category = await findCategoryByNameAndOrgFromRepo(organizationId, bestMatch);
+          }
+        }
         
         if (category) {
           try {
@@ -882,19 +935,19 @@ ${diff}`;
             
             await updatePullRequestCategory(prDbId, category.id, confidence);
             await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'completed' });
-            console.log(`WEBHOOK CATEGORY ASSIGNED: PR #${pr.number} categorized as '${categoryName}' (ID: ${category.id}) with confidence ${confidence}`);
+            console.log(`WEBHOOK CATEGORY ASSIGNED: PR #${pr.number} categorized as '${category.name}' (ID: ${category.id}) with confidence ${confidence}`);
           } catch (categoryError) {
             logError("updatePullRequestCategory", categoryError, {
               pr_id: prDbId,
               category_id: category.id,
-              category_name: categoryName,
+              category_name: category.name,
               confidence: confidence
             });
             await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: 'Failed to update PR with category' });
           }
         } else {
-          console.warn(`WEBHOOK CATEGORY ERROR: AI suggested category '${categoryName}' not found for organization ${organizationId}.`);
-          await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: `AI suggested category '${categoryName}' not found` });
+          console.warn(`WEBHOOK CATEGORY ERROR: AI suggested category '${suggestedCategoryName}' not found for organization ${organizationId}.`);
+          await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'error', error_message: `AI suggested category '${suggestedCategoryName}' not found` });
         }
       } else {
         console.warn(`WEBHOOK PARSE ERROR: Could not parse category and confidence from AI response for PR #${pr.number}: ${text}`);

@@ -192,11 +192,25 @@ export async function GET(request: NextRequest) {
     // Mark PR as processing
     await updatePullRequestRecord(pullRequest.id, { ai_status: 'processing' });
     
-    // Prepare AI prompt
+    // Prepare AI prompt with more restrictive formatting
     const prTitle = pullRequest.title;
     const prBody = pullRequest.description || '';
     
-    const systemPrompt = `You are an expert at categorizing GitHub pull requests. Analyze the pull request title, body, and diff. Respond with the most relevant category from the provided list and a confidence score (0-1). Available categories: ${categoryNames.join(', ')}. Respond in the format: Category: [Selected Category], Confidence: [Score]. Example: Category: Bug Fix, Confidence: 0.9`;
+    // Create a more restrictive prompt with numbered options
+    const categoryOptions = categoryNames.map((name, index) => `${index + 1}. ${name}`).join('\n');
+    
+    const systemPrompt = `You are an expert at categorizing GitHub pull requests. You MUST select EXACTLY ONE category from the numbered list below. Do not create new categories or modify the category names.
+
+AVAILABLE CATEGORIES:
+${categoryOptions}
+
+Analyze the pull request and respond in this EXACT format:
+Category: [EXACT CATEGORY NAME FROM LIST]
+Confidence: [NUMBER BETWEEN 0.0 AND 1.0]
+
+Example: Category: Bug Fix, Confidence: 0.85
+
+IMPORTANT: The category name must match EXACTLY one of the categories listed above. Do not abbreviate, modify, or create new category names.`;
     const userPrompt = `Title: ${prTitle}\nBody: ${prBody}\nDiff:\n${diff}`;
     
     console.log(`DEBUG: Generating text with model ${selectedModelId} for PR #${pullRequest.number}`);
@@ -215,11 +229,48 @@ export async function GET(request: NextRequest) {
       const categoryMatch = text.match(/Category: (.*?), Confidence: (\d\.?\d*)/i);
       
       if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
-        const categoryName = categoryMatch[1].trim();
+        const suggestedCategoryName = categoryMatch[1].trim();
         const confidence = parseFloat(categoryMatch[2]);
         
-        // Find category in database
-        const category = await findCategoryByNameAndOrg(organizationId, categoryName);
+        // First, try exact match
+        let category = await findCategoryByNameAndOrg(organizationId, suggestedCategoryName);
+        
+        // If no exact match, try fuzzy matching as fallback
+        if (!category) {
+          console.log(`DEBUG FUZZY MATCHING: Attempting fuzzy match for '${suggestedCategoryName}' in categories: ${categoryNames.join(', ')}`);
+          
+          // Simple fuzzy matching - find closest match
+          let bestMatch = null;
+          let bestScore = 0;
+          
+          for (const categoryName of categoryNames) {
+            // Calculate similarity score (simple case-insensitive contains check + length similarity)
+            const suggested = suggestedCategoryName.toLowerCase().trim();
+            const candidate = categoryName.toLowerCase().trim();
+            
+            let score = 0;
+            if (suggested === candidate) {
+              score = 1.0; // Perfect match
+            } else if (suggested.includes(candidate) || candidate.includes(suggested)) {
+              score = 0.8; // Contains match
+            } else {
+              // Levenshtein-like simple scoring
+              const maxLength = Math.max(suggested.length, candidate.length);
+              const commonChars = suggested.split('').filter(char => candidate.includes(char)).length;
+              score = commonChars / maxLength;
+            }
+            
+            if (score > bestScore && score > 0.6) { // Minimum threshold
+              bestScore = score;
+              bestMatch = categoryName;
+            }
+          }
+          
+          if (bestMatch) {
+            console.log(`DEBUG FUZZY MATCH: Found fuzzy match '${bestMatch}' for '${suggestedCategoryName}' with score ${bestScore}`);
+            category = await findCategoryByNameAndOrg(organizationId, bestMatch);
+          }
+        }
         
         if (category) {
           // Update PR with category
@@ -236,16 +287,16 @@ export async function GET(request: NextRequest) {
               confidence: confidence
             },
             updatedPR,
-            message: `PR #${pullRequest.number} categorized as '${categoryName}' with confidence ${confidence}`
+            message: `PR #${pullRequest.number} categorized as '${category.name}' with confidence ${confidence}`
           });
         } else {
           await updatePullRequestRecord(pullRequest.id, { 
             ai_status: 'error', 
-            error_message: `AI suggested category '${categoryName}' not found`
+            error_message: `AI suggested category '${suggestedCategoryName}' not found`
           });
           
           return NextResponse.json({
-            error: `AI suggested category '${categoryName}' not found for organization ${organizationId}`
+            error: `AI suggested category '${suggestedCategoryName}' not found for organization ${organizationId}`
           }, { status: 404 });
         }
       } else {
