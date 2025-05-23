@@ -40,8 +40,9 @@ export async function getOrganizationInstallations(): Promise<OrganizationWithIn
     const baseUrl = getBaseUrl();
     console.log(`getOrganizationInstallations: Using baseUrl ${baseUrl}`);
     
-    // Get cookies and await the toString() call
-    const cookieHeader = await cookies().toString();
+    // Get cookies and await both the cookies() call and toString()
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.toString();
     
     // In Next.js Server Components, we need to manually add the authorization header
     // since the automatic cookie handling only works with client components
@@ -90,8 +91,9 @@ export async function syncGitHubOrganizations() {
       return { success: false, error: 'No access token' };
     }
     
-    // Get cookies and await the toString() call
-    const cookieHeader = await cookies().toString();
+    // Get cookies and await both the cookies() call and toString()
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.toString();
     
     console.log('syncGitHubOrganizations: Sending sync request');
     const response = await fetch(`${baseUrl}/api/github/organizations/sync`, {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as PRRepository from '@/lib/repositories/pr-repository';
 import * as OrganizationRepository from '@/lib/repositories/organization-repository';
+import { query } from '@/lib/db';
 import { auth } from '@/auth';
 
 export const runtime = 'nodejs';
@@ -45,68 +46,79 @@ export async function GET(request: NextRequest) {
       const nextDate = new Date(currentDate);
       nextDate.setDate(nextDate.getDate() + 1);
       
-      // Time range for this day
-      const fromDate = currentDate.toISOString();
-      const toDate = nextDate.toISOString();
-
-      // Get PRs merged on this day
-      const mergedPRs = await PRRepository.getOrganizationPullRequests(orgId, {
-        state: 'merged',
-        orderBy: 'merged_at',
-        orderDir: 'DESC'
-      });
+      // Use optimized SQL queries for each day
       
-      // Filter PRs merged on this specific day
-      const prsForThisDay = mergedPRs.filter(pr => {
-        if (!pr.merged_at) return false;
-        const mergedDate = new Date(pr.merged_at);
-        return mergedDate >= currentDate && mergedDate < nextDate;
-      });
+      // 1. Get PRs merged on this specific day with cycle time calculation
+      const prsForDay = await query<{
+        id: number;
+        cycle_time_hours: number;
+        additions: number;
+        deletions: number;
+      }>(`
+        SELECT 
+          pr.id,
+          CAST((julianday(pr.merged_at) - julianday(pr.created_at)) * 24 AS REAL) as cycle_time_hours,
+          pr.additions,
+          pr.deletions
+        FROM pull_requests pr
+        JOIN repositories r ON pr.repository_id = r.id
+        WHERE r.organization_id = ?
+        AND pr.state = 'merged'
+        AND pr.merged_at >= ?
+        AND pr.merged_at < ?
+        AND pr.created_at IS NOT NULL
+        AND pr.merged_at IS NOT NULL
+      `, [orgId, currentDate.toISOString(), nextDate.toISOString()]);
+      
+      // 2. Calculate review time for PRs merged this day
+      const reviewTimes = await query<{
+        review_time_hours: number;
+      }>(`
+        SELECT 
+          CAST((julianday(rev.submitted_at) - julianday(pr.created_at)) * 24 AS REAL) as review_time_hours
+        FROM pull_requests pr
+        JOIN repositories r ON pr.repository_id = r.id
+        JOIN pr_reviews rev ON pr.id = rev.pull_request_id
+        WHERE r.organization_id = ?
+        AND pr.state = 'merged'
+        AND pr.merged_at >= ?
+        AND pr.merged_at < ?
+        AND pr.created_at IS NOT NULL
+        AND rev.submitted_at IS NOT NULL
+        AND rev.submitted_at = (
+          SELECT MIN(rev2.submitted_at) 
+          FROM pr_reviews rev2 
+          WHERE rev2.pull_request_id = pr.id
+        )
+      `, [orgId, currentDate.toISOString(), nextDate.toISOString()]);
       
       // Calculate metrics
-      const prThroughput = prsForThisDay.length;
+      const prThroughput = prsForDay.length;
       
-      // Calculate average cycle time (time from creation to merge)
-      let totalCycleTime = 0;
-      let totalReviewTime = 0;
+      // Calculate average cycle time
+      const avgCycleTime = prsForDay.length > 0 
+        ? prsForDay.reduce((sum, pr) => sum + (pr.cycle_time_hours || 0), 0) / prsForDay.length
+        : (i > 0 ? timeSeriesData[i-1].cycleTime : 0);
       
-      for (const pr of prsForThisDay) {
-        if (pr.created_at && pr.merged_at) {
-          const created = new Date(pr.created_at);
-          const merged = new Date(pr.merged_at);
-          totalCycleTime += (merged.getTime() - created.getTime()) / (1000 * 60 * 60);
-          
-          // For review time, let's estimate as 1/3 of cycle time as a simplified approach
-          // In a real implementation, you would calculate based on the time of the first review
-          totalReviewTime += (merged.getTime() - created.getTime()) / (1000 * 60 * 60) / 3;
-        }
-      }
+      // Calculate average review time  
+      const avgReviewTime = reviewTimes.length > 0
+        ? reviewTimes.reduce((sum, review) => sum + (review.review_time_hours || 0), 0) / reviewTimes.length
+        : (i > 0 ? timeSeriesData[i-1].reviewTime : 0);
       
-      const cycleTime = prThroughput > 0 ? totalCycleTime / prThroughput : 
-                       (i > 0 ? timeSeriesData[i-1].cycleTime : 0); // Use previous day if no PRs today
-                       
-      const reviewTime = prThroughput > 0 ? totalReviewTime / prThroughput : 
-                        (i > 0 ? timeSeriesData[i-1].reviewTime : 0); // Use previous day if no PRs today
+      // Calculate coding hours based on lines changed
+      const totalLinesChanged = prsForDay.reduce((sum, pr) => 
+        sum + (pr.additions || 0) + (pr.deletions || 0), 0
+      );
       
-      // Estimate coding hours based on additions/deletions
-      // In a real implementation, this would be more sophisticated
-      let totalAdditions = 0;
-      let totalDeletions = 0;
-      
-      for (const pr of prsForThisDay) {
-        totalAdditions += pr.additions || 0;
-        totalDeletions += pr.deletions || 0;
-      }
-      
-      // Simple formula: estimate 1 hour of coding for every 100 lines changed
-      const codingHours = (totalAdditions + totalDeletions) / 100;
+      // Estimate: 1 hour of coding for every 50 lines changed (more realistic than 100)
+      const codingHours = totalLinesChanged / 50;
       
       timeSeriesData.push({
         date: dateStr,
         prThroughput,
-        cycleTime,
-        reviewTime,
-        codingHours
+        cycleTime: Math.round(avgCycleTime * 10) / 10, // Round to 1 decimal
+        reviewTime: Math.round(avgReviewTime * 10) / 10, // Round to 1 decimal  
+        codingHours: Math.round(codingHours * 10) / 10 // Round to 1 decimal
       });
     }
 

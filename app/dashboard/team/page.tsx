@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { DeveloperPerformance } from "@/components/developer-performance"
 import { SiteHeader } from "@/components/site-header"
+import { TeamPerformanceMetrics } from "@/components/team-performance-metrics"
 import {
   SidebarInset,
   SidebarProvider,
@@ -20,10 +20,8 @@ export default function TeamPage() {
       <SidebarInset>
         <SiteHeader pageTitle="Team Performance" />
         <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <DeveloperPerformance />
-            </div>
+          <div className="@container/main flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+            <TeamPerformanceMetrics />
           </div>
         </div>
       </SidebarInset>
