@@ -881,7 +881,7 @@ ${diff}`;
             logOperation("updatePullRequestCategory", updateCategoryParams);
             
             await updatePullRequestCategory(prDbId, category.id, confidence);
-            await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'completed', state: 'open' }); // Changed status to state
+            await PullRequestRepository.updatePullRequest(prDbId, { ai_status: 'completed' });
             console.log(`WEBHOOK CATEGORY ASSIGNED: PR #${pr.number} categorized as '${categoryName}' (ID: ${category.id}) with confidence ${confidence}`);
           } catch (categoryError) {
             logError("updatePullRequestCategory", categoryError, {
