@@ -1,87 +1,131 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findCategoryById } from '@/lib/repositories';
 import * as PRRepository from '@/lib/repositories/pr-repository';
-import { RepositoryService } from '@/lib/services/repository-service';
 import * as UserRepository from '@/lib/repositories/user-repository';
-import * as OrganizationRepository from '@/lib/repositories/organization-repository';
-import { PullRequest } from '@/lib/types';
-import { auth } from '@/auth';
+import { getUserWithOrganizations } from '@/lib/auth-context';
+import { query } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    // Use cached user context to avoid repeated queries
+    const { user, primaryOrganization } = await getUserWithOrganizations(request);
+    const orgId = primaryOrganization.id;
+
+    // Get recent pull requests for the organization
+    const recentPRs = await query<{
+      id: number;
+      number: number;
+      title: string;
+      author_id: string | null;
+      state: string;
+      created_at: string;
+      merged_at: string | null;
+      repository_id: number;
+      repository_name: string;
+      repository_full_name: string;
+      category_name: string | null;
+      category_color: string | null;
+      additions: number | null;
+      deletions: number | null;
+      changed_files: number | null;
+    }>(`
+      SELECT 
+        pr.id,
+        pr.number,
+        pr.title,
+        pr.author_id,
+        pr.state,
+        pr.created_at,
+        pr.merged_at,
+        pr.repository_id,
+        r.name as repository_name,
+        r.full_name as repository_full_name,
+        c.name as category_name,
+        c.color as category_color,
+        pr.additions,
+        pr.deletions,
+        pr.changed_files
+      FROM pull_requests pr
+      JOIN repositories r ON pr.repository_id = r.id
+      LEFT JOIN categories c ON pr.category_id = c.id
+      WHERE r.organization_id = ?
+      ORDER BY pr.created_at DESC
+      LIMIT 20
+    `, [orgId]);
+
+    // Get unique author IDs to fetch author details in batch
+    const authorIds = [...new Set(recentPRs.map(pr => pr.author_id).filter(id => id !== null))];
+    
+    // Fetch all authors in a single query (only if there are author IDs)
+    let authors: { id: string; name: string | null; email: string; }[] = [];
+    if (authorIds.length > 0) {
+      authors = await query<{
+        id: string;
+        name: string | null;
+        email: string;
+      }>(`
+        SELECT id, name, email
+        FROM users 
+        WHERE id IN (${authorIds.map(() => '?').join(',')})
+      `, authorIds);
     }
 
-    // Get the user's active organization
-    const organizations = await OrganizationRepository.getUserOrganizationsWithRole(session.user.id);
-    if (!organizations || organizations.length === 0) {
-      return NextResponse.json({ error: 'No organizations found' }, { status: 404 });
-    }
+    // Create author lookup map
+    const authorMap = new Map(authors.map(author => [author.id, author]));
 
-    // For simplicity, use the first organization
-    const orgId = organizations[0].id;
+    // Helper function to calculate cycle time in hours
+    const calculateCycleTime = (createdAt: string, mergedAt: string | null): number => {
+      if (!mergedAt) return 0;
+      const created = new Date(createdAt);
+      const merged = new Date(mergedAt);
+      return Math.round((merged.getTime() - created.getTime()) / (1000 * 60 * 60) * 10) / 10; // Round to 1 decimal
+    };
 
-    // Get recent PRs from this organization
-    const pullRequests = await PRRepository.getOrganizationPullRequests(orgId, {
-      limit: 10,
-      orderBy: 'created_at',
-      orderDir: 'DESC'
-    });
-
-    // Transform the data to match the component's expected format
-    const formattedPRs = await Promise.all(pullRequests.map(async (pr: PullRequest) => {
-      // Get repository details
-      const repo = await RepositoryService.getRepositoryById(pr.repository_id);
-      
-      // Get author details
-      let authorName = 'Unknown';
-      if (pr.author_id) {
-        const author = await UserRepository.findUserById(pr.author_id);
-        if (author) {
-          authorName = author.name || author.email || 'Unknown';
-        }
-      }
-      
-      // Get category name
-      let investmentArea = undefined;
-      if (pr.category_id) {
-        const category = await findCategoryById(pr.category_id);
-        investmentArea = category?.name;
-      }
-      
+    // Format the pull requests to match the expected format for backward compatibility
+    const formattedPRs = recentPRs.map(pr => ({
+      id: pr.id,
+      title: pr.title,
+      number: pr.number,
+      // Map author to developer for backward compatibility
+      developer: pr.author_id ? (authorMap.get(pr.author_id) ? {
+        id: pr.author_id,
+        name: authorMap.get(pr.author_id)!.name || 'Unknown'
+      } : {
+        id: pr.author_id,
+        name: 'Unknown'
+      }) : {
+        id: 0,
+        name: 'Unknown'
+      },
+      repository: {
+        id: pr.repository_id,
+        name: pr.repository_name
+      },
+      // Map state to status for backward compatibility
+      status: pr.state,
+      createdAt: pr.created_at,
+      mergedAt: pr.merged_at || '',
       // Calculate cycle time
-      let cycleTime = 0;
-      if (pr.created_at && pr.merged_at) {
-        const created = new Date(pr.created_at);
-        const merged = new Date(pr.merged_at);
-        cycleTime = (merged.getTime() - created.getTime()) / (1000 * 60 * 60);
-      }
-      
-      return {
-        id: pr.id,
-        title: pr.title,
-        number: pr.number,
-        developer: {
-          id: pr.author_id || 0,
-          name: authorName
-        },
-        repository: {
-          id: repo?.id || 0,
-          name: repo?.name || 'Unknown'
-        },
-        status: pr.state,
-        createdAt: pr.created_at,
-        mergedAt: pr.merged_at || '',
-        cycleTime: cycleTime,
-        investmentArea: investmentArea,
-        linesAdded: pr.additions || 0,
-        linesRemoved: pr.deletions || 0,
-        files: pr.changed_files || 0
-      };
+      cycleTime: calculateCycleTime(pr.created_at, pr.merged_at),
+      // Map category to investmentArea for backward compatibility
+      investmentArea: pr.category_name,
+      // Map additions/deletions to linesAdded/linesRemoved for backward compatibility
+      linesAdded: pr.additions || 0,
+      linesRemoved: pr.deletions || 0,
+      files: pr.changed_files || 0,
+      // Keep new format for components that might use it
+      author: pr.author_id ? authorMap.get(pr.author_id) || { name: 'Unknown', email: 'unknown@example.com' } : null,
+      state: pr.state,
+      created_at: pr.created_at,
+      merged_at: pr.merged_at,
+      category: pr.category_name ? {
+        name: pr.category_name,
+        color: pr.category_color
+      } : null,
+      additions: pr.additions,
+      deletions: pr.deletions,
+      changed_files: pr.changed_files
     }));
 
     return NextResponse.json(formattedPRs);

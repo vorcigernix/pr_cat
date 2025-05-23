@@ -21,11 +21,35 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export function DateRangePickerWithPresets() {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2023, 0, 1),
-    to: new Date(),
-  })
+interface DateRangePickerWithPresetsProps {
+  onDateRangeChange?: (range: DateRange | undefined) => void;
+  selectedRange?: DateRange | undefined;
+}
+
+export function DateRangePickerWithPresets({ 
+  onDateRangeChange, 
+  selectedRange 
+}: DateRangePickerWithPresetsProps = {}) {
+  const [date, setDate] = React.useState<DateRange | undefined>(
+    selectedRange || {
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    }
+  );
+
+  // Update internal state when selectedRange prop changes
+  React.useEffect(() => {
+    if (selectedRange !== undefined) {
+      setDate(selectedRange);
+    }
+  }, [selectedRange]);
+
+  const handleDateChange = (newDate: DateRange | undefined) => {
+    setDate(newDate);
+    if (onDateRangeChange) {
+      onDateRangeChange(newDate);
+    }
+  };
 
   const presets = [
     {
@@ -60,7 +84,7 @@ export function DateRangePickerWithPresets() {
         to: new Date(),
       },
     },
-  ]
+  ];
 
   return (
     <div className="grid gap-2">
@@ -92,9 +116,9 @@ export function DateRangePickerWithPresets() {
         <PopoverContent className="w-auto p-0" align="end">
           <Select
             onValueChange={(value) => {
-              const preset = presets.find((preset) => preset.id === value)
+              const preset = presets.find((preset) => preset.id === value);
               if (preset) {
-                setDate(preset.dateRange)
+                handleDateChange(preset.dateRange);
               }
             }}
           >
@@ -114,7 +138,7 @@ export function DateRangePickerWithPresets() {
               mode="range"
               defaultMonth={date?.from}
               selected={date}
-              onSelect={setDate}
+              onSelect={handleDateChange}
               numberOfMonths={2}
             />
           </div>

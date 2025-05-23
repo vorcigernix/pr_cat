@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as PRRepository from '@/lib/repositories/pr-repository';
-import * as OrganizationRepository from '@/lib/repositories/organization-repository';
 import { query } from '@/lib/db';
-import { auth } from '@/auth';
+import { getUserWithOrganizations } from '@/lib/auth-context';
 
 export const runtime = 'nodejs';
 
@@ -16,29 +15,47 @@ type TimeSeriesDataPoint = {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    // Use cached user context to avoid repeated queries
+    const { user, primaryOrganization } = await getUserWithOrganizations(request);
+    const orgId = primaryOrganization.id;
+
+    // Parse query parameters
+    const { searchParams } = new URL(request.url);
+    const repositoryId = searchParams.get('repositoryId');
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+
+    // Set date range - default to last 14 days if not provided
+    let startDate: Date, endDate: Date;
+    
+    if (startDateParam && endDateParam) {
+      startDate = new Date(startDateParam);
+      endDate = new Date(endDateParam);
+    } else {
+      endDate = new Date();
+      startDate = new Date(endDate);
+      startDate.setDate(startDate.getDate() - 13); // 14 days total (including today)
     }
 
-    // Get the user's active organization
-    const organizations = await OrganizationRepository.getUserOrganizationsWithRole(session.user.id);
-    if (!organizations || organizations.length === 0) {
-      return NextResponse.json({ error: 'No organizations found' }, { status: 404 });
+    // Ensure we don't exceed a reasonable range (max 90 days)
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysDiff > 90) {
+      return NextResponse.json({ error: 'Date range cannot exceed 90 days' }, { status: 400 });
     }
-
-    // For simplicity, use the first organization
-    const orgId = organizations[0].id;
-
-    // Calculate time series data for the last 14 days
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - 13); // 14 days total (including today)
 
     const timeSeriesData: TimeSeriesDataPoint[] = [];
 
+    // Build repository filter condition
+    let repositoryFilter = '';
+    let queryParams: any[] = [orgId];
+    
+    if (repositoryId && repositoryId !== 'all') {
+      repositoryFilter = 'AND r.id = ?';
+      queryParams.push(parseInt(repositoryId));
+    }
+
     // For each day in the range
-    for (let i = 0; i <= 13; i++) {
+    for (let i = 0; i <= daysDiff; i++) {
       const currentDate = new Date(startDate);
       currentDate.setDate(currentDate.getDate() + i);
       
@@ -46,7 +63,7 @@ export async function GET(request: NextRequest) {
       const nextDate = new Date(currentDate);
       nextDate.setDate(nextDate.getDate() + 1);
       
-      // Use optimized SQL queries for each day
+      // Use optimized SQL queries for each day with optional repository filter
       
       // 1. Get PRs merged on this specific day with cycle time calculation
       const prsForDay = await query<{
@@ -63,12 +80,13 @@ export async function GET(request: NextRequest) {
         FROM pull_requests pr
         JOIN repositories r ON pr.repository_id = r.id
         WHERE r.organization_id = ?
+        ${repositoryFilter}
         AND pr.state = 'merged'
         AND pr.merged_at >= ?
         AND pr.merged_at < ?
         AND pr.created_at IS NOT NULL
         AND pr.merged_at IS NOT NULL
-      `, [orgId, currentDate.toISOString(), nextDate.toISOString()]);
+      `, [...queryParams, currentDate.toISOString(), nextDate.toISOString()]);
       
       // 2. Calculate review time for PRs merged this day
       const reviewTimes = await query<{
@@ -80,6 +98,7 @@ export async function GET(request: NextRequest) {
         JOIN repositories r ON pr.repository_id = r.id
         JOIN pr_reviews rev ON pr.id = rev.pull_request_id
         WHERE r.organization_id = ?
+        ${repositoryFilter}
         AND pr.state = 'merged'
         AND pr.merged_at >= ?
         AND pr.merged_at < ?
@@ -90,7 +109,7 @@ export async function GET(request: NextRequest) {
           FROM pr_reviews rev2 
           WHERE rev2.pull_request_id = pr.id
         )
-      `, [orgId, currentDate.toISOString(), nextDate.toISOString()]);
+      `, [...queryParams, currentDate.toISOString(), nextDate.toISOString()]);
       
       // Calculate metrics
       const prThroughput = prsForDay.length;
@@ -98,12 +117,12 @@ export async function GET(request: NextRequest) {
       // Calculate average cycle time
       const avgCycleTime = prsForDay.length > 0 
         ? prsForDay.reduce((sum, pr) => sum + (pr.cycle_time_hours || 0), 0) / prsForDay.length
-        : (i > 0 ? timeSeriesData[i-1].cycleTime : 0);
+        : (i > 0 ? timeSeriesData[i-1]?.cycleTime || 0 : 0);
       
       // Calculate average review time  
       const avgReviewTime = reviewTimes.length > 0
         ? reviewTimes.reduce((sum, review) => sum + (review.review_time_hours || 0), 0) / reviewTimes.length
-        : (i > 0 ? timeSeriesData[i-1].reviewTime : 0);
+        : (i > 0 ? timeSeriesData[i-1]?.reviewTime || 0 : 0);
       
       // Calculate coding hours based on lines changed
       const totalLinesChanged = prsForDay.reduce((sum, pr) => 

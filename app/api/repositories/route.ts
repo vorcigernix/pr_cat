@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { RepositoryService } from '@/lib/services/repository-service';
-import { findUserById } from '@/lib/repositories';
+import { getAuthenticatedUser } from '@/lib/auth-context';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    // Get user from database
-    const user = await findUserById(session.user.id);
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    // Use cached user context to avoid repeated queries
+    const user = await getAuthenticatedUser(request);
 
     // Get all organizations with their repositories for this user
     const organizationsWithRepositories = await RepositoryService.getRepositoriesForUserOrganizations(user.id);

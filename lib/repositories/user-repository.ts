@@ -153,4 +153,87 @@ export async function findOrCreateUserByGitHubId(userData: {
     email: userData.email || null,
     image: userData.avatar_url || null,
   });
+}
+
+/**
+ * Optimized function to get user with their organizations in a single query
+ * This reduces the number of database calls from 2+ to 1
+ */
+export async function findUserWithOrganizations(userId: string) {
+  const results = await query<{
+    user_id: string;
+    user_name: string | null;
+    user_email: string;
+    user_image: string | null;
+    user_created_at: string;
+    user_updated_at: string;
+    org_id: number | null;
+    org_name: string | null;
+    org_github_id: number | null;
+    org_avatar_url: string | null;
+    org_installation_id: number | null;
+    org_created_at: string | null;
+    org_updated_at: string | null;
+    role: string | null;
+  }>(`
+    SELECT 
+      u.id as user_id,
+      u.name as user_name,
+      u.email as user_email,
+      u.image as user_image,
+      u.created_at as user_created_at,
+      u.updated_at as user_updated_at,
+      o.id as org_id,
+      o.name as org_name,
+      o.github_id as org_github_id,
+      o.avatar_url as org_avatar_url,
+      o.installation_id as org_installation_id,
+      o.created_at as org_created_at,
+      o.updated_at as org_updated_at,
+      uo.role
+    FROM users u
+    LEFT JOIN user_organizations uo ON u.id = uo.user_id
+    LEFT JOIN organizations o ON uo.organization_id = o.id
+    WHERE u.id = ?
+    ORDER BY o.created_at ASC
+  `, [userId]);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  // Extract user data (same for all rows)
+  const userData = {
+    id: results[0].user_id,
+    name: results[0].user_name,
+    email: results[0].user_email,
+    image: results[0].user_image,
+    created_at: results[0].user_created_at,
+    updated_at: results[0].user_updated_at
+  };
+
+  // Extract unique organizations
+  const organizations = results
+    .filter(row => row.org_id !== null) // Filter out users with no organizations
+    .reduce((acc: any[], row) => {
+      // Avoid duplicates
+      if (!acc.find(org => org.id === row.org_id)) {
+        acc.push({
+          id: row.org_id!,
+          name: row.org_name!,
+          github_id: row.org_github_id,
+          avatar_url: row.org_avatar_url,
+          installation_id: row.org_installation_id,
+          created_at: row.org_created_at!,
+          updated_at: row.org_updated_at!,
+          role: row.role!
+        });
+      }
+      return acc;
+    }, []);
+
+  return {
+    user: userData,
+    organizations
+  };
 } 

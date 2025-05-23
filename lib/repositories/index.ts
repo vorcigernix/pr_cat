@@ -11,6 +11,7 @@ export {
   removeUserFromOrganization,
   getOrganizationRole,
   findOrCreateUserByGitHubId,
+  findUserWithOrganizations,
 } from './user-repository';
 export { 
   findOrCreateOrganization, 
