@@ -1,14 +1,10 @@
 import { Suspense } from 'react';
 import { SectionCardsEngineering } from '@/components/section-cards-engineering';
-import { getMetricsSummary } from '@/app/api/services/metrics-data';
 
-export default async function MetricsCardsWrapper() {
-  // Fetch data in the server component
-  const metrics = await getMetricsSummary();
-  
+export default function MetricsCardsWrapper() {
   return (
     <Suspense fallback={<MetricsCardsSkeleton />}>
-      <SectionCardsEngineering initialMetrics={metrics} />
+      <SectionCardsEngineering />
     </Suspense>
   );
 }

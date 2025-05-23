@@ -40,6 +40,40 @@ const defaultMetrics: MetricsSummary = {
   reviewTime: { value: 39.1, change: -5.9, trend: "up" }
 };
 
+// Helper function to transform API data to metrics format
+const transformApiDataToMetrics = (data: ApiSummaryResponse): MetricsSummary => {
+  const weeklyPRChange = data.prsMergedLastWeek > 0 
+    ? ((data.prsMergedThisWeek - data.prsMergedLastWeek) / data.prsMergedLastWeek) * 100
+    : 0;
+
+  return {
+    // Estimate coding time based on average PR size
+    codingTime: { 
+      value: parseFloat((data.averagePRSize / 100).toFixed(1)), 
+      change: 0, // We don't have historical data yet
+      trend: "up" 
+    },
+    // Average PR size from the API
+    prSize: {
+      value: data.averagePRSize,
+      change: 0, // We don't have historical data yet
+      trend: "up" // Lower is better for PR size
+    },
+    // Cycle time - we'll use a placeholder since we don't have real cycle time in the API yet
+    cycleTime: {
+      value: 48, // Placeholder value
+      change: weeklyPRChange > 0 ? -5 : 5, // If PR volume is up, cycle time is down (estimate)
+      trend: weeklyPRChange > 0 ? "up" : "down"
+    },
+    // Review time - placeholder based on categorization rate
+    reviewTime: {
+      value: 24, // Placeholder value
+      change: data.categorizationRate > 75 ? -3 : 3, // High categorization = faster reviews (estimate)
+      trend: data.categorizationRate > 75 ? "up" : "down"
+    }
+  };
+};
+
 export function SectionCardsEngineering() {
   const [metrics, setMetrics] = useState<MetricsSummary>(defaultMetrics);
   const [loading, setLoading] = useState(true);
@@ -60,38 +94,8 @@ export function SectionCardsEngineering() {
         
         const data: ApiSummaryResponse = await response.json();
         
-        // Calculate metrics from API data
-        const weeklyPRChange = data.prsMergedLastWeek > 0 
-          ? ((data.prsMergedThisWeek - data.prsMergedLastWeek) / data.prsMergedLastWeek) * 100
-          : 0;
-
-        // Transform API data to our metrics format
-        setMetrics({
-          // Estimate coding time based on average PR size
-          codingTime: { 
-            value: parseFloat((data.averagePRSize / 100).toFixed(1)), 
-            change: 0, // We don't have historical data yet
-            trend: "up" 
-          },
-          // Average PR size from the API
-          prSize: {
-            value: data.averagePRSize,
-            change: 0, // We don't have historical data yet
-            trend: "up" // Lower is better for PR size
-          },
-          // Cycle time - we'll use a placeholder since we don't have real cycle time in the API yet
-          cycleTime: {
-            value: 48, // Placeholder value
-            change: weeklyPRChange > 0 ? -5 : 5, // If PR volume is up, cycle time is down (estimate)
-            trend: weeklyPRChange > 0 ? "up" : "down"
-          },
-          // Review time - placeholder based on categorization rate
-          reviewTime: {
-            value: 24, // Placeholder value
-            change: data.categorizationRate > 75 ? -3 : 3, // High categorization = faster reviews (estimate)
-            trend: data.categorizationRate > 75 ? "up" : "down"
-          }
-        });
+        // Transform API data to our metrics format using the helper function
+        setMetrics(transformApiDataToMetrics(data));
       } catch (error) {
         console.error("Failed to load metrics:", error);
         setError(error instanceof Error ? error.message : "An unknown error occurred");
