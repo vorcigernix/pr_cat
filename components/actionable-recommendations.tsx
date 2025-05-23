@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { IconExternalLink, IconAlertTriangle, IconClock, IconUsers, IconTrendingUp } from "@tabler/icons-react"
+import { IconExternalLink, IconAlertTriangle, IconClock, IconUsers, IconTrendingUp, IconCheck, IconArrowUpRight } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type Recommendation = {
   id: string;
@@ -73,37 +74,45 @@ export function ActionableRecommendations() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'performance':
-        return <IconTrendingUp className="h-4 w-4 text-blue-500" />;
+        return <IconTrendingUp className="h-4 w-4" />;
       case 'quality':
-        return <IconAlertTriangle className="h-4 w-4 text-yellow-500" />;
+        return <IconCheck className="h-4 w-4" />;
       case 'collaboration':
-        return <IconUsers className="h-4 w-4 text-green-500" />;
+        return <IconUsers className="h-4 w-4" />;
       case 'process':
-        return <IconClock className="h-4 w-4 text-purple-500" />;
+        return <IconClock className="h-4 w-4" />;
       default:
-        return <IconAlertTriangle className="h-4 w-4 text-gray-500" />;
+        return <IconAlertTriangle className="h-4 w-4" />;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getImpactGradient = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'from-red-50/80 to-red-100/40 dark:from-red-950/30 dark:to-red-900/20';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'from-amber-50/80 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/20';
       case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'from-blue-50/80 to-blue-100/40 dark:from-blue-950/30 dark:to-blue-900/20';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'from-gray-50/80 to-gray-100/40 dark:from-gray-950/30 dark:to-gray-900/20';
     }
+  };
+
+  const groupRecommendationsByPriority = (recs: Recommendation[]) => {
+    return {
+      high: recs.filter(r => r.priority === 'high'),
+      medium: recs.filter(r => r.priority === 'medium'),
+      low: recs.filter(r => r.priority === 'low')
+    };
   };
 
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Actionable Recommendations</CardTitle>
-          <CardDescription>Loading optimization insights...</CardDescription>
+          <CardTitle>Workflow Insights</CardTitle>
+          <CardDescription>Loading optimization opportunities...</CardDescription>
         </CardHeader>
         <CardContent className="h-[400px] flex items-center justify-center">
           <div className="animate-pulse w-full space-y-4">
@@ -120,17 +129,19 @@ export function ActionableRecommendations() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Actionable Recommendations</CardTitle>
-          <CardDescription>Error loading recommendations</CardDescription>
+          <CardTitle>Workflow Insights</CardTitle>
+          <CardDescription>Unable to load recommendations</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-red-500">{error}</p>
-          <button 
+          <p className="text-muted-foreground">{error}</p>
+          <Button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            variant="outline" 
+            size="sm"
+            className="mt-4"
           >
-            Retry
-          </button>
+            Try Again
+          </Button>
         </CardContent>
       </Card>
     );
@@ -140,15 +151,17 @@ export function ActionableRecommendations() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Actionable Recommendations</CardTitle>
-          <CardDescription>Your workflows are well optimized!</CardDescription>
+          <CardTitle>Workflow Insights</CardTitle>
+          <CardDescription>Your development workflow is running smoothly</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <IconTrendingUp className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <p className="text-lg font-semibold text-green-700 mb-2">Excellent Performance!</p>
-            <p className="text-muted-foreground">
-              No significant optimization opportunities identified. Your team's workflows are running smoothly.
+            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+              <IconCheck className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">All Systems Running Well</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              No significant optimization opportunities identified. Your team's development workflow is performing efficiently.
             </p>
           </div>
         </CardContent>
@@ -156,122 +169,204 @@ export function ActionableRecommendations() {
     );
   }
 
+  const groupedRecs = groupRecommendationsByPriority(recommendations.recommendations);
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Actionable Recommendations</CardTitle>
+            <CardTitle>Workflow Insights</CardTitle>
             <CardDescription>
-              AI-generated insights to optimize your development workflow
+              Opportunities to enhance your development flow
             </CardDescription>
           </div>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">
-              {recommendations.summary.totalRecommendations} recommendations
-            </p>
             <p className="text-sm font-medium">
-              Impact: {recommendations.summary.estimatedImpact}
+              {recommendations.summary.totalRecommendations} insights
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Potential impact: {recommendations.summary.estimatedImpact}
             </p>
           </div>
-        </div>
-        
-        {/* Summary badges */}
-        <div className="flex flex-wrap gap-2 mt-4">
-          {recommendations.summary.highPriorityCount > 0 && (
-            <Badge variant="outline" className="text-red-600 border-red-200">
-              {recommendations.summary.highPriorityCount} High Priority
-            </Badge>
-          )}
-          {recommendations.summary.focusAreas.map((area) => (
-            <Badge key={area} variant="outline" className="capitalize">
-              {area}
-            </Badge>
-          ))}
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {recommendations.recommendations.map((rec) => (
-            <Card key={rec.id} className="border-l-4 border-l-blue-500">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    {getTypeIcon(rec.type)}
-                    <div className="flex-1">
-                      <CardTitle className="text-base font-semibold">{rec.title}</CardTitle>
-                      <CardDescription className="mt-1">{rec.description}</CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={`text-xs ${getPriorityColor(rec.priority)}`}>
-                      {rec.priority.toUpperCase()}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {rec.timeFrame}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
-                {/* Impact */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm font-medium text-blue-800 mb-1">Expected Impact</p>
-                  <p className="text-sm text-blue-700">{rec.impact}</p>
-                  <div className="mt-2 grid grid-cols-3 gap-4 text-xs">
-                    <div>
-                      <span className="font-medium">Current:</span> {rec.metrics.currentValue}
-                    </div>
-                    <div>
-                      <span className="font-medium">Target:</span> {rec.metrics.targetValue}
-                    </div>
-                    <div>
-                      <span className="font-medium">Improvement:</span> {rec.metrics.improvementPotential}
-                    </div>
-                  </div>
-                </div>
+        <Tabs defaultValue="high" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="high" className="relative">
+              High Impact
+              {groupedRecs.high.length > 0 && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  {groupedRecs.high.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="medium" className="relative">
+              Medium Impact
+              {groupedRecs.medium.length > 0 && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  {groupedRecs.medium.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="low" className="relative">
+              Low Impact
+              {groupedRecs.low.length > 0 && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  {groupedRecs.low.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-                {/* Action Items */}
-                <div>
-                  <p className="text-sm font-medium mb-2">Action Items</p>
-                  <ul className="space-y-1">
-                    {rec.actionItems.map((item, index) => (
-                      <li key={index} className="flex items-start space-x-2 text-sm">
-                        <span className="font-medium text-blue-600 mt-0.5">•</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+          <TabsContent value="high" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {groupedRecs.high.map((rec) => (
+                <Card 
+                  key={rec.id} 
+                  className={`bg-gradient-to-br ${getImpactGradient(rec.priority)} border-red-200/60 dark:border-red-800/30`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 text-red-600 dark:text-red-400">
+                        {getTypeIcon(rec.type)}
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-base font-semibold">{rec.title}</CardTitle>
+                        <CardDescription className="mt-1 text-sm">{rec.description}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Expected Impact</p>
+                      <p className="text-sm text-muted-foreground">{rec.impact}</p>
+                      <div className="mt-2 flex items-center justify-between text-xs">
+                        <span><strong>Current:</strong> {rec.metrics.currentValue}</span>
+                        <IconArrowUpRight className="h-3 w-3 text-muted-foreground" />
+                        <span><strong>Target:</strong> {rec.metrics.targetValue}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">
+                        {rec.timeFrame}
+                      </Badge>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <IconExternalLink className="h-3 w-3 mr-1" />
+                        Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {groupedRecs.high.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  <IconCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No high-impact opportunities identified</p>
                 </div>
+              )}
+            </div>
+          </TabsContent>
 
-                {/* Call to Action */}
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <div className="text-xs text-muted-foreground">
-                    Type: <span className="capitalize">{rec.type}</span>
-                  </div>
-                  <Button size="sm" variant="outline" className="text-xs">
-                    <IconExternalLink className="h-3 w-3 mr-1" />
-                    Learn More
-                  </Button>
+          <TabsContent value="medium" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {groupedRecs.medium.map((rec) => (
+                <Card 
+                  key={rec.id} 
+                  className={`bg-gradient-to-br ${getImpactGradient(rec.priority)} border-amber-200/60 dark:border-amber-800/30`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 text-amber-600 dark:text-amber-400">
+                        {getTypeIcon(rec.type)}
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-base font-semibold">{rec.title}</CardTitle>
+                        <CardDescription className="mt-1 text-sm">{rec.description}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Expected Impact</p>
+                      <p className="text-sm text-muted-foreground">{rec.impact}</p>
+                      <div className="mt-2 flex items-center justify-between text-xs">
+                        <span><strong>Current:</strong> {rec.metrics.currentValue}</span>
+                        <IconArrowUpRight className="h-3 w-3 text-muted-foreground" />
+                        <span><strong>Target:</strong> {rec.metrics.targetValue}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">
+                        {rec.timeFrame}
+                      </Badge>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <IconExternalLink className="h-3 w-3 mr-1" />
+                        Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {groupedRecs.medium.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  <IconCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No medium-impact opportunities identified</p>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              )}
+            </div>
+          </TabsContent>
 
-        {/* Quick Actions */}
-        {recommendations.summary.highPriorityCount > 0 && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <h4 className="font-semibold text-red-800 mb-2">High Priority Actions</h4>
-            <p className="text-sm text-red-700 mb-3">
-              {recommendations.summary.highPriorityCount} critical improvement{recommendations.summary.highPriorityCount === 1 ? '' : 's'} identified. 
-              Taking action on these will have immediate impact on your team's productivity.
-            </p>
-            <Button size="sm" className="bg-red-600 hover:bg-red-700">
-              Start with High Priority Items
-            </Button>
-          </div>
-        )}
+          <TabsContent value="low" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {groupedRecs.low.map((rec) => (
+                <Card 
+                  key={rec.id} 
+                  className={`bg-gradient-to-br ${getImpactGradient(rec.priority)} border-blue-200/60 dark:border-blue-800/30`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 text-blue-600 dark:text-blue-400">
+                        {getTypeIcon(rec.type)}
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-base font-semibold">{rec.title}</CardTitle>
+                        <CardDescription className="mt-1 text-sm">{rec.description}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Expected Impact</p>
+                      <p className="text-sm text-muted-foreground">{rec.impact}</p>
+                      <div className="mt-2 flex items-center justify-between text-xs">
+                        <span><strong>Current:</strong> {rec.metrics.currentValue}</span>
+                        <IconArrowUpRight className="h-3 w-3 text-muted-foreground" />
+                        <span><strong>Target:</strong> {rec.metrics.targetValue}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">
+                        {rec.timeFrame}
+                      </Badge>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <IconExternalLink className="h-3 w-3 mr-1" />
+                        Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {groupedRecs.low.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  <IconCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No low-impact opportunities identified</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
