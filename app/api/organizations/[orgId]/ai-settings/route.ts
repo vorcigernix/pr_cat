@@ -64,6 +64,8 @@ export async function PUT(
   try {
     const body = await request.json() as UpdateAiSettingsPayload;
     
+    console.log(`Server: Received AI settings update for org ${orgId}:`, JSON.stringify(body, null, 2));
+    
     // Basic validation for the new payload
     if (body.selectedModelId !== undefined && (typeof body.selectedModelId !== 'string' && body.selectedModelId !== null)) {
       return NextResponse.json({ error: 'Invalid selectedModelId value' }, { status: 400 });
@@ -81,6 +83,7 @@ export async function PUT(
     }
             
     await updateOrganizationAiSettings(numericOrgId, body);
+    console.log(`Server: Successfully updated AI settings for org ${orgId}`);
     return NextResponse.json({ message: 'AI settings updated successfully' });
   } catch (error) {
     console.error(`Error updating AI settings for org ${orgId}:`, error);

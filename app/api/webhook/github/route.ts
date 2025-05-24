@@ -876,7 +876,8 @@ ${diff}`;
 
       console.log(`WEBHOOK AI RESPONSE: AI Response for PR #${pr.number}: ${text}`);
 
-      const categoryMatch = text.match(/Category: (.*?), Confidence: (\d\.?\d*)/i);
+      // Parse AI response - handle both comma-separated and newline-separated formats
+      const categoryMatch = text.match(/Category:\s*(.*?)(?:,|\n)\s*Confidence:\s*(\d+\.?\d*)/i);
       if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
         const suggestedCategoryName = categoryMatch[1].trim();
         const confidence = parseFloat(categoryMatch[2]);

@@ -225,8 +225,8 @@ IMPORTANT: The category name must match EXACTLY one of the categories listed abo
       
       console.log(`DEBUG: AI response for PR #${pullRequest.number}: ${text}`);
       
-      // Parse AI response
-      const categoryMatch = text.match(/Category: (.*?), Confidence: (\d\.?\d*)/i);
+      // Parse AI response - handle both comma-separated and newline-separated formats
+      const categoryMatch = text.match(/Category:\s*(.*?)(?:,|\n)\s*Confidence:\s*(\d+\.?\d*)/i);
       
       if (categoryMatch && categoryMatch[1] && categoryMatch[2]) {
         const suggestedCategoryName = categoryMatch[1].trim();

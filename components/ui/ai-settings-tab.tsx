@@ -57,9 +57,11 @@ export function AiSettingsTab() {
           throw new Error('Failed to fetch AI settings');
         }
         const data: FetchedAiSettings = await response.json();
+        console.log('Fetched AI settings:', data);
         setFetchedSettings(data);
         setSelectedProvider(data.provider);
         setSelectedModelId(data.selectedModelId);
+        console.log('Set provider to:', data.provider, 'and model to:', data.selectedModelId);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Could not load AI settings.');
       } finally {
@@ -79,9 +81,9 @@ export function AiSettingsTab() {
     }
   }, [selectedOrganization]);
 
-  // When provider changes, reset model selection
+  // When provider changes, reset model selection (but not when loading from server)
   useEffect(() => {
-    if (selectedProvider) {
+    if (selectedProvider && !isLoadingSettings) {
       // Check if current selected model is from the new provider
       const currentModelMatchesProvider = selectedModelId && 
         allModels.some(m => m.id === selectedModelId && m.provider === selectedProvider);
@@ -91,11 +93,18 @@ export function AiSettingsTab() {
         setSelectedModelId(null);
       }
     }
-  }, [selectedProvider, selectedModelId]);
+  }, [selectedProvider, isLoadingSettings]);
+
+  // Debug state changes
+  useEffect(() => {
+    console.log('State changed - Provider:', selectedProvider, 'Model:', selectedModelId, 'Loading:', isLoadingSettings, 'Available models:', availableModels.length);
+  }, [selectedProvider, selectedModelId, isLoadingSettings, availableModels]);
 
   const handleSave = async () => {
     if (!selectedOrganization) return;
     setIsSaving(true);
+
+    console.log('Save started with state - Provider:', selectedProvider, 'Model:', selectedModelId);
 
     const payload: UpdateAiSettingsPayload = {
       provider: selectedProvider,
@@ -145,6 +154,8 @@ export function AiSettingsTab() {
       }
     }
 
+    console.log('Save payload being sent:', JSON.stringify(payload, null, 2));
+
     try {
       const response = await fetch(`/api/organizations/${selectedOrganization.id}/ai-settings`, {
         method: 'PUT',
@@ -158,9 +169,11 @@ export function AiSettingsTab() {
       toast.success('AI settings saved successfully!');
       const fetchResponse = await fetch(`/api/organizations/${selectedOrganization.id}/ai-settings`);
       const data: FetchedAiSettings = await fetchResponse.json();
+      console.log('After save, fetched AI settings:', data);
       setFetchedSettings(data);
       setSelectedProvider(data.provider);
       setSelectedModelId(data.selectedModelId);
+      console.log('After save, set provider to:', data.provider, 'and model to:', data.selectedModelId);
       setOpenaiApiKeyInput(''); 
       setGoogleApiKeyInput('');
       setAnthropicApiKeyInput('');
@@ -196,6 +209,9 @@ export function AiSettingsTab() {
 
     return { value, onChange, placeholder, isSet };
   };
+
+  // Debug current state
+  console.log('Current state - Provider:', selectedProvider, 'Model:', selectedModelId, 'Fetched:', fetchedSettings);
 
   if (sessionStatus === 'loading') {
     return <p>Loading session data...</p>;
@@ -274,8 +290,10 @@ export function AiSettingsTab() {
               <div className="space-y-2">
                 <Label htmlFor="provider-select">AI Provider</Label>
                 <Select
+                  key={`provider-${selectedOrganization.id}`}
                   value={selectedProvider || 'none'}
                   onValueChange={(value) => {
+                    console.log('Provider changed to:', value);
                     if (value === 'none') {
                       setSelectedProvider(null);
                     } else {
@@ -300,8 +318,12 @@ export function AiSettingsTab() {
                 <div className="space-y-2">
                   <Label htmlFor="model-select">AI Model</Label>
                   <Select
+                    key={`model-${selectedOrganization.id}-${selectedProvider}`}
                     value={selectedModelId || 'none'} 
-                    onValueChange={(value) => setSelectedModelId(value === 'none' ? null : value)}
+                    onValueChange={(value) => {
+                      console.log('Model changed to:', value);
+                      setSelectedModelId(value === 'none' ? null : value);
+                    }}
                   >
                     <SelectTrigger id="model-select">
                       <SelectValue placeholder={`Select ${selectedProvider} model`} />

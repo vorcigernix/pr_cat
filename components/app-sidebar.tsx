@@ -10,7 +10,6 @@ import {
   IconLifebuoy,
   IconHelp,
   IconListDetails,
-  IconSearch,
   IconSettings,
   IconUsers,
   IconFileStack,
@@ -78,15 +77,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Get Help",
-      url: "#",
+      url: "/dashboard/help",
       icon: IconLifebuoy,
-      isActive: false
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-      isActive: false
+      isActive: pathname === "/dashboard/help"
     },
   ]
 

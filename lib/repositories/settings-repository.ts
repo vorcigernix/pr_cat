@@ -38,18 +38,30 @@ async function getOrganizationSetting(organizationId: number, key: string): Prom
 }
 
 async function updateOrganizationSetting(organizationId: number, key: string, value: string | null): Promise<void> {
-  // If value is null, we might want to DELETE the setting row or store NULL 
-  // depending on desired behavior for "cleared" keys.
-  // Storing NULL allows distinguishing between "never set" and "explicitly cleared".
-  // For simplicity, current behavior is upsert, so null will store NULL.
-  await execute(
-    `INSERT INTO settings (user_id, organization_id, key, value, created_at, updated_at) 
-     VALUES (NULL, ?, ?, ?, datetime('now'), datetime('now'))
-     ON CONFLICT(user_id, organization_id, key) DO UPDATE SET 
-       value = excluded.value,
-       updated_at = datetime('now')`,
-    [organizationId, key, value]
+  // For organization settings, user_id is always NULL
+  // SQLite treats NULL values as distinct, so we need to handle the upsert differently
+  
+  // First check if a setting already exists
+  const existingSetting = await query<Setting>(
+    'SELECT id FROM settings WHERE user_id IS NULL AND organization_id = ? AND key = ?',
+    [organizationId, key]
   );
+  
+  if (existingSetting.length > 0) {
+    // Update existing setting
+    await execute(
+      'UPDATE settings SET value = ?, updated_at = datetime(\'now\') WHERE user_id IS NULL AND organization_id = ? AND key = ?',
+      [value, organizationId, key]
+    );
+    console.log(`Updated existing setting ${key} for org ${organizationId} to: ${value}`);
+  } else {
+    // Insert new setting
+    await execute(
+      'INSERT INTO settings (user_id, organization_id, key, value, created_at, updated_at) VALUES (NULL, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
+      [organizationId, key, value]
+    );
+    console.log(`Inserted new setting ${key} for org ${organizationId} with value: ${value}`);
+  }
 }
 
 export async function getOrganizationAiSettings(organizationId: number): Promise<AiSettings> {
@@ -72,21 +84,30 @@ export async function updateOrganizationAiSettings(
   organizationId: number, 
   payload: UpdateAiSettingsPayload
 ): Promise<void> {
+  console.log(`Updating AI settings for org ${organizationId}:`, JSON.stringify(payload, null, 2));
+  
   if (payload.provider !== undefined) {
+    console.log(`Setting provider to: ${payload.provider}`);
     await updateOrganizationSetting(organizationId, AI_PROVIDER_KEY, payload.provider);
   }
   if (payload.selectedModelId !== undefined) {
+    console.log(`Setting selectedModelId to: ${payload.selectedModelId}`);
     await updateOrganizationSetting(organizationId, AI_SELECTED_MODEL_ID_KEY, payload.selectedModelId);
   }
   if (payload.openaiApiKey !== undefined) {
+    console.log(`Setting OpenAI API key (length: ${payload.openaiApiKey?.length || 0})`);
     await updateOrganizationSetting(organizationId, AI_OPENAI_API_KEY_KEY, payload.openaiApiKey);
   }
   if (payload.googleApiKey !== undefined) {
+    console.log(`Setting Google API key (length: ${payload.googleApiKey?.length || 0})`);
     await updateOrganizationSetting(organizationId, AI_GOOGLE_API_KEY_KEY, payload.googleApiKey);
   }
   if (payload.anthropicApiKey !== undefined) {
+    console.log(`Setting Anthropic API key (length: ${payload.anthropicApiKey?.length || 0})`);
     await updateOrganizationSetting(organizationId, AI_ANTHROPIC_API_KEY_KEY, payload.anthropicApiKey);
   }
+  
+  console.log(`Finished updating AI settings for org ${organizationId}`);
 }
 
 // Get a specific API key for an organization and provider
