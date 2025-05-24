@@ -56,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: pathname === "/dashboard/analytics"
     },
     {
-      title: "Projects",
+      title: "Repositories",
       url: "/dashboard/projects",
       icon: IconFolder,
       isActive: pathname === "/dashboard/projects"
@@ -108,24 +108,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
-        <SidebarGroup title="Projects">
-          <SidebarGroupContent className="mt-2">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="Projects"
-                  className={pathname === "/dashboard/projects" ? "bg-accent text-accent-foreground" : ""}
-                  asChild
-                >
-                  <Link href="/dashboard/projects">
-                    <IconFileStack size={18} />
-                    <span>Projects</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

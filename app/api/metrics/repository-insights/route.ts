@@ -11,6 +11,7 @@ type RepositoryInsight = {
   name: string;
   fullName: string;
   isTracked: boolean;
+  hasData: boolean;
   metrics: {
     totalPRs: number;
     openPRs: number;
@@ -67,41 +68,93 @@ export async function GET(request: NextRequest) {
     // Get all repositories for the organization
     const repositories = await RepositoryRepository.getOrganizationRepositories(orgId);
     
+    if (repositories.length === 0) {
+      return NextResponse.json({
+        repositories: [],
+        topPerformers: [],
+        needsAttention: [],
+        organizationAverages: {
+          avgCycleTime: 0,
+          avgPRSize: 0,
+          avgCategorizationRate: 0,
+          avgHealthScore: 0
+        }
+      });
+    }
+
+    const repositoryIds = repositories.map(repo => repo.id);
+    
+    // Bulk query for current period stats (last 30 days) - ONE query for all repositories
+    const currentPeriodStats = await query<{
+      repository_id: number;
+      total_prs: number;
+      open_prs: number;
+      avg_cycle_time: number;
+      avg_pr_size: number;
+      categorized_prs: number;
+      contributor_count: number;
+      reviewed_prs: number;
+    }>(`
+      SELECT 
+        pr.repository_id,
+        COUNT(pr.id) as total_prs,
+        SUM(CASE WHEN pr.state = 'open' THEN 1 ELSE 0 END) as open_prs,
+        AVG(CASE 
+          WHEN pr.state = 'merged' AND pr.created_at IS NOT NULL AND pr.merged_at IS NOT NULL 
+          THEN CAST((julianday(pr.merged_at) - julianday(pr.created_at)) * 24 AS REAL)
+          ELSE NULL 
+        END) as avg_cycle_time,
+        AVG(COALESCE(pr.additions, 0) + COALESCE(pr.deletions, 0)) as avg_pr_size,
+        SUM(CASE WHEN pr.category_id IS NOT NULL THEN 1 ELSE 0 END) as categorized_prs,
+        COUNT(DISTINCT pr.author_id) as contributor_count,
+        COUNT(DISTINCT CASE 
+          WHEN EXISTS(SELECT 1 FROM pr_reviews rev WHERE rev.pull_request_id = pr.id) 
+          THEN pr.id 
+          ELSE NULL 
+        END) as reviewed_prs
+      FROM pull_requests pr
+      WHERE pr.repository_id IN (${repositoryIds.map(() => '?').join(',')})
+      AND pr.created_at >= ?
+      GROUP BY pr.repository_id
+    `, [...repositoryIds, thirtyDaysAgo.toISOString()]);
+
+    // Bulk query for previous period stats (for trend analysis) - ONE query for all repositories
+    const previousPeriodStats = await query<{
+      repository_id: number;
+      total_prs: number;
+      avg_cycle_time: number;
+      reviewed_prs: number;
+    }>(`
+      SELECT 
+        pr.repository_id,
+        COUNT(pr.id) as total_prs,
+        AVG(CASE 
+          WHEN pr.state = 'merged' AND pr.created_at IS NOT NULL AND pr.merged_at IS NOT NULL 
+          THEN CAST((julianday(pr.merged_at) - julianday(pr.created_at)) * 24 AS REAL)
+          ELSE NULL 
+        END) as avg_cycle_time,
+        COUNT(DISTINCT CASE 
+          WHEN EXISTS(SELECT 1 FROM pr_reviews rev WHERE rev.pull_request_id = pr.id) 
+          THEN pr.id 
+          ELSE NULL 
+        END) as reviewed_prs
+      FROM pull_requests pr
+      WHERE pr.repository_id IN (${repositoryIds.map(() => '?').join(',')})
+      AND pr.created_at >= ?
+      AND pr.created_at < ?
+      GROUP BY pr.repository_id
+    `, [...repositoryIds, sixtyDaysAgo.toISOString(), thirtyDaysAgo.toISOString()]);
+
+    // Create lookup maps for faster access
+    const currentStatsMap = new Map(currentPeriodStats.map(stat => [stat.repository_id, stat]));
+    const previousStatsMap = new Map(previousPeriodStats.map(stat => [stat.repository_id, stat]));
+    
     const repositoryInsights: RepositoryInsight[] = [];
 
     for (const repo of repositories) {
-      // Get PR statistics for this repository
-      const repoStats = await query<{
-        total_prs: number;
-        open_prs: number;
-        avg_cycle_time: number;
-        avg_pr_size: number;
-        categorized_prs: number;
-        contributor_count: number;
-        reviewed_prs: number;
-      }>(`
-        SELECT 
-          COUNT(pr.id) as total_prs,
-          SUM(CASE WHEN pr.state = 'open' THEN 1 ELSE 0 END) as open_prs,
-          AVG(CASE 
-            WHEN pr.state = 'merged' AND pr.created_at IS NOT NULL AND pr.merged_at IS NOT NULL 
-            THEN CAST((julianday(pr.merged_at) - julianday(pr.created_at)) * 24 AS REAL)
-            ELSE NULL 
-          END) as avg_cycle_time,
-          AVG(COALESCE(pr.additions, 0) + COALESCE(pr.deletions, 0)) as avg_pr_size,
-          SUM(CASE WHEN pr.category_id IS NOT NULL THEN 1 ELSE 0 END) as categorized_prs,
-          COUNT(DISTINCT pr.author_id) as contributor_count,
-          COUNT(DISTINCT CASE 
-            WHEN EXISTS(SELECT 1 FROM pr_reviews rev WHERE rev.pull_request_id = pr.id) 
-            THEN pr.id 
-            ELSE NULL 
-          END) as reviewed_prs
-        FROM pull_requests pr
-        WHERE pr.repository_id = ?
-        AND pr.created_at >= ?
-      `, [repo.id, thirtyDaysAgo.toISOString()]);
+      const stats = currentStatsMap.get(repo.id);
+      const prevStats = previousStatsMap.get(repo.id);
 
-      const stats = repoStats[0];
       if (!stats) continue;
 
       // Calculate metrics
@@ -116,40 +169,20 @@ export async function GET(request: NextRequest) {
       // Activity score based on PR volume and contributors
       const activityScore = Math.min(100, (totalPRs * 2) + (contributorCount * 5));
 
-      // Health score - composite metric
-      const healthFactors = [
-        Math.min(100, reviewCoverage), // Review coverage (0-100)
-        Math.min(100, categorizationRate), // Categorization rate (0-100)
-        Math.max(0, 100 - (avgCycleTime * 2)), // Inverse cycle time (lower is better)
-        Math.max(0, 100 - (avgPRSize / 10)), // Inverse PR size (smaller is better)
-      ];
-      const healthScore = healthFactors.reduce((sum, factor) => sum + factor, 0) / healthFactors.length;
+      // Check if we have meaningful data (at least some PR activity)
+      const hasData = totalPRs > 0;
 
-      // Get previous period stats for trend analysis
-      const previousStats = await query<{
-        total_prs: number;
-        avg_cycle_time: number;
-        reviewed_prs: number;
-      }>(`
-        SELECT 
-          COUNT(pr.id) as total_prs,
-          AVG(CASE 
-            WHEN pr.state = 'merged' AND pr.created_at IS NOT NULL AND pr.merged_at IS NOT NULL 
-            THEN CAST((julianday(pr.merged_at) - julianday(pr.created_at)) * 24 AS REAL)
-            ELSE NULL 
-          END) as avg_cycle_time,
-          COUNT(DISTINCT CASE 
-            WHEN EXISTS(SELECT 1 FROM pr_reviews rev WHERE rev.pull_request_id = pr.id) 
-            THEN pr.id 
-            ELSE NULL 
-          END) as reviewed_prs
-        FROM pull_requests pr
-        WHERE pr.repository_id = ?
-        AND pr.created_at >= ?
-        AND pr.created_at < ?
-      `, [repo.id, sixtyDaysAgo.toISOString(), thirtyDaysAgo.toISOString()]);
-
-      const prevStats = previousStats[0];
+      // Health score - composite metric (only calculate if we have data)
+      let healthScore = 0;
+      if (hasData) {
+        const healthFactors = [
+          Math.min(100, reviewCoverage), // Review coverage (0-100)
+          Math.min(100, categorizationRate), // Categorization rate (0-100)
+          Math.max(0, 100 - (avgCycleTime * 2)), // Inverse cycle time (lower is better)
+          Math.max(0, 100 - (avgPRSize / 10)), // Inverse PR size (smaller is better)
+        ];
+        healthScore = healthFactors.reduce((sum, factor) => sum + factor, 0) / healthFactors.length;
+      }
 
       // Calculate trends
       const prVelocityChange = prevStats?.total_prs 
@@ -172,6 +205,7 @@ export async function GET(request: NextRequest) {
         name: repo.name,
         fullName: repo.full_name,
         isTracked: repo.is_tracked,
+        hasData,
         metrics: {
           totalPRs,
           openPRs,
@@ -191,30 +225,37 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Sort by health score for analysis
-    repositoryInsights.sort((a, b) => b.metrics.healthScore - a.metrics.healthScore);
+    // Sort by health score for analysis (only repositories with data should be ranked)
+    repositoryInsights.sort((a, b) => {
+      // Repositories with data should always come before those without
+      if (a.hasData && !b.hasData) return -1;
+      if (!a.hasData && b.hasData) return 1;
+      // Both have data or both don't have data - sort by health score
+      return b.metrics.healthScore - a.metrics.healthScore;
+    });
 
-    // Identify top performers and repos needing attention
-    const topPerformers = repositoryInsights.slice(0, 3);
-    const needsAttention = repositoryInsights
+    // Identify top performers and repos needing attention (only from repositories with data)
+    const repositoriesWithData = repositoryInsights.filter(repo => repo.hasData);
+    const topPerformers = repositoriesWithData.slice(0, 3);
+    const needsAttention = repositoriesWithData
       .filter(repo => repo.metrics.healthScore < 60 || repo.metrics.reviewCoverage < 50)
       .slice(0, 3);
 
-    // Calculate organization averages
-    const avgCycleTime = repositoryInsights.length > 0
-      ? repositoryInsights.reduce((sum, repo) => sum + repo.metrics.avgCycleTime, 0) / repositoryInsights.length
+    // Calculate organization averages (only for repositories with data)
+    const avgCycleTime = repositoriesWithData.length > 0
+      ? repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.avgCycleTime, 0) / repositoriesWithData.length
       : 0;
 
-    const avgPRSize = repositoryInsights.length > 0
-      ? repositoryInsights.reduce((sum, repo) => sum + repo.metrics.avgPRSize, 0) / repositoryInsights.length
+    const avgPRSize = repositoriesWithData.length > 0
+      ? repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.avgPRSize, 0) / repositoriesWithData.length
       : 0;
 
-    const avgCategorizationRate = repositoryInsights.length > 0
-      ? repositoryInsights.reduce((sum, repo) => sum + repo.metrics.categorizationRate, 0) / repositoryInsights.length
+    const avgCategorizationRate = repositoriesWithData.length > 0
+      ? repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.categorizationRate, 0) / repositoriesWithData.length
       : 0;
 
-    const avgHealthScore = repositoryInsights.length > 0
-      ? repositoryInsights.reduce((sum, repo) => sum + repo.metrics.healthScore, 0) / repositoryInsights.length
+    const avgHealthScore = repositoriesWithData.length > 0
+      ? repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.healthScore, 0) / repositoriesWithData.length
       : 0;
 
     const response: RepositoryInsightsResponse = {

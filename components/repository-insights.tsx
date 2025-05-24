@@ -18,6 +18,7 @@ type RepositoryInsight = {
   name: string;
   fullName: string;
   isTracked: boolean;
+  hasData: boolean;
   metrics: {
     totalPRs: number;
     openPRs: number;
@@ -265,7 +266,10 @@ export function RepositoryInsights() {
         <CardContent>
           <div className="space-y-4">
             {insights.repositories.map((repo) => (
-              <div key={repo.repositoryId} className="p-4 border rounded-lg space-y-3">
+              <div 
+                key={repo.repositoryId} 
+                className={`p-4 border rounded-lg space-y-3 ${!repo.hasData ? 'opacity-50' : ''}`}
+              >
                 {/* Repository Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -277,64 +281,94 @@ export function RepositoryInsights() {
                     {!repo.isTracked && (
                       <Badge variant="outline" className="text-muted-foreground">Not Tracked</Badge>
                     )}
+                    {!repo.hasData && (
+                      <Badge variant="outline" className="text-muted-foreground">No Activity</Badge>
+                    )}
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
-                      <p className={`text-lg font-bold ${getHealthScoreColor(repo.metrics.healthScore)}`}>
-                        {repo.metrics.healthScore}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Health Score</p>
+                      {repo.hasData ? (
+                        <>
+                          <p className={`text-lg font-bold ${getHealthScoreColor(repo.metrics.healthScore)}`}>
+                            {repo.metrics.healthScore}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Health Score</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-bold text-muted-foreground">
+                            --
+                          </p>
+                          <p className="text-xs text-muted-foreground">No Data</p>
+                        </>
+                      )}
                     </div>
-                    {getHealthScoreBadge(repo.metrics.healthScore)}
+                    {repo.hasData ? (
+                      getHealthScoreBadge(repo.metrics.healthScore)
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">No Data</Badge>
+                    )}
                   </div>
                 </div>
 
                 {/* Health Score Progress */}
-                <Progress value={repo.metrics.healthScore} className="h-2" />
+                {repo.hasData ? (
+                  <Progress value={repo.metrics.healthScore} className="h-2" />
+                ) : (
+                  <Progress value={0} className="h-2 opacity-30" />
+                )}
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
-                  <div className="text-center">
-                    <p className="font-medium">{repo.metrics.totalPRs}</p>
-                    <p className="text-xs text-muted-foreground">Total PRs</p>
+                {repo.hasData ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
+                    <div className="text-center">
+                      <p className="font-medium">{repo.metrics.totalPRs}</p>
+                      <p className="text-xs text-muted-foreground">Total PRs</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">{repo.metrics.openPRs}</p>
+                      <p className="text-xs text-muted-foreground">Open PRs</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">{repo.metrics.avgCycleTime}h</p>
+                      <p className="text-xs text-muted-foreground">Cycle Time</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">{repo.metrics.avgPRSize}</p>
+                      <p className="text-xs text-muted-foreground">PR Size</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">{repo.metrics.reviewCoverage}%</p>
+                      <p className="text-xs text-muted-foreground">Review Coverage</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">{repo.metrics.contributorCount}</p>
+                      <p className="text-xs text-muted-foreground">Contributors</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="font-medium">{repo.metrics.openPRs}</p>
-                    <p className="text-xs text-muted-foreground">Open PRs</p>
+                ) : (
+                  <div className="flex items-center justify-center py-8 text-muted-foreground">
+                    <p className="text-sm">No pull request activity in the last 30 days</p>
                   </div>
-                  <div className="text-center">
-                    <p className="font-medium">{repo.metrics.avgCycleTime}h</p>
-                    <p className="text-xs text-muted-foreground">Cycle Time</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-medium">{repo.metrics.avgPRSize}</p>
-                    <p className="text-xs text-muted-foreground">PR Size</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-medium">{repo.metrics.reviewCoverage}%</p>
-                    <p className="text-xs text-muted-foreground">Review Coverage</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-medium">{repo.metrics.contributorCount}</p>
-                    <p className="text-xs text-muted-foreground">Contributors</p>
-                  </div>
-                </div>
+                )}
 
                 {/* Trends */}
-                <div className="flex items-center space-x-6 text-sm">
-                  <div className="flex items-center space-x-1">
-                    {getTrendIcon(repo.trends.prVelocityTrend)}
-                    <span className="text-muted-foreground">PR Velocity</span>
+                {repo.hasData && (
+                  <div className="flex items-center space-x-6 text-sm">
+                    <div className="flex items-center space-x-1">
+                      {getTrendIcon(repo.trends.prVelocityTrend)}
+                      <span className="text-muted-foreground">PR Velocity</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      {getTrendIcon(repo.trends.cycleTimeTrend)}
+                      <span className="text-muted-foreground">Cycle Time</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      {getTrendIcon(repo.trends.qualityTrend)}
+                      <span className="text-muted-foreground">Quality</span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    {getTrendIcon(repo.trends.cycleTimeTrend)}
-                    <span className="text-muted-foreground">Cycle Time</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    {getTrendIcon(repo.trends.qualityTrend)}
-                    <span className="text-muted-foreground">Quality</span>
-                  </div>
-                </div>
+                )}
               </div>
             ))}
           </div>

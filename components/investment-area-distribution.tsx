@@ -178,29 +178,34 @@ export function InvestmentAreaDistribution() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Team Focus Distribution</CardTitle>
+        <CardTitle>Focus Distribution</CardTitle>
         <CardDescription>
-          <span className="hidden @[540px]/card:block">
-            Daily breakdown of your team's collaborative energy across categories • {getTimeRangeLabel()}
-          </span>
           <span className="@[540px]/card:hidden">Daily focus breakdown • {getTimeRangeLabel()}</span>
+          <span className="hidden @[540px]/card:block">
+            Daily breakdown of your teams collaborative energy across categories • {getTimeRangeLabel()}
+          </span>
         </CardDescription>
-        <CardAction className="flex items-center gap-2">
-          <div className="hidden lg:flex gap-2">
-            {categories.map((category) => (
-              <button 
-                key={category.key}
-                onClick={() => handleCategoryToggle(category.key)}
-                className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                  selectedCategories.includes(category.key) 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'bg-transparent text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
+      </CardHeader>
+      
+      {/* Filters Row */}
+      <div className="flex items-center justify-between gap-4 px-6 pb-4">
+        <div className="hidden lg:flex gap-2">
+          {categories.map((category) => (
+            <button 
+              key={category.key}
+              onClick={() => handleCategoryToggle(category.key)}
+              className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                selectedCategories.includes(category.key) 
+                ? 'bg-primary/10 text-primary' 
+                : 'bg-transparent text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {category.label}
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-2">
           <ToggleGroup
             type="single"
             value={timeRange}
@@ -232,8 +237,9 @@ export function InvestmentAreaDistribution() {
               </SelectItem>
             </SelectContent>
           </Select>
-        </CardAction>
-      </CardHeader>
+        </div>
+      </div>
+      
       <CardContent>
         <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
           <BarChart accessibilityLayer data={filteredData}>
