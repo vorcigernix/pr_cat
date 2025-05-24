@@ -122,7 +122,7 @@ export function RecommendationsInsights() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Team Insights & Recommendations</CardTitle>
+          <CardTitle>Teams Insights & Recommendations</CardTitle>
           <CardDescription className="text-red-500">Error loading insights</CardDescription>
         </CardHeader>
         <CardContent>
@@ -152,7 +152,7 @@ export function RecommendationsInsights() {
             </div>
             <h3 className="text-lg font-semibold mb-2">Great Work!</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Your team's workflow is performing efficiently. No critical recommendations at this time.
+              Your teams workflow is performing efficiently. No critical recommendations at this time.
             </p>
           </div>
         </CardContent>
@@ -161,14 +161,14 @@ export function RecommendationsInsights() {
   }
 
   return (
-    <Card className="mx-4 lg:mx-6">
+    <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
           <IconBulb size={24} className="text-yellow-500" />
-          <CardTitle>Team Improvement Quests</CardTitle>
+          <CardTitle>Improvement Quests</CardTitle>
         </div>
         <CardDescription>
-          Opportunities to level up your team's collaboration
+          Opportunities to level up your teams collaboration
         </CardDescription>
       </CardHeader>
       <CardContent>

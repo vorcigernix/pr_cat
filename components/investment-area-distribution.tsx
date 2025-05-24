@@ -1,23 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  ChartConfig, 
+  ChartContainer, 
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip, 
+  ChartTooltipContent 
+} from "@/components/ui/chart";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-type CategoryData = {
-  name: string;
-  value: number;
+type TimeSeriesDataPoint = {
+  date: string;
+  [key: string]: string | number;
+};
+
+type CategoryInfo = {
+  key: string;
+  label: string;
   color: string;
 };
 
+type TimeSeriesResponse = {
+  data: TimeSeriesDataPoint[];
+  categories: CategoryInfo[];
+};
+
 export function InvestmentAreaDistribution() {
-  const [data, setData] = useState<CategoryData[]>([]);
+  const isMobile = useIsMobile();
+  const [timeRange, setTimeRange] = useState("30d");
+  const [data, setData] = useState<TimeSeriesDataPoint[]>([]);
+  const [categories, setCategories] = useState<CategoryInfo[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,33 +53,21 @@ export function InvestmentAreaDistribution() {
         setLoading(true);
         setError(null);
         
-        // Fetch real category distribution data
-        const response = await fetch('/api/pull-requests/category-distribution');
+        // Fetch category distribution time series data
+        const response = await fetch(`/api/pull-requests/category-distribution?timeRange=${timeRange}&format=timeseries`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch category distribution: ${response.status} ${response.statusText}`);
         }
         
-        const categoryData = await response.json();
+        const timeSeriesData: TimeSeriesResponse = await response.json();
         
-        // Map the API response to the format needed for the chart
-        const colors = [
-          "#3b82f6", // Blue
-          "#ef4444", // Red
-          "#f97316", // Orange
-          "#a855f7", // Purple
-          "#14b8a6", // Teal
-          "#eab308", // Yellow
-          "#ec4899"  // Pink
-        ];
+        setData(timeSeriesData.data);
+        setCategories(timeSeriesData.categories);
         
-        const formattedData = categoryData.map((item: any, index: number) => ({
-          name: item.category_name,
-          value: item.count,
-          color: colors[index % colors.length]
-        }));
+        // Auto-select all categories for bar chart (they work well together)
+        setSelectedCategories(timeSeriesData.categories.map(cat => cat.key));
         
-        setData(formattedData);
       } catch (error) {
         console.error("Failed to load category distribution:", error);
         setError(error instanceof Error ? error.message : "An unknown error occurred");
@@ -63,14 +77,60 @@ export function InvestmentAreaDistribution() {
     };
 
     fetchData();
-  }, []);
+  }, [timeRange, isMobile]);
+
+  const filteredData = data.filter(item => {
+    const date = new Date(item.date);
+    const today = new Date();
+    let daysToSubtract = 30;
+    
+    if (timeRange === "7d") {
+      daysToSubtract = 7;
+    } else if (timeRange === "90d") {
+      daysToSubtract = 90;
+    }
+    
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - daysToSubtract);
+    
+    return date >= startDate;
+  });
+
+  const chartConfig: ChartConfig = categories.reduce((config, category) => {
+    config[category.key] = {
+      label: category.label,
+      color: category.color,
+    };
+    return config;
+  }, {} as ChartConfig);
+
+  const handleCategoryToggle = (categoryKey: string) => {
+    if (selectedCategories.includes(categoryKey)) {
+      // Remove the category if it's already selected
+      if (selectedCategories.length > 1) { // Ensure at least one category is always selected
+        setSelectedCategories(selectedCategories.filter(c => c !== categoryKey));
+      }
+    } else {
+      // Add the category
+      setSelectedCategories([...selectedCategories, categoryKey]);
+    }
+  };
+
+  const getTimeRangeLabel = () => {
+    switch (timeRange) {
+      case '7d': return 'Last 7 days';
+      case '30d': return 'Last 30 days';
+      case '90d': return 'Last 90 days';
+      default: return 'Last 30 days';
+    }
+  };
 
   if (loading) {
     return (
-      <Card>
+      <Card className="@container/card">
         <CardHeader>
           <CardTitle>Team Focus Distribution</CardTitle>
-          <CardDescription>Loading team focus data...</CardDescription>
+          <CardDescription>Loading team focus trends...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full animate-pulse bg-muted"></div>
@@ -81,7 +141,7 @@ export function InvestmentAreaDistribution() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="@container/card">
         <CardHeader>
           <CardTitle>Team Focus Distribution</CardTitle>
           <CardDescription className="text-red-500">Error loading data</CardDescription>
@@ -99,9 +159,9 @@ export function InvestmentAreaDistribution() {
     );
   }
 
-  if (data.length === 0) {
+  if (data.length === 0 || categories.length === 0) {
     return (
-      <Card>
+      <Card className="@container/card">
         <CardHeader>
           <CardTitle>Team Focus Distribution</CardTitle>
           <CardDescription>No category data available</CardDescription>
@@ -116,36 +176,108 @@ export function InvestmentAreaDistribution() {
   }
 
   return (
-    <Card className="col-span-1">
+    <Card className="@container/card">
       <CardHeader>
         <CardTitle>Team Focus Distribution</CardTitle>
         <CardDescription>
-          Where your team is putting their collaborative energy
+          <span className="hidden @[540px]/card:block">
+            Daily breakdown of your team's collaborative energy across categories • {getTimeRangeLabel()}
+          </span>
+          <span className="@[540px]/card:hidden">Daily focus breakdown • {getTimeRangeLabel()}</span>
         </CardDescription>
+        <CardAction className="flex items-center gap-2">
+          <div className="hidden lg:flex gap-2">
+            {categories.map((category) => (
+              <button 
+                key={category.key}
+                onClick={() => handleCategoryToggle(category.key)}
+                className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                  selectedCategories.includes(category.key) 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'bg-transparent text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+          <ToggleGroup
+            type="single"
+            value={timeRange}
+            onValueChange={setTimeRange}
+            variant="outline"
+            className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
+          >
+            <ToggleGroupItem value="7d">7 days</ToggleGroupItem>
+            <ToggleGroupItem value="30d">30 days</ToggleGroupItem>
+            <ToggleGroupItem value="90d">90 days</ToggleGroupItem>
+          </ToggleGroup>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger
+              className="flex w-28 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+              size="sm"
+              aria-label="Select time range"
+            >
+              <SelectValue placeholder="Last 30 days" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="7d" className="rounded-lg">
+                Last 7 days
+              </SelectItem>
+              <SelectItem value="30d" className="rounded-lg">
+                Last 30 days
+              </SelectItem>
+              <SelectItem value="90d" className="rounded-lg">
+                Last 90 days
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </CardAction>
       </CardHeader>
       <CardContent>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
+          <BarChart accessibilityLayer data={filteredData}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              tickFormatter={(value) => {
+                const date = new Date(value);
+                return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              }}
+            />
+            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+            <ChartLegend content={<ChartLegendContent />} />
+            
+            {selectedCategories.map((categoryKey, index) => {
+              const category = categories.find(c => c.key === categoryKey);
+              if (!category) return null;
+              
+              const isFirst = index === 0;
+              const isLast = index === selectedCategories.length - 1;
+              
+              return (
+                <Bar
+                  key={categoryKey}
+                  dataKey={categoryKey}
+                  stackId="a"
+                  fill={`var(--color-${categoryKey})`}
+                  radius={
+                    selectedCategories.length === 1 
+                      ? [4, 4, 4, 4] // Single bar gets rounded on all corners
+                      : isLast 
+                        ? [4, 4, 0, 0] // Top bar gets rounded top corners
+                        : isFirst 
+                          ? [0, 0, 4, 4] // Bottom bar gets rounded bottom corners  
+                          : [0, 0, 0, 0] // Middle bars have no radius
+                  }
+                />
+              );
+            })}
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

@@ -291,16 +291,9 @@ export function PRQualityDetails() {
                           <stop offset="0%" stopColor="#ef4444" />
                           <stop offset="100%" stopColor="#dc2626" />
                         </linearGradient>
-                        <filter id="glow">
-                          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                          <feMerge> 
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                          </feMerge>
-                        </filter>
                       </defs>
                       
-                      {/* Background circle with subtle inner shadow effect */}
+                      {/* Background circle */}
                       <circle
                         cx="72"
                         cy="72"
@@ -326,10 +319,6 @@ export function PRQualityDetails() {
                         strokeDashoffset={`${2 * Math.PI * 58 * (1 - qualityData.aggregateScore / 100)}`}
                         className="transition-all duration-1500 ease-out"
                         strokeLinecap="round"
-                        filter="url(#glow)"
-                        style={{
-                          transformOrigin: '72px 72px',
-                        }}
                       />
                       
                       {/* Score markers */}
@@ -347,7 +336,7 @@ export function PRQualityDetails() {
                     
                     {/* Score text in center with enhanced styling */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className={`text-4xl font-black ${getScoreColor(qualityData.aggregateScore)} drop-shadow-sm`}>
+                      <div className={`text-4xl font-black ${getScoreColor(qualityData.aggregateScore)}`}>
                         {qualityData.aggregateScore}
                       </div>
                       <div className="text-xs text-muted-foreground font-semibold tracking-wider uppercase">
@@ -357,12 +346,6 @@ export function PRQualityDetails() {
                         out of 100
                       </div>
                     </div>
-                    
-                    {/* Subtle outer glow effect */}
-                    <div className={`absolute inset-0 rounded-full opacity-20 ${
-                      qualityData.aggregateScore >= 80 ? 'shadow-green-500/20' : 
-                      qualityData.aggregateScore >= 60 ? 'shadow-yellow-500/20' : 'shadow-red-500/20'
-                    } shadow-2xl`}></div>
                   </div>
                   
                   {/* Status indicator */}
