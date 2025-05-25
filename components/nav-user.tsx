@@ -1,6 +1,7 @@
 "use client"
 
 import { signIn, signOut, useSession } from "next-auth/react"
+import { useTheme } from "next-themes"
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -14,13 +15,18 @@ import {
   DropdownMenuItem, 
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal
 } from "@/components/ui/dropdown-menu"
-import { IconBrandGithub } from "@tabler/icons-react"
+import { IconBrandGithub, IconMoon, IconSun, IconDeviceDesktop } from "@tabler/icons-react"
 
 export function NavUser() {
   const { } = useSidebar()
   const { data: session } = useSession()
+  const { setTheme, theme } = useTheme()
 
   // If not authenticated, show GitHub login button
   if (!session) {
@@ -70,6 +76,29 @@ export function NavUser() {
             <DropdownMenuLabel>
               {session?.user?.name || session?.user?.email || "Account"}
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <IconSun className="h-4 w-4 mr-2" />
+                Theme
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setTheme("light")}>
+                    <IconSun className="h-4 w-4 mr-2" />
+                    Light
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("dark")}>
+                    <IconMoon className="h-4 w-4 mr-2" />
+                    Dark
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("system")}>
+                    <IconDeviceDesktop className="h-4 w-4 mr-2" />
+                    System
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
               Sign out
