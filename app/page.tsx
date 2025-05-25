@@ -667,7 +667,7 @@ export default function Home() {
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link href="https://github.com/vorcigernix/pr_cat/blob/main/docs/quick-start.md" target="_blank" rel="noopener noreferrer">
+              <Link href="https://github.com/vorcigernix/pr_cat/blob/main/README.md" target="_blank" rel="noopener noreferrer">
                 Quick Start Guide
               </Link>
             </Button>
