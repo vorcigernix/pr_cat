@@ -95,7 +95,7 @@ export default async function Home() {
               <div className="lg:h-[44rem] relative" style={{ transform: 'skewX(0.36rad)' }}>
                 <Image
                   className="rounded-lg z-[2] relative border border-border/20 dark:hidden"
-                  src="/dashboard.avif"
+                  src="/dashboard.png"
                   alt="PR Cat Dashboard Screenshot"
                   width={2880}
                   height={2074}
@@ -103,7 +103,7 @@ export default async function Home() {
                 />
                 <Image
                   className="rounded-lg z-[2] relative border border-border/20 hidden dark:block"
-                  src="/dashboard2.avif"
+                  src="/dashboard2.png"
                   alt="PR Cat Dashboard Screenshot"
                   width={2880}
                   height={2074}
