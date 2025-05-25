@@ -2,6 +2,10 @@
 
 PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps engineering teams understand how they're investing their time across different areas of their codebase.
 
+## Quick Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,GITHUB_WEBHOOK_SECRET,TURSO_URL,TURSO_TOKEN,NEXTAUTH_SECRET&envDescription=Required%20environment%20variables%20for%20PR%20Cat&envLink=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat%23environment-setup&project-name=pr-cat&repository-name=pr-cat)
+
 ## Features
 
 - **GitHub Integration**: Connect to your GitHub repositories and automatically track pull requests

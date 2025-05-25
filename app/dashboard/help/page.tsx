@@ -7,6 +7,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { 
   IconBrandGithub, 
   IconChartBar, 
@@ -23,10 +25,17 @@ import {
   IconQuestionMark,
   IconMail,
   IconBook,
-  IconApi
+  IconApi,
+  IconInfoCircle
 } from "@tabler/icons-react";
+import { headers } from "next/headers";
+import Link from "next/link";
 
-export default function HelpPage() {
+export default async function HelpPage() {
+  const headersList = await headers();
+  const host = headersList.get('host');
+  const isProduction = host === 'prcat.vercel.app';
+
   return (
     <SidebarProvider
       style={
@@ -44,6 +53,34 @@ export default function HelpPage() {
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
                 <div className="space-y-6">
+                  
+                  {/* Hosted Solution Notice - Only show on production */}
+                  {isProduction && (
+                    <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+                      <IconInfoCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <AlertTitle className="text-blue-800 dark:text-blue-200">Hosted Solution Coming Soon</AlertTitle>
+                      <AlertDescription className="text-blue-700 dark:text-blue-300">
+                        <p className="mb-3">
+                          We're working on a hosted version of PR Cat that will eliminate the need for self-hosting. 
+                          In the meantime, you can deploy your own instance using our open source code.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
+                            <Link href="https://github.com/vorcigernix/pr_cat" target="_blank" rel="noopener noreferrer">
+                              <IconBrandGithub className="mr-2 h-4 w-4" />
+                              Deploy Your Own
+                            </Link>
+                          </Button>
+                          <Button asChild variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20">
+                            <Link href="mailto:hello@prcat.dev?subject=Hosted Solution Interest">
+                              <IconMail className="mr-2 h-4 w-4" />
+                              Get Notified
+                            </Link>
+                          </Button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   
                   {/* Quick Start Guide - Always visible */}
                   <Card>

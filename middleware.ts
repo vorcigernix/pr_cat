@@ -4,6 +4,12 @@ import { auth } from "@/auth";
 export default auth((req) => {
   const isAuth = !!req.auth;
   const { pathname } = req.nextUrl;
+  const isProduction = req.nextUrl.hostname === 'prcat.vercel.app';
+  
+  // If running on production, redirect all dashboard requests to help page
+  if (isProduction && pathname.startsWith('/dashboard') && pathname !== '/dashboard/help') {
+    return NextResponse.redirect(new URL('/dashboard/help', req.url));
+  }
   
   // If user tries to access sign-up, redirect to sign-in
   if (pathname.startsWith('/sign-up')) {
