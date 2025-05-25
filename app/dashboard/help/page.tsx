@@ -65,14 +65,14 @@ export default async function HelpPage() {
                           In the meantime, you can deploy your own instance using our open source code.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2">
-                          <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
+                          <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                             <Link href="https://github.com/vorcigernix/pr_cat" target="_blank" rel="noopener noreferrer">
                               <IconBrandGithub className="mr-2 h-4 w-4" />
                               Deploy Your Own
                             </Link>
                           </Button>
                           <Button asChild variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20">
-                            <Link href="mailto:hello@prcat.dev?subject=Hosted Solution Interest">
+                            <Link href="mailto:adam.sobotka@duck.com?subject=prcat inquiry">
                               <IconMail className="mr-2 h-4 w-4" />
                               Get Notified
                             </Link>
