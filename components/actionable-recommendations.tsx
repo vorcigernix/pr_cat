@@ -89,11 +89,11 @@ export function ActionableRecommendations() {
   const getImpactGradient = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'from-red-100 via-red-200/50 to-red-50/30 dark:from-red-950/60 dark:via-red-800/10 dark:to-red-900/5';
-      case 'medium':
-        return 'from-amber-100 via-amber-200/50 to-amber-50/30 dark:from-amber-950/60 dark:via-amber-800/10 dark:to-amber-900/5';
-      case 'low':
         return 'from-blue-100 via-blue-200/50 to-blue-50/30 dark:from-blue-950/60 dark:via-blue-800/10 dark:to-blue-900/5';
+      case 'medium':
+        return 'from-cyan-100 via-cyan-200/50 to-cyan-50/30 dark:from-cyan-950/60 dark:via-cyan-800/10 dark:to-cyan-900/5';
+      case 'low':
+        return 'from-green-100 via-green-200/50 to-green-50/30 dark:from-green-950/60 dark:via-green-800/10 dark:to-green-900/5';
       default:
         return 'from-gray-100 to-gray-50/30 dark:from-gray-950/60 dark:to-gray-900/10';
     }
@@ -195,7 +195,7 @@ export function ActionableRecommendations() {
         <Tabs defaultValue="high" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="high" className="relative">
-              High Impact
+              High Impact Opportunities
               {groupedRecs.high.length > 0 && (
                 <Badge variant="secondary" className="ml-2 text-xs">
                   {groupedRecs.high.length}
@@ -203,7 +203,7 @@ export function ActionableRecommendations() {
               )}
             </TabsTrigger>
             <TabsTrigger value="medium" className="relative">
-              Medium Impact
+              Quick Wins Available
               {groupedRecs.medium.length > 0 && (
                 <Badge variant="secondary" className="ml-2 text-xs">
                   {groupedRecs.medium.length}
@@ -211,7 +211,7 @@ export function ActionableRecommendations() {
               )}
             </TabsTrigger>
             <TabsTrigger value="low" className="relative">
-              Low Impact
+              Minor Improvements
               {groupedRecs.low.length > 0 && (
                 <Badge variant="secondary" className="ml-2 text-xs">
                   {groupedRecs.low.length}
@@ -225,11 +225,11 @@ export function ActionableRecommendations() {
               {groupedRecs.high.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-red-200/60 dark:border-red-800/30`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-blue-200/60 dark:border-blue-800/30`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-red-600 dark:text-red-400">
+                      <div className="mt-0.5 text-blue-600 dark:text-blue-400">
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">
@@ -263,7 +263,7 @@ export function ActionableRecommendations() {
               {groupedRecs.high.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   <IconCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No high-impact opportunities identified</p>
+                  <p className="text-sm">No high-impact opportunities identified - great work!</p>
                 </div>
               )}
             </div>
@@ -274,11 +274,11 @@ export function ActionableRecommendations() {
               {groupedRecs.medium.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-amber-200/60 dark:border-amber-800/30`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-cyan-200/60 dark:border-cyan-800/30`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-amber-600 dark:text-amber-400">
+                      <div className="mt-0.5 text-cyan-600 dark:text-cyan-400">
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">
@@ -323,11 +323,11 @@ export function ActionableRecommendations() {
               {groupedRecs.low.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-blue-200/60 dark:border-blue-800/30`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-green-200/60 dark:border-green-800/30`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-blue-600 dark:text-blue-400">
+                      <div className="mt-0.5 text-green-600 dark:text-green-400">
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">

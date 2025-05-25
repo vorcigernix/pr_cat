@@ -269,7 +269,7 @@ export function TeamPerformanceMetrics() {
                       {member.reviewThoroughness > 100 ? (
                         <IconTrendingUp className="h-3 w-3 text-green-500" />
                       ) : member.reviewThoroughness < 50 ? (
-                        <IconTrendingDown className="h-3 w-3 text-red-500" />
+                        <IconTrendingDown className="h-3 w-3 text-orange-500" />
                       ) : null}
                     </div>
                     <p className="text-xs text-muted-foreground">Review Ratio</p>

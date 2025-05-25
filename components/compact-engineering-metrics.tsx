@@ -189,10 +189,10 @@ export function CompactEngineeringMetrics() {
                   <div className="text-xs font-medium text-muted-foreground">{metric.name}</div>
                   <div className="flex items-center">
                     <span className="text-sm font-bold mr-1">{metric.value.toFixed(1)}{metric.unit}</span>
-                    <span className={`text-xs font-medium flex items-center ${
+                    <span className={`text-xs font-medium ${
                       metric.isReversed ? 
-                        (metric.change < 0 ? 'text-green-500' : metric.change > 0 ? 'text-red-500' : 'text-muted-foreground') :
-                        (metric.change > 0 ? 'text-green-500' : metric.change < 0 ? 'text-red-500' : 'text-muted-foreground')
+                        (metric.change < 0 ? 'text-green-500' : metric.change > 0 ? 'text-orange-500' : 'text-muted-foreground') :
+                        (metric.change > 0 ? 'text-green-500' : metric.change < 0 ? 'text-orange-500' : 'text-muted-foreground')
                     }`}>
                       {metric.isReversed ? 
                         (metric.change < 0 ? <IconArrowDownRight className="h-3 w-3 mr-0.5" /> : metric.change > 0 ? <IconArrowUpRight className="h-3 w-3 mr-0.5" /> : null) :

@@ -84,7 +84,7 @@ export function RepositoryInsights() {
       case 'up':
         return <IconTrendingUp className="h-3 w-3 text-green-500" />;
       case 'down':
-        return <IconTrendingDown className="h-3 w-3 text-red-500" />;
+        return <IconTrendingDown className="h-3 w-3 text-orange-500" />;
       case 'stable':
         return <IconMinus className="h-3 w-3 text-muted-foreground" />;
     }
@@ -92,14 +92,14 @@ export function RepositoryInsights() {
 
   const getHealthScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600";
-    if (score >= 60) return "text-yellow-600";
-    return "text-red-600";
+    if (score >= 60) return "text-amber-600";
+    return "text-orange-600";
   };
 
   const getHealthScoreBadge = (score: number) => {
     if (score >= 80) return <Badge variant="outline" className="text-green-600 border-green-200">Excellent</Badge>;
-    if (score >= 60) return <Badge variant="outline" className="text-yellow-600 border-yellow-200">Good</Badge>;
-    return <Badge variant="outline" className="text-red-600 border-red-200">Needs Attention</Badge>;
+    if (score >= 60) return <Badge variant="outline" className="text-amber-600 border-amber-200">Good</Badge>;
+    return <Badge variant="outline" className="text-orange-600 border-orange-200">Needs Attention</Badge>;
   };
 
   if (loading) {

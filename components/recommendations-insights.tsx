@@ -75,11 +75,11 @@ export function RecommendationsInsights() {
   const getImpactBadge = (priority: string) => {
     switch (priority) {
       case "high":
-        return <Badge className="bg-red-500 hover:bg-red-600">High Impact</Badge>;
+        return <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">High Impact Opportunity</Badge>;
       case "medium":
-        return <Badge className="bg-amber-500 hover:bg-amber-600">Medium Impact</Badge>;
+        return <Badge className="bg-blue-500 text-white hover:bg-blue-600">Quick Win Available</Badge>;
       case "low":
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Low Impact</Badge>;
+        return <Badge className="bg-green-500 text-white hover:bg-green-600">Minor Improvement</Badge>;
       default:
         return <Badge variant="outline">{priority}</Badge>;
     }
@@ -177,18 +177,18 @@ export function RecommendationsInsights() {
             <Card 
               key={recommendation.id} 
               className={`border-l-4 ${
-                recommendation.priority === 'high' ? 'border-l-red-500' : recommendation.priority === 'medium' ? 'border-l-yellow-500' : 'border-l-blue-500'
+                recommendation.priority === 'high' ? 'border-l-yellow-500' : recommendation.priority === 'medium' ? 'border-l-blue-500' : 'border-l-green-500'
               }`}
             >
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     {recommendation.priority === 'high' ? (
-                      <IconAlertCircle size={18} className="text-red-500" />
-                    ) : recommendation.priority === 'medium' ? (
                       <IconAlertCircle size={18} className="text-yellow-500" />
+                    ) : recommendation.priority === 'medium' ? (
+                      <IconAlertCircle size={18} className="text-blue-500" />
                     ) : (
-                      <IconCheck size={18} className="text-blue-500" />
+                      <IconCheck size={18} className="text-green-500" />
                     )}
                     <CardTitle className="text-base">
                       {recommendation.title}

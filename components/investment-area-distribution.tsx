@@ -96,10 +96,35 @@ export function InvestmentAreaDistribution() {
     return date >= startDate;
   });
 
+  const getStandardizedColor = (categoryKey: string, categoryLabel: string) => {
+    // Standardize colors to match PR activity table
+    const lowerKey = categoryKey.toLowerCase();
+    const lowerLabel = categoryLabel.toLowerCase();
+    
+    if (lowerKey.includes('bug') || lowerLabel.includes('bug') || lowerLabel.includes('fix')) {
+      return '#ef4444'; // red-500
+    }
+    if (lowerKey.includes('feature') || lowerLabel.includes('feature') || lowerLabel.includes('enhancement')) {
+      return '#3b82f6'; // blue-500
+    }
+    if (lowerKey.includes('debt') || lowerLabel.includes('debt') || lowerLabel.includes('refactor')) {
+      return '#eab308'; // yellow-500
+    }
+    if (lowerKey.includes('doc') || lowerLabel.includes('doc')) {
+      return '#10b981'; // green-500
+    }
+    if (lowerKey.includes('ui') || lowerLabel.includes('ux') || lowerLabel.includes('product')) {
+      return '#8b5cf6'; // violet-500
+    }
+    
+    // Default fallback color
+    return '#6b7280'; // gray-500
+  };
+
   const chartConfig: ChartConfig = categories.reduce((config, category) => {
     config[category.key] = {
       label: category.label,
-      color: category.color,
+      color: getStandardizedColor(category.key, category.label),
     };
     return config;
   }, {} as ChartConfig);

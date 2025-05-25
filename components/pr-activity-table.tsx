@@ -81,13 +81,13 @@ export function PRActivityTable() {
   function getStatusBadge(status: string) {
     switch (status) {
       case "merged":
-        return <Badge className="bg-green-500">Merged</Badge>;
+        return <Badge className="bg-green-700 text-white hover:bg-green-800">Merged</Badge>;
       case "open":
-        return <Badge className="bg-blue-500">Open</Badge>;
+        return <Badge className="bg-blue-700 text-white hover:bg-blue-800">Open</Badge>;
       case "closed":
-        return <Badge className="bg-red-500">Closed</Badge>;
+        return <Badge className="bg-gray-700 text-white hover:bg-gray-800">Closed</Badge>;
       default:
-        return <Badge className="bg-gray-500">{status}</Badge>;
+        return <Badge className="bg-gray-700 text-white hover:bg-gray-800">{status}</Badge>;
     }
   }
 
@@ -99,14 +99,14 @@ export function PRActivityTable() {
       case "bug fix":
       case "bugs":
         return <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900">{area}</Badge>;
-      case "technical debt":
-      case "tech debt":
-      case "refactoring":
-        return <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900">{area}</Badge>;
       case "new features":
       case "feature":
       case "enhancement":
         return <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900">{area}</Badge>;
+      case "technical debt":
+      case "tech debt":
+      case "refactoring":
+        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900">{area}</Badge>;
       case "product debt":
       case "ux improvement":
       case "ui":
@@ -115,7 +115,7 @@ export function PRActivityTable() {
       case "docs":
         return <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900">{area}</Badge>;
       default:
-        return <Badge variant="outline">{area}</Badge>;
+        return <Badge variant="outline" className="bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-900">{area}</Badge>;
     }
   }
 
