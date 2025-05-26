@@ -79,7 +79,7 @@ export default function Home() {
               <span className="text-yellow-600 dark:text-yellow-400">You Can Actually Trust</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Self-hosted GitHub PR analytics for engineering leaders who want transparency, control, and insights that actually help their teams grow. No vendor lock-in, no hidden algorithms.
+              Self-hosted GitHub PR analytics for developers and their teams who want transparency, control, and insights that actually help everyone grow together. No vendor lock-in, no hidden algorithms.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button size="lg" asChild>
@@ -262,9 +262,9 @@ export default function Home() {
       <section id="practical-value" className="py-16 md:py-24">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Turn engineering insights into strategic wins</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">Turn team insights into collaborative wins</h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Get the concrete metrics you need for data-driven retrospectives, executive updates, and team growth conversations.
+              Get the concrete metrics your team needs for data-driven retrospectives, meaningful standups, and collaborative growth conversations.
             </p>
           </div>
 
@@ -279,7 +279,7 @@ export default function Home() {
                   <h3 className="text-2xl font-bold">Data-Driven Retrospectives</h3>
                 </div>
                 <p className="text-muted-foreground mb-6">
-                  Move beyond "gut feeling" retrospectives. Use concrete metrics to identify what's working across your organization, what's not, and specific actions your teams can take to improve together.
+                  Move beyond "gut feeling" retrospectives. Use concrete metrics to identify what's working in your team's workflow, what's not, and specific actions you can take to improve together.
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 text-sm">
@@ -292,7 +292,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-2"></div>
-                    <p><strong>"60% effort on bug fixes vs features organization-wide"</strong> — Time to address root causes?</p>
+                    <p><strong>"60% effort on bug fixes vs features this sprint"</strong> — Time to address root causes?</p>
                   </div>
                 </div>
               </div>
@@ -322,24 +322,24 @@ export default function Home() {
                   <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                     <IconPresentation className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
-                  <h3 className="text-2xl font-bold">Data You Can Present With Confidence</h3>
+                  <h3 className="text-2xl font-bold">Data Your Team Can Trust and Act On</h3>
                 </div>
                 <p className="text-muted-foreground mb-6">
-                  Get the concrete metrics you need to tell compelling stories about your team's progress. PR Cat provides the data foundation for your executive updates and quarterly reviews.
+                  Get the concrete metrics your team needs to tell compelling stories about your progress together. PR Cat provides the data foundation for meaningful retrospectives and team discussions.
                 </p>
                 <div className="space-y-4">
-                  <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                    <p className="font-medium text-sm mb-1">Cycle Time Trends</p>
-                    <p className="text-xs text-muted-foreground">Track team velocity improvements over time with concrete numbers</p>
-                  </div>
-                  <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                    <p className="font-medium text-sm mb-1">Investment Distribution</p>
-                    <p className="text-xs text-muted-foreground">Show where engineering effort is actually going vs. planned allocation</p>
-                  </div>
-                  <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                    <p className="font-medium text-sm mb-1">Quality Metrics</p>
-                    <p className="text-xs text-muted-foreground">Demonstrate review coverage and collaboration trends</p>
-                  </div>
+                                      <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                      <p className="font-medium text-sm mb-1">Cycle Time Trends</p>
+                      <p className="text-xs text-muted-foreground">Track your team's velocity improvements over time with concrete numbers</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                      <p className="font-medium text-sm mb-1">Work Distribution</p>
+                      <p className="text-xs text-muted-foreground">See where your team's effort is actually going vs. where you planned to focus</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                      <p className="font-medium text-sm mb-1">Collaboration Metrics</p>
+                      <p className="text-xs text-muted-foreground">Understand review coverage and team collaboration patterns</p>
+                    </div>
                 </div>
               </div>
               <div className="md:order-1">
@@ -370,10 +370,10 @@ export default function Home() {
                   <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
                     <IconBuildingStore className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                   </div>
-                  <h3 className="text-2xl font-bold">Track Investment vs. Outcomes</h3>
+                  <h3 className="text-2xl font-bold">Track Team Focus vs. Outcomes</h3>
                 </div>
                 <p className="text-muted-foreground mb-6">
-                  Use PR Cat's category distribution and cycle time data to validate whether your organization's actual work aligns with planned priorities and business goals across all teams and repositories.
+                  Use PR Cat's category distribution and cycle time data to validate whether your team's actual work aligns with your planned priorities and goals across all your repositories.
                 </p>
                 <div className="space-y-4">
                   <div className="border-l-4 border-orange-500 pl-4">
@@ -384,10 +384,10 @@ export default function Home() {
                     <p className="font-medium text-sm">Velocity Impact Tracking</p>
                     <p className="text-xs text-muted-foreground mt-1">Measure how infrastructure investments affect delivery speed</p>
                   </div>
-                  <div className="border-l-4 border-orange-500 pl-4">
-                    <p className="font-medium text-sm">Resource Allocation Data</p>
-                    <p className="text-xs text-muted-foreground mt-1">Get concrete data to support hiring and tooling requests</p>
-                  </div>
+                                      <div className="border-l-4 border-orange-500 pl-4">
+                      <p className="font-medium text-sm">Team Capacity Insights</p>
+                      <p className="text-xs text-muted-foreground mt-1">Get concrete data to support team discussions about workload and priorities</p>
+                    </div>
                 </div>
               </div>
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 p-6 rounded-xl">
@@ -411,7 +411,7 @@ export default function Home() {
                   </div>
                   <div className="border-t pt-3 mt-3">
                     <div className="text-xs text-muted-foreground">
-                      Compare against your planned allocation to identify gaps and make data-driven adjustments
+                      Compare against your team's planned focus to identify gaps and make data-driven adjustments together
                     </div>
                   </div>
                 </div>
@@ -427,7 +427,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-4">What's Under the Hood</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Simple, powerful features that focus on collaboration and organizational health, not surveillance.
+              Simple, powerful features that focus on team collaboration and workflow health, not individual surveillance.
             </p>
           </div>
           <div className="grid gap-8 md:grid-cols-3 max-w-4xl mx-auto">
@@ -435,9 +435,9 @@ export default function Home() {
               <div className="flex justify-center mb-4">
                 <IconChartBar className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Engineering Flow Dashboard</h3>
+              <h3 className="text-xl font-bold mb-2">Team Flow Dashboard</h3>
               <p className="text-muted-foreground">
-                Focus on metrics that encourage collaboration and flow across your organization, not individual performance surveillance.
+                Focus on metrics that encourage collaboration and flow within your team, not individual performance surveillance.
               </p>
             </div>
             <div className="bg-background p-6 rounded-lg shadow-sm text-center">
@@ -453,9 +453,9 @@ export default function Home() {
               <div className="flex justify-center mb-4">
                 <IconTargetArrow className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Collaboration Insights</h3>
+              <h3 className="text-xl font-bold mb-2">Team Collaboration Insights</h3>
               <p className="text-muted-foreground">
-                Identify systemic obstacles across teams, removing process friction that slows everyone down.
+                Identify workflow obstacles and process friction that slows your team down, so you can improve together.
               </p>
             </div>
           </div>
@@ -470,9 +470,9 @@ export default function Home() {
               <div className="bg-primary/10 dark:bg-primary/5 w-fit px-3 py-1 rounded-full mb-4">
                 <span className="text-sm font-medium text-primary">AI-Powered</span>
               </div>
-              <h2 className="text-3xl font-bold tracking-tight mb-4">Engineering Focus Distribution</h2>
+              <h2 className="text-3xl font-bold tracking-tight mb-4">Team Focus Distribution</h2>
               <p className="text-lg text-muted-foreground mb-6">
-                Our AI helps your organization understand where collective engineering energy is going, not to judge performance but to align focus with what matters most across all your teams.
+                Our AI helps your team understand where your collective energy is going, not to judge performance but to align focus with what matters most to you.
               </p>
               
               <div className="space-y-4 mb-8">
@@ -493,16 +493,16 @@ export default function Home() {
                     <IconChartBar className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium">Engineering Energy Insights</h3>
+                    <h3 className="font-medium">Team Energy Insights</h3>
                     <p className="text-muted-foreground text-sm">
-                      See where your organization's collective engineering energy is flowing to make better decisions together about where to focus next.
+                      See where your team's collective energy is flowing to make better decisions together about where to focus next.
                     </p>
                   </div>
                 </div>
               </div>
               
               <p className="text-sm border-l-2 border-primary/50 pl-4 py-1 text-muted-foreground italic">
-                &quot;As a tech lead who codes daily with my teams, this helped us discover together that we were spending too much energy on maintenance and not enough on innovation across our repositories. We adjusted as an organization.&quot;
+                &quot;As a developer who works daily with my team, this helped us discover together that we were spending too much energy on maintenance and not enough on innovation. We adjusted our focus as a team.&quot;
               </p>
             </div>
             
@@ -519,7 +519,7 @@ export default function Home() {
                 </div>
                 <div className="p-5">
                   <div className="flex justify-between mb-2">
-                    <h3 className="text-sm font-medium">Engineering Focus Distribution</h3>
+                    <h3 className="text-sm font-medium">Team Focus Distribution</h3>
                     <span className="text-xs text-muted-foreground">Last updated: 2h ago</span>
                   </div>
                   
@@ -605,9 +605,9 @@ export default function Home() {
       <section id="metrics" className="py-16 md:py-24">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Engineering health metrics that matter</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">Team health metrics that matter</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              For engineering leaders who see organizational success as a collaborative achievement across all teams, not individual performance metrics.
+              For developers and teams who see success as a collaborative achievement, not individual performance metrics.
             </p>
           </div>
           <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-4xl mx-auto">
@@ -617,7 +617,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-bold mb-1">Delivery Speed</h3>
               <p className="text-sm text-muted-foreground">
-                Understand your organization's flow from first commit to production deployment across all repositories.
+                Understand your team's flow from first commit to production deployment across all your repositories.
               </p>
             </div>
             <div className="bg-muted/30 p-6 rounded-lg text-center">
@@ -626,7 +626,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-bold mb-1">PR Size</h3>
               <p className="text-sm text-muted-foreground">
-                Collaboratively work toward smaller, more digestible changes for better organizational flow.
+                Work together toward smaller, more digestible changes for better team flow and collaboration.
               </p>
             </div>
             <div className="bg-muted/30 p-6 rounded-lg text-center">
@@ -635,7 +635,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-bold mb-1">Feedback Speed</h3>
               <p className="text-sm text-muted-foreground">
-                Optimize how quickly teams provide meaningful code reviews to each other across the organization.
+                Optimize how quickly your team provides meaningful code reviews to each other.
               </p>
             </div>
             <div className="bg-muted/30 p-6 rounded-lg text-center">
@@ -644,7 +644,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-bold mb-1">Flow State Time</h3>
               <p className="text-sm text-muted-foreground">
-                Understand how much time your engineering organization spends in a state of high productivity and collaboration.
+                Understand how much time your team spends in a state of high productivity and collaboration.
               </p>
             </div>
           </div>
@@ -656,7 +656,7 @@ export default function Home() {
         <div className="container max-w-6xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">Ready to deploy your own engineering analytics?</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Join engineering organizations that trust open source. Deploy PR Cat on your infrastructure and start gaining insights into your development workflow.
+            Join development teams that trust open source. Deploy PR Cat on your infrastructure and start gaining insights into your team's workflow.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
