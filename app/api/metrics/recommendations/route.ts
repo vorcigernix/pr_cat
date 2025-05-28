@@ -121,7 +121,9 @@ export async function GET(request: NextRequest) {
       FROM pull_requests pr
       JOIN repositories r ON pr.repository_id = r.id
       WHERE r.organization_id = ?
-      AND pr.created_at >= ?
+      AND pr.state = 'merged'
+      AND pr.merged_at >= ?
+      AND pr.merged_at IS NOT NULL
     `, [orgId, thirtyDaysAgo.toISOString()]);
 
     const sizeStats = prSizeAnalysis[0];
