@@ -1,6 +1,7 @@
 import { ActionableRecommendations } from "@/components/actionable-recommendations"
 import { AppSidebar } from "@/components/app-sidebar"
 import { CompactEngineeringMetrics } from "@/components/compact-engineering-metrics"
+import { DashboardControls } from "@/components/ui/dashboard-controls"
 import { InvestmentAreaDistribution } from "@/components/investment-area-distribution"
 import { PRActivityTable } from "@/components/pr-activity-table"
 import { SectionCardsEngineering } from "@/components/section-cards-engineering"
@@ -222,6 +223,9 @@ export default async function DashboardPage() {
             <SetupStatusAlert />
           </div>
         )}
+        <div className="px-4 lg:px-6">
+          <DashboardControls />
+        </div>
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">

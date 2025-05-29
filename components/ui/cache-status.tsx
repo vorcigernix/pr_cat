@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { IconClock, IconWifi, IconWifiOff } from "@tabler/icons-react";
+import { IconClock, IconWifi, IconWifiOff, IconLoader } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 
 interface CacheStatusProps {
@@ -26,36 +26,47 @@ export function CacheStatus({ isLoading, error, lastUpdated, className }: CacheS
     return `${diffInDays}d ago`;
   };
 
-  const getStatusColor = () => {
-    if (error) return "text-red-500";
-    if (isLoading) return "text-blue-500";
-    if (!lastUpdated) return "text-gray-500";
-    
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - lastUpdated.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 5) return "text-green-500";
-    if (diffInMinutes < 30) return "text-yellow-500";
-    return "text-orange-500";
+  const getStatusInfo = () => {
+    if (isLoading) {
+      return {
+        text: "Loading...",
+        variant: "secondary" as const,
+        icon: <IconLoader className="h-3 w-3 animate-spin" />,
+      };
+    }
+
+    if (error) {
+      return {
+        text: "Error",
+        variant: "destructive" as const,
+        icon: <IconWifiOff className="h-3 w-3" />,
+      };
+    }
+
+    if (lastUpdated) {
+      const timeAgo = getTimeAgo(lastUpdated);
+      const isStale = new Date().getTime() - lastUpdated.getTime() > 30 * 60 * 1000; // 30 minutes
+      
+      return {
+        text: `Updated ${timeAgo}`,
+        variant: isStale ? ("outline" as const) : ("default" as const),
+        icon: <IconClock className="h-3 w-3" />,
+      };
+    }
+
+    return {
+      text: "Ready",
+      variant: "outline" as const,
+      icon: <IconWifi className="h-3 w-3" />,
+    };
   };
 
-  const getStatusIcon = () => {
-    if (error) return <IconWifiOff className="h-3 w-3" />;
-    if (isLoading) return <IconWifi className="h-3 w-3 animate-pulse" />;
-    return <IconClock className="h-3 w-3" />;
-  };
-
-  const getStatusText = () => {
-    if (error) return "Error";
-    if (isLoading) return "Updating...";
-    if (!lastUpdated) return "No data";
-    return getTimeAgo(lastUpdated);
-  };
+  const status = getStatusInfo();
 
   return (
-    <Badge variant="outline" className={`${getStatusColor()} ${className}`}>
-      {getStatusIcon()}
-      <span className="ml-1 text-xs">{getStatusText()}</span>
+    <Badge variant={status.variant} className={`flex items-center gap-1 ${className}`}>
+      {status.icon}
+      <span className="text-xs">{status.text}</span>
     </Badge>
   );
 } 

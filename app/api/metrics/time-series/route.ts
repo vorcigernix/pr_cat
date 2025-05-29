@@ -6,6 +6,8 @@ import { getUserWithOrganizations } from '@/lib/auth-context';
 export const runtime = 'nodejs';
 // Cache for 30 minutes - time series data changes gradually
 export const revalidate = 1800;
+// Force dynamic rendering since we use headers()
+export const dynamic = 'force-dynamic';
 
 type TimeSeriesDataPoint = {
   date: string;

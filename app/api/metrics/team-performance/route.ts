@@ -7,6 +7,8 @@ import { auth } from '@/auth';
 export const runtime = 'nodejs';
 // Cache for 1 hour - team performance metrics are aggregate data
 export const revalidate = 3600;
+// Force dynamic rendering since we use headers()
+export const dynamic = 'force-dynamic';
 
 type TeamMemberStats = {
   userId: string;

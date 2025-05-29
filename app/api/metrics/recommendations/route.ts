@@ -6,6 +6,8 @@ import { auth } from '@/auth';
 export const runtime = 'nodejs';
 // Cache for 2 hours - workflow recommendations change less frequently
 export const revalidate = 7200;
+// Force dynamic rendering since we use headers()
+export const dynamic = 'force-dynamic';
 
 type Recommendation = {
   id: string;

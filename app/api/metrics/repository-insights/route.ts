@@ -7,6 +7,8 @@ import { auth } from '@/auth';
 export const runtime = 'nodejs';
 // Cache for 1 hour - repository insights are aggregate data that changes slowly
 export const revalidate = 3600;
+// Force dynamic rendering since we use headers()
+export const dynamic = 'force-dynamic';
 
 type RepositoryInsight = {
   repositoryId: number;

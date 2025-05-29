@@ -23,9 +23,9 @@ export function useMetricsSummary() {
   });
 
   return {
-    data,
-    isLoading,
+    data: data ? { ...data, lastUpdated: new Date() } : undefined,
     error,
+    isLoading,
     refresh: mutate,
   };
 }
@@ -33,50 +33,35 @@ export function useMetricsSummary() {
 // Custom hook for workflow recommendations
 export function useWorkflowRecommendations() {
   const { data, error, isLoading, mutate } = useSWR('/api/metrics/recommendations', fetcher, {
-    // Revalidate less frequently since recommendations change slowly
-    revalidateOnFocus: false,
-    // Revalidate every 2 hours
-    refreshInterval: 2 * 60 * 60 * 1000,
-    // Keep data fresh for 30 minutes
-    dedupingInterval: 30 * 60 * 1000,
-    errorRetryCount: 2,
-    errorRetryInterval: 10000,
-  });
-
-  return {
-    data,
-    isLoading,
-    error,
-    refresh: mutate,
-  };
-}
-
-// Custom hook for time series data
-export function useTimeSeriesData(repositoryId?: string, startDate?: string, endDate?: string) {
-  // Build query string
-  const params = new URLSearchParams();
-  if (repositoryId && repositoryId !== 'all') {
-    params.set('repositoryId', repositoryId);
-  }
-  if (startDate) params.set('startDate', startDate);
-  if (endDate) params.set('endDate', endDate);
-  
-  const queryString = params.toString();
-  const url = `/api/metrics/time-series${queryString ? `?${queryString}` : ''}`;
-
-  const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
     revalidateOnFocus: true,
-    // Revalidate every 15 minutes for time series
-    refreshInterval: 15 * 60 * 1000,
-    dedupingInterval: 5 * 60 * 1000,
+    refreshInterval: 60 * 60 * 1000, // 1 hour
+    dedupingInterval: 10 * 60 * 1000, // 10 minutes
     errorRetryCount: 3,
     errorRetryInterval: 5000,
   });
 
   return {
     data,
-    isLoading,
     error,
+    isLoading,
+    refresh: mutate,
+  };
+}
+
+// Custom hook for time series data
+export function useTimeSeriesData() {
+  const { data, error, isLoading, mutate } = useSWR('/api/metrics/time-series', fetcher, {
+    revalidateOnFocus: true,
+    refreshInterval: 15 * 60 * 1000, // 15 minutes
+    dedupingInterval: 5 * 60 * 1000, // 5 minutes
+    errorRetryCount: 3,
+    errorRetryInterval: 5000,
+  });
+
+  return {
+    data,
+    error,
+    isLoading,
     refresh: mutate,
   };
 }
@@ -85,65 +70,58 @@ export function useTimeSeriesData(repositoryId?: string, startDate?: string, end
 export function useRepositoryInsights() {
   const { data, error, isLoading, mutate } = useSWR('/api/metrics/repository-insights', fetcher, {
     revalidateOnFocus: true,
-    // Revalidate every 30 minutes
-    refreshInterval: 30 * 60 * 1000,
-    dedupingInterval: 10 * 60 * 1000,
+    refreshInterval: 30 * 60 * 1000, // 30 minutes
+    dedupingInterval: 10 * 60 * 1000, // 10 minutes
     errorRetryCount: 3,
     errorRetryInterval: 5000,
   });
 
   return {
     data,
-    isLoading,
     error,
+    isLoading,
     refresh: mutate,
   };
 }
 
 // Custom hook for team performance
-export function useTeamPerformance(repositoryId?: string) {
-  const params = new URLSearchParams();
-  if (repositoryId && repositoryId !== 'all') {
-    params.set('repositoryId', repositoryId);
-  }
-  
-  const queryString = params.toString();
-  const url = `/api/metrics/team-performance${queryString ? `?${queryString}` : ''}`;
-
-  const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
+export function useTeamPerformance() {
+  const { data, error, isLoading, mutate } = useSWR('/api/metrics/team-performance', fetcher, {
     revalidateOnFocus: true,
-    // Revalidate every 30 minutes
-    refreshInterval: 30 * 60 * 1000,
-    dedupingInterval: 10 * 60 * 1000,
+    refreshInterval: 30 * 60 * 1000, // 30 minutes
+    dedupingInterval: 10 * 60 * 1000, // 10 minutes
     errorRetryCount: 3,
     errorRetryInterval: 5000,
   });
 
   return {
     data,
-    isLoading,
     error,
+    isLoading,
     refresh: mutate,
   };
 }
 
-// Hook for manual refresh of all metrics
+// Hook to refresh all metrics at once
 export function useRefreshAllMetrics() {
-  const { refresh: refreshSummary } = useMetricsSummary();
-  const { refresh: refreshRecommendations } = useWorkflowRecommendations();
-  const { refresh: refreshTimeSeries } = useTimeSeriesData();
-  const { refresh: refreshRepositoryInsights } = useRepositoryInsights();
-  const { refresh: refreshTeamPerformance } = useTeamPerformance();
+  const summaryHook = useMetricsSummary();
+  const recommendationsHook = useWorkflowRecommendations();
+  const timeSeriesHook = useTimeSeriesData();
+  const repositoryHook = useRepositoryInsights();
+  const teamHook = useTeamPerformance();
 
   const refreshAll = async () => {
     await Promise.all([
-      refreshSummary(),
-      refreshRecommendations(),
-      refreshTimeSeries(),
-      refreshRepositoryInsights(),
-      refreshTeamPerformance(),
+      summaryHook.refresh(),
+      recommendationsHook.refresh(),
+      timeSeriesHook.refresh(),
+      repositoryHook.refresh(),
+      teamHook.refresh(),
     ]);
   };
 
-  return { refreshAll };
+  return {
+    refreshAll,
+    isLoading: summaryHook.isLoading || recommendationsHook.isLoading || timeSeriesHook.isLoading || repositoryHook.isLoading || teamHook.isLoading,
+  };
 } 
