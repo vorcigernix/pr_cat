@@ -4,6 +4,8 @@ import { query } from '@/lib/db';
 import { auth } from '@/auth';
 
 export const runtime = 'nodejs';
+// Cache for 2 hours - workflow recommendations change less frequently
+export const revalidate = 7200;
 
 type Recommendation = {
   id: string;
@@ -120,11 +122,18 @@ export async function GET(request: NextRequest) {
         COUNT(pr.id) as total_prs
       FROM pull_requests pr
       JOIN repositories r ON pr.repository_id = r.id
+      LEFT JOIN pr_reviews rev ON pr.id = rev.pull_request_id
       WHERE r.organization_id = ?
       AND pr.state = 'merged'
-      AND pr.merged_at >= ?
+      AND pr.merged_at >= datetime('now', '-30 days')
+      AND pr.created_at IS NOT NULL
       AND pr.merged_at IS NOT NULL
-    `, [orgId, thirtyDaysAgo.toISOString()]);
+      AND (rev.submitted_at IS NULL OR rev.submitted_at = (
+        SELECT MIN(rev2.submitted_at) 
+        FROM pr_reviews rev2 
+        WHERE rev2.pull_request_id = pr.id
+      ))
+    `, [orgId]);
 
     const sizeStats = prSizeAnalysis[0];
     if (sizeStats && sizeStats.avg_pr_size > 300) {

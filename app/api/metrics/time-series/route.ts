@@ -4,6 +4,8 @@ import { query } from '@/lib/db';
 import { getUserWithOrganizations } from '@/lib/auth-context';
 
 export const runtime = 'nodejs';
+// Cache for 30 minutes - time series data changes gradually
+export const revalidate = 1800;
 
 type TimeSeriesDataPoint = {
   date: string;

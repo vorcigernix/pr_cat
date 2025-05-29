@@ -5,6 +5,8 @@ import { query } from '@/lib/db';
 import { auth } from '@/auth';
 
 export const runtime = 'nodejs';
+// Cache for 1 hour - repository insights are aggregate data that changes slowly
+export const revalidate = 3600;
 
 type RepositoryInsight = {
   repositoryId: number;

@@ -1,17 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
-
+import React, { useState, useEffect } from "react";
+import { IconTrendingUp, IconTrendingDown } from "@tabler/icons-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useMetricsSummary } from "@/hooks/use-metrics";
 
 // Define the metrics types
 type MetricsSummary = {
@@ -75,40 +68,13 @@ const transformApiDataToMetrics = (data: ApiSummaryResponse): MetricsSummary => 
 };
 
 export function SectionCardsEngineering() {
-  const [metrics, setMetrics] = useState<MetricsSummary>(defaultMetrics);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch real metrics data from our API
-        const response = await fetch('/api/metrics/summary');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch metrics: ${response.status} ${response.statusText}`);
-        }
-        
-        const data: ApiSummaryResponse = await response.json();
-        
-        // Transform API data to our metrics format using the helper function
-        setMetrics(transformApiDataToMetrics(data));
-      } catch (error) {
-        console.error("Failed to load metrics:", error);
-        setError(error instanceof Error ? error.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMetrics();
-  }, []);
+  const { data, isLoading, error, refresh } = useMetricsSummary();
+  
+  // Transform API data to metrics format, fallback to defaults
+  const metrics = data ? transformApiDataToMetrics(data) : defaultMetrics;
 
   // Show loading placeholder when data is being fetched
-  if (loading) {
+  if (isLoading && !data) {
     return (
       <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         {Array(4).fill(0).map((_, i) => (
@@ -127,15 +93,15 @@ export function SectionCardsEngineering() {
     );
   }
 
-  // Show error state
-  if (error) {
+  // Show error state (but still show stale data if available)
+  if (error && !data) {
     return (
       <div className="px-4 lg:px-6">
         <Card className="p-4">
           <CardTitle className="mb-2">Error Loading Metrics</CardTitle>
-          <CardDescription className="text-red-500">{error}</CardDescription>
+          <CardDescription className="text-red-500">{error.message}</CardDescription>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={() => refresh()} 
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Retry

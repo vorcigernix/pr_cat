@@ -5,6 +5,8 @@ import { query } from '@/lib/db';
 import { auth } from '@/auth';
 
 export const runtime = 'nodejs';
+// Cache for 1 hour - team performance metrics are aggregate data
+export const revalidate = 3600;
 
 type TeamMemberStats = {
   userId: string;

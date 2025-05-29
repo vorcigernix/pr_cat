@@ -3,6 +3,8 @@ import { getUserWithOrganizations } from '@/lib/auth-context';
 import { query } from '@/lib/db';
 
 export const runtime = 'nodejs';
+// Cache for 1 hour - engineering metrics don't need real-time updates
+export const revalidate = 3600;
 
 export async function GET(request: NextRequest) {
   try {
