@@ -1,7 +1,8 @@
 import { createClient } from '@libsql/client';
 
-// Create a singleton client to avoid creating too many connections
+// Singleton client with better error handling
 let client: ReturnType<typeof createClient> | null = null;
+let isConnected = false;
 
 export function getDbClient() {
   if (!client) {
@@ -9,16 +10,35 @@ export function getDbClient() {
     const authToken = process.env.TURSO_TOKEN;
 
     if (!url) {
-      throw new Error('TURSO_URL is not defined');
+      throw new Error('TURSO_URL environment variable is required');
     }
 
-    client = createClient({
-      url,
-      authToken,
-    });
+    try {
+      client = createClient({
+        url,
+        authToken,
+      });
+      isConnected = true;
+    } catch (error) {
+      console.error('Failed to create database client:', error);
+      throw new Error('Database connection failed');
+    }
   }
 
   return client;
+}
+
+// Health check function
+export async function checkDbHealth(): Promise<boolean> {
+  try {
+    const db = getDbClient();
+    await db.execute({ sql: 'SELECT 1', args: [] });
+    return true;
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    isConnected = false;
+    return false;
+  }
 }
 
 export async function query<T = any>(
@@ -26,6 +46,7 @@ export async function query<T = any>(
   params: any[] = []
 ): Promise<T[]> {
   const db = getDbClient();
+  
   try {
     const result = await db.execute({ 
       sql, 
@@ -34,8 +55,8 @@ export async function query<T = any>(
     
     return result.rows as T[];
   } catch (error) {
-    console.error('Database query error:', error);
-    throw new Error(`Database query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Database query error:', { sql, params, error });
+    throw new Error(`Query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -44,6 +65,7 @@ export async function execute(
   params: any[] = []
 ): Promise<{ lastInsertId?: number; rowsAffected: number }> {
   const db = getDbClient();
+  
   try {
     const result = await db.execute({ 
       sql, 
@@ -55,8 +77,8 @@ export async function execute(
       rowsAffected: result.rowsAffected,
     };
   } catch (error) {
-    console.error('Database execute error:', error);
-    throw new Error(`Database execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Database execute error:', { sql, params, error });
+    throw new Error(`Execute failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -87,8 +109,20 @@ export async function transaction<T>(
     await db.execute({ sql: 'COMMIT' });
     return result;
   } catch (error) {
-    await db.execute({ sql: 'ROLLBACK' });
+    try {
+      await db.execute({ sql: 'ROLLBACK' });
+    } catch (rollbackError) {
+      console.error('Failed to rollback transaction:', rollbackError);
+    }
     console.error('Transaction error:', error);
     throw error;
   }
+}
+
+// Utility to get connection status
+export function getConnectionStatus() {
+  return {
+    isConnected,
+    hasClient: !!client
+  };
 } 

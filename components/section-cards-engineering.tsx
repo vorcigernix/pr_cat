@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { IconTrendingUp, IconTrendingDown } from "@tabler/icons-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMetricsSummary } from "@/hooks/use-metrics";
 
-// Define the metrics types
+// Types
 type MetricsSummary = {
   codingTime: { value: number; change: number; trend: "up" | "down" };
   prSize: { value: number; change: number; trend: "up" | "down" };
@@ -14,7 +14,6 @@ type MetricsSummary = {
   reviewTime: { value: number; change: number; trend: "up" | "down" };
 };
 
-// API response type
 type ApiSummaryResponse = {
   trackedRepositories: number;
   prsMergedThisWeek: number;
@@ -25,185 +24,166 @@ type ApiSummaryResponse = {
   categorizationRate: number;
 };
 
-// Default fallback metrics to use when API data isn't available yet
-const defaultMetrics: MetricsSummary = {
+// Metric configuration for cleaner code
+const METRICS_CONFIG = [
+  {
+    key: 'codingTime' as const,
+    title: 'Flow State Time',
+    description: 'Daily average per team member',
+    unit: 'hrs',
+    trendMessage: (trend: string) => trend === 'up' ? 'More focus time unlocked' : 'Less flow state time'
+  },
+  {
+    key: 'prSize' as const,
+    title: 'PR Size',
+    description: 'Avg. lines of code per contribution',
+    unit: 'LOC',
+    trendMessage: (trend: string) => trend === 'up' ? 'More focused, digestible PRs' : 'PRs are getting larger'
+  },
+  {
+    key: 'cycleTime' as const,
+    title: 'Delivery Speed',
+    description: 'From first commit to production',
+    unit: 'hrs',
+    trendMessage: (trend: string) => trend === 'up' ? 'Team is shipping faster' : 'Delivery cycle slowing down'
+  },
+  {
+    key: 'reviewTime' as const,
+    title: 'Feedback Speed',
+    description: 'Time to first meaningful review',
+    unit: 'hrs',
+    trendMessage: (trend: string) => trend === 'up' ? 'Faster team feedback' : 'Feedback loop slowing'
+  }
+];
+
+// Default metrics
+const DEFAULT_METRICS: MetricsSummary = {
   codingTime: { value: 4.6, change: 0, trend: "up" },
   prSize: { value: 359, change: -55, trend: "up" },
   cycleTime: { value: 77.8, change: -5.4, trend: "up" },
   reviewTime: { value: 39.1, change: -5.9, trend: "up" }
 };
 
-// Helper function to transform API data to metrics format
+// Transform API data to metrics format
 const transformApiDataToMetrics = (data: ApiSummaryResponse): MetricsSummary => {
   const weeklyPRChange = data.prsMergedLastWeek > 0 
     ? ((data.prsMergedThisWeek - data.prsMergedLastWeek) / data.prsMergedLastWeek) * 100
     : 0;
 
   return {
-    // Estimate coding time based on average PR size
     codingTime: { 
       value: parseFloat((data.averagePRSize / 100).toFixed(1)), 
-      change: 0, // We don't have historical data yet
+      change: 0,
       trend: "up" 
     },
-    // Average PR size from the API
     prSize: {
       value: data.averagePRSize,
-      change: 0, // We don't have historical data yet
-      trend: "up" // Lower is better for PR size
+      change: 0,
+      trend: "up"
     },
-    // Cycle time - we'll use a placeholder since we don't have real cycle time in the API yet
     cycleTime: {
-      value: 48, // Placeholder value
-      change: weeklyPRChange > 0 ? -5 : 5, // If PR volume is up, cycle time is down (estimate)
+      value: 48,
+      change: weeklyPRChange > 0 ? -5 : 5,
       trend: weeklyPRChange > 0 ? "up" : "down"
     },
-    // Review time - placeholder based on categorization rate
     reviewTime: {
-      value: 24, // Placeholder value
-      change: data.categorizationRate > 75 ? -3 : 3, // High categorization = faster reviews (estimate)
+      value: 24,
+      change: data.categorizationRate > 75 ? -3 : 3,
       trend: data.categorizationRate > 75 ? "up" : "down"
     }
   };
 };
 
+// Reusable metric card component
+function MetricCard({ config, metric }: { 
+  config: typeof METRICS_CONFIG[0]; 
+  metric: { value: number; change: number; trend: "up" | "down" } 
+}) {
+  const isPositiveTrend = metric.trend === 'up';
+  const changeValue = config.key === 'prSize' ? Math.abs(metric.change) : metric.change;
+  const changePrefix = metric.change > 0 ? '+' : '';
+
+  return (
+    <Card className="@container/card">
+      <CardHeader>
+        <CardDescription>{config.title}</CardDescription>
+        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          {metric.value} {config.unit}
+        </CardTitle>
+        <CardAction>
+          <Badge variant="outline" className={isPositiveTrend ? 'text-green-500' : 'text-amber-500'}>
+            {isPositiveTrend ? <IconTrendingUp /> : <IconTrendingDown />}
+            {changePrefix}{changeValue}{config.key === 'prSize' ? '' : ` ${config.unit}`}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 flex gap-2 font-medium">
+          {config.trendMessage(metric.trend)}
+        </div>
+        <div className="text-muted-foreground">
+          {config.description}
+        </div>
+      </CardFooter>
+    </Card>
+  );
+}
+
+// Loading skeleton component
+function LoadingSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      {Array(4).fill(0).map((_, i) => (
+        <Card key={i} className="@container/card">
+          <CardHeader>
+            <CardDescription>Loading...</CardDescription>
+            <div className="h-8 w-24 animate-pulse bg-muted rounded mt-1"></div>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="h-4 w-32 animate-pulse bg-muted rounded"></div>
+            <div className="h-4 w-48 animate-pulse bg-muted rounded"></div>
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// Error component
+function ErrorCard({ error, refresh }: { error: Error; refresh: () => void }) {
+  return (
+    <div className="px-4 lg:px-6">
+      <Card className="p-4">
+        <CardTitle className="mb-2">Error Loading Metrics</CardTitle>
+        <CardDescription className="text-red-500">{error.message}</CardDescription>
+        <button 
+          onClick={refresh} 
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
+      </Card>
+    </div>
+  );
+}
+
 export function SectionCardsEngineering() {
   const { data, isLoading, error, refresh } = useMetricsSummary();
   
-  // Transform API data to metrics format, fallback to defaults
-  const metrics = data ? transformApiDataToMetrics(data) : defaultMetrics;
+  const metrics = data ? transformApiDataToMetrics(data) : DEFAULT_METRICS;
 
-  // Show loading placeholder when data is being fetched
-  if (isLoading && !data) {
-    return (
-      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-        {Array(4).fill(0).map((_, i) => (
-          <Card key={i} className="@container/card">
-            <CardHeader>
-              <CardDescription>Loading...</CardDescription>
-              <div className="h-8 w-24 animate-pulse bg-muted rounded mt-1"></div>
-            </CardHeader>
-            <CardFooter className="flex-col items-start gap-1.5 text-sm">
-              <div className="h-4 w-32 animate-pulse bg-muted rounded"></div>
-              <div className="h-4 w-48 animate-pulse bg-muted rounded"></div>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  // Show error state (but still show stale data if available)
-  if (error && !data) {
-    return (
-      <div className="px-4 lg:px-6">
-        <Card className="p-4">
-          <CardTitle className="mb-2">Error Loading Metrics</CardTitle>
-          <CardDescription className="text-red-500">{error.message}</CardDescription>
-          <button 
-            onClick={() => refresh()} 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Retry
-          </button>
-        </Card>
-      </div>
-    );
-  }
+  if (isLoading && !data) return <LoadingSkeleton />;
+  if (error && !data) return <ErrorCard error={error} refresh={refresh} />;
 
   return (
     <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Flow State Time</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {metrics.codingTime.value} hrs
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline" className={metrics.codingTime.trend === 'up' ? 'text-green-500' : 'text-amber-500'}>
-              {metrics.codingTime.trend === 'up' ? <IconTrendingUp /> : <IconTrendingDown />}
-              {metrics.codingTime.change > 0 ? '+' : ''}{metrics.codingTime.change} hrs
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.codingTime.trend === 'up' ? 'More focus time unlocked' : 'Less flow state time'}
-          </div>
-          <div className="text-muted-foreground">
-            Daily average per team member
-          </div>
-        </CardFooter>
-      </Card>
-      
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>PR Size</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {metrics.prSize.value} LOC
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline" className={metrics.prSize.trend === 'up' ? 'text-green-500' : 'text-amber-500'}>
-              {metrics.prSize.trend === 'up' ? <IconTrendingUp /> : <IconTrendingDown />}
-              {metrics.prSize.change > 0 ? '+' : ''}{Math.abs(metrics.prSize.change)}
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.prSize.trend === 'up' ? 'More focused, digestible PRs' : 'PRs are getting larger'}
-          </div>
-          <div className="text-muted-foreground">
-            Avg. lines of code per contribution
-          </div>
-        </CardFooter>
-      </Card>
-      
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Delivery Speed</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {metrics.cycleTime.value} hrs
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline" className={metrics.cycleTime.trend === 'up' ? 'text-green-500' : 'text-amber-500'}>
-              {metrics.cycleTime.trend === 'up' ? <IconTrendingUp /> : <IconTrendingDown />}
-              {metrics.cycleTime.change > 0 ? '+' : ''}{metrics.cycleTime.change} hrs
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.cycleTime.trend === 'up' ? 'Team is shipping faster' : 'Delivery cycle slowing down'}
-          </div>
-          <div className="text-muted-foreground">
-            From first commit to production
-          </div>
-        </CardFooter>
-      </Card>
-      
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Feedback Speed</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {metrics.reviewTime.value} hrs
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline" className={metrics.reviewTime.trend === 'up' ? 'text-green-500' : 'text-amber-500'}>
-              {metrics.reviewTime.trend === 'up' ? <IconTrendingUp /> : <IconTrendingDown />}
-              {metrics.reviewTime.change > 0 ? '+' : ''}{metrics.reviewTime.change} hrs
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.reviewTime.trend === 'up' ? 'Faster team feedback' : 'Feedback loop slowing'}
-          </div>
-          <div className="text-muted-foreground">
-            How quickly the team reviews code
-          </div>
-        </CardFooter>
-      </Card>
+      {METRICS_CONFIG.map((config) => (
+        <MetricCard
+          key={config.key}
+          config={config}
+          metric={metrics[config.key]}
+        />
+      ))}
     </div>
   );
 } 
