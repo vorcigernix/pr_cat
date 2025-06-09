@@ -81,6 +81,9 @@ export async function PUT(
     if (body.anthropicApiKey !== undefined && typeof body.anthropicApiKey !== 'string' && body.anthropicApiKey !== null) {
       return NextResponse.json({ error: 'Invalid anthropicApiKey value. Must be a string or null.' }, { status: 400 });
     }
+    if (body.categoryThreshold !== undefined && (typeof body.categoryThreshold !== 'number' || body.categoryThreshold < 0 || body.categoryThreshold > 100)) {
+      return NextResponse.json({ error: 'Invalid categoryThreshold value. Must be a number between 0 and 100.' }, { status: 400 });
+    }
             
     await updateOrganizationAiSettings(numericOrgId, body);
     console.log(`Server: Successfully updated AI settings for org ${orgId}`);

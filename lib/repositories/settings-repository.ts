@@ -7,6 +7,7 @@ const AI_SELECTED_MODEL_ID_KEY = 'ai_selected_model_id';
 const AI_OPENAI_API_KEY_KEY = 'ai_openai_api_key';
 const AI_GOOGLE_API_KEY_KEY = 'ai_google_api_key';
 const AI_ANTHROPIC_API_KEY_KEY = 'ai_anthropic_api_key';
+const AI_CATEGORY_THRESHOLD_KEY = 'ai_category_threshold';
 
 // Valid AI provider values
 export type AIProvider = 'openai' | 'google' | 'anthropic' | null;
@@ -18,6 +19,7 @@ export interface AiSettings {
   isOpenAiKeySet: boolean;
   isGoogleKeySet: boolean;
   isAnthropicKeySet: boolean;
+  categoryThreshold: number; // 0-100, confidence threshold for PR categorization
 }
 
 // Interface for payload when updating settings (actual keys are sent)
@@ -27,6 +29,7 @@ export interface UpdateAiSettingsPayload {
   openaiApiKey?: string | null;
   googleApiKey?: string | null;
   anthropicApiKey?: string | null;
+  categoryThreshold?: number;
 }
 
 async function getOrganizationSetting(organizationId: number, key: string): Promise<string | null> {
@@ -70,6 +73,7 @@ export async function getOrganizationAiSettings(organizationId: number): Promise
   const openAiKey = await getOrganizationSetting(organizationId, AI_OPENAI_API_KEY_KEY);
   const googleKey = await getOrganizationSetting(organizationId, AI_GOOGLE_API_KEY_KEY);
   const anthropicKey = await getOrganizationSetting(organizationId, AI_ANTHROPIC_API_KEY_KEY);
+  const threshold = await getOrganizationSetting(organizationId, AI_CATEGORY_THRESHOLD_KEY);
 
   return {
     provider: provider || null,
@@ -77,6 +81,7 @@ export async function getOrganizationAiSettings(organizationId: number): Promise
     isOpenAiKeySet: !!openAiKey,
     isGoogleKeySet: !!googleKey,
     isAnthropicKeySet: !!anthropicKey,
+    categoryThreshold: threshold ? parseFloat(threshold) : 80, // Default to 80% confidence
   };
 }
 
@@ -105,6 +110,10 @@ export async function updateOrganizationAiSettings(
   if (payload.anthropicApiKey !== undefined) {
     console.log(`Setting Anthropic API key (length: ${payload.anthropicApiKey?.length || 0})`);
     await updateOrganizationSetting(organizationId, AI_ANTHROPIC_API_KEY_KEY, payload.anthropicApiKey);
+  }
+  if (payload.categoryThreshold !== undefined) {
+    console.log(`Setting category threshold to: ${payload.categoryThreshold}`);
+    await updateOrganizationSetting(organizationId, AI_CATEGORY_THRESHOLD_KEY, payload.categoryThreshold?.toString());
   }
   
   console.log(`Finished updating AI settings for org ${organizationId}`);

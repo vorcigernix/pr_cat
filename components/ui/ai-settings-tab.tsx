@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { AiSettings as FetchedAiSettings, UpdateAiSettingsPayload } from '@/lib/repositories';
 import { AIProvider } from '@/lib/repositories/settings-repository';
@@ -26,6 +27,7 @@ export function AiSettingsTab() {
   const [openaiApiKeyInput, setOpenaiApiKeyInput] = useState('');
   const [googleApiKeyInput, setGoogleApiKeyInput] = useState('');
   const [anthropicApiKeyInput, setAnthropicApiKeyInput] = useState('');
+  const [categoryThreshold, setCategoryThreshold] = useState<number>(80);
 
   const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -51,6 +53,7 @@ export function AiSettingsTab() {
       setOpenaiApiKeyInput('');
       setGoogleApiKeyInput('');
       setAnthropicApiKeyInput('');
+      setCategoryThreshold(80);
       try {
         const response = await fetch(`/api/organizations/${selectedOrganization.id}/ai-settings`);
         if (!response.ok) {
@@ -61,6 +64,7 @@ export function AiSettingsTab() {
         setFetchedSettings(data);
         setSelectedProvider(data.provider);
         setSelectedModelId(data.selectedModelId);
+        setCategoryThreshold(data.categoryThreshold);
         console.log('Set provider to:', data.provider, 'and model to:', data.selectedModelId);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Could not load AI settings.');
@@ -77,6 +81,7 @@ export function AiSettingsTab() {
       setOpenaiApiKeyInput('');
       setGoogleApiKeyInput('');
       setAnthropicApiKeyInput('');
+      setCategoryThreshold(80);
       setIsLoadingSettings(false);
     }
   }, [selectedOrganization]);
@@ -109,6 +114,7 @@ export function AiSettingsTab() {
     const payload: UpdateAiSettingsPayload = {
       provider: selectedProvider,
       selectedModelId: selectedModelId,
+      categoryThreshold: categoryThreshold,
     };
 
     // Handle API key changes based on provider
@@ -173,6 +179,7 @@ export function AiSettingsTab() {
       setFetchedSettings(data);
       setSelectedProvider(data.provider);
       setSelectedModelId(data.selectedModelId);
+      setCategoryThreshold(data.categoryThreshold);
       console.log('After save, set provider to:', data.provider, 'and model to:', data.selectedModelId);
       setOpenaiApiKeyInput(''); 
       setGoogleApiKeyInput('');
@@ -389,6 +396,37 @@ export function AiSettingsTab() {
                     onChange={getApiKeyInputProps('anthropic').onChange}
                   />
                   <p className="text-xs text-muted-foreground">Get your API key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="underline">Anthropic Console</a>.</p>
+                </div>
+              )}
+
+              {/* Category Recognition Threshold - only show when provider is selected */}
+              {selectedProvider && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="category-threshold">
+                      PR Category Recognition Threshold
+                    </Label>
+                    <div className="space-y-3">
+                      <Slider
+                        id="category-threshold"
+                        min={10}
+                        max={100}
+                        step={5}
+                        value={[categoryThreshold]}
+                        onValueChange={(value) => setCategoryThreshold(value[0])}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>10% (Permissive)</span>
+                        <span className="font-medium">{categoryThreshold}%</span>
+                        <span>100% (Strict)</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      AI confidence threshold for automatic PR categorization. Lower values categorize more PRs but may be less accurate. 
+                      Higher values are more selective but more precise. Recommended: 70-90%.
+                    </p>
+                  </div>
                 </div>
               )}
             </CardContent>
