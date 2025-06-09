@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   experimental: {
     // Note: Edge is already the default in Next.js 15
     // Only specify runtime options that differ from defaults
+    ppr: 'incremental',
   },
 };
 

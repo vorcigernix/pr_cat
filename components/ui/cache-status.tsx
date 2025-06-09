@@ -1,72 +1,158 @@
 "use client";
 
 import React from "react";
-import { IconClock, IconWifi, IconWifiOff, IconLoader } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
+import { IconClock, IconRefresh, IconCheck, IconAlertCircle } from "@tabler/icons-react";
 
 interface CacheStatusProps {
   isLoading?: boolean;
   error?: Error | null;
   lastUpdated?: Date;
-  className?: string;
+  dataDate?: string;
+  cacheStrategy?: string;
+  isComplete?: boolean;
+  nextUpdate?: string;
 }
 
-export function CacheStatus({ isLoading, error, lastUpdated, className }: CacheStatusProps) {
-  const getTimeAgo = (date: Date) => {
+export function CacheStatus({ 
+  isLoading, 
+  error, 
+  lastUpdated, 
+  dataDate,
+  cacheStrategy = 'daily-complete-data',
+  isComplete = true,
+  nextUpdate
+}: CacheStatusProps) {
+  const formatTime = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (d.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (d.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const getDataDateInfo = () => {
+    if (!dataDate) return null;
+    
+    const date = new Date(dataDate);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Check if data is from yesterday (complete) or today (incomplete)
+    if (date.toDateString() === yesterday.toDateString()) {
+      return {
+        text: `Data through ${formatDate(date)}`,
+        variant: 'default' as const,
+        icon: <IconCheck className="w-3 h-3" />
+      };
+    } else if (date.toDateString() === today.toDateString()) {
+      return {
+        text: `Incomplete data (${formatDate(date)})`,
+        variant: 'secondary' as const,
+        icon: <IconAlertCircle className="w-3 h-3" />
+      };
+    } else {
+      return {
+        text: `Data from ${formatDate(date)}`,
+        variant: 'outline' as const,
+        icon: <IconClock className="w-3 h-3" />
+      };
+    }
+  };
+
+  const getNextUpdateInfo = () => {
+    if (!nextUpdate) return null;
+    
+    const nextDate = new Date(nextUpdate);
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    const hoursUntil = Math.ceil((nextDate.getTime() - now.getTime()) / (1000 * 60 * 60));
     
-    if (diffInMinutes < 1) return "Just now";
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
+    if (hoursUntil <= 0) {
+      return 'Update available';
+    } else if (hoursUntil < 24) {
+      return `Next update in ${hoursUntil}h`;
+    } else {
+      return `Next update ${formatDate(nextDate)}`;
+    }
   };
 
-  const getStatusInfo = () => {
-    if (isLoading) {
-      return {
-        text: "Loading...",
-        variant: "secondary" as const,
-        icon: <IconLoader className="h-3 w-3 animate-spin" />,
-      };
-    }
+  if (error) {
+    return (
+      <div className="flex items-center space-x-2 text-sm text-red-600">
+        <IconAlertCircle className="w-4 h-4" />
+        <span>Data unavailable</span>
+        <Badge variant="destructive" className="text-xs">
+          Error
+        </Badge>
+      </div>
+    );
+  }
 
-    if (error) {
-      return {
-        text: "Error",
-        variant: "destructive" as const,
-        icon: <IconWifiOff className="h-3 w-3" />,
-      };
-    }
+  if (isLoading) {
+    return (
+      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <IconRefresh className="w-4 h-4 animate-spin" />
+        <span>Loading metrics...</span>
+        <Badge variant="outline" className="text-xs">
+          Loading
+        </Badge>
+      </div>
+    );
+  }
 
-    if (lastUpdated) {
-      const timeAgo = getTimeAgo(lastUpdated);
-      const isStale = new Date().getTime() - lastUpdated.getTime() > 30 * 60 * 1000; // 30 minutes
-      
-      return {
-        text: `Updated ${timeAgo}`,
-        variant: isStale ? ("outline" as const) : ("default" as const),
-        icon: <IconClock className="h-3 w-3" />,
-      };
-    }
-
-    return {
-      text: "Ready",
-      variant: "outline" as const,
-      icon: <IconWifi className="h-3 w-3" />,
-    };
-  };
-
-  const status = getStatusInfo();
+  const dataInfo = getDataDateInfo();
+  const nextUpdateText = getNextUpdateInfo();
 
   return (
-    <Badge variant={status.variant} className={`flex items-center gap-1 ${className}`}>
-      {status.icon}
-      <span className="text-xs">{status.text}</span>
-    </Badge>
+    <div className="flex items-center space-x-3 text-sm">
+      {/* Data date status */}
+      {dataInfo && (
+        <div className="flex items-center space-x-1">
+          {dataInfo.icon}
+          <span className="text-muted-foreground">{dataInfo.text}</span>
+        </div>
+      )}
+
+      {/* Last updated */}
+      {lastUpdated && (
+        <div className="flex items-center space-x-1 text-muted-foreground">
+          <IconClock className="w-3 h-3" />
+          <span>Updated {formatTime(lastUpdated)}</span>
+        </div>
+      )}
+
+      {/* Cache strategy badge */}
+      <Badge variant="outline" className="text-xs">
+        {cacheStrategy === 'daily-complete-data' ? 'Daily Cache' : 'Cached'}
+      </Badge>
+
+      {/* Next update info */}
+      {nextUpdateText && (
+        <span className="text-xs text-muted-foreground">
+          {nextUpdateText}
+        </span>
+      )}
+
+      {/* Data completeness indicator */}
+      {!isComplete && (
+        <Badge variant="secondary" className="text-xs">
+          <IconAlertCircle className="w-3 h-3 mr-1" />
+          Incomplete
+        </Badge>
+      )}
+    </div>
   );
 } 

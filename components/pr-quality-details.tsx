@@ -70,6 +70,7 @@ export function PRQualityDetails() {
   const [qualityData, setQualityData] = useState<QualityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -260,7 +261,7 @@ export function PRQualityDetails() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="overview">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="factors">Quality Factors</TabsTrigger>
@@ -274,9 +275,13 @@ export function PRQualityDetails() {
                   <CardTitle className="text-base">Overall Quality Score</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center py-8">
-                  {/* Circular Progress Indicator */}
-                  <div className="relative w-36 h-36 mb-6">
-                    <svg className="w-36 h-36 transform -rotate-90" viewBox="0 0 144 144">
+                  {/* Circular Progress Indicator - Now Clickable */}
+                  <div 
+                    className="relative w-40 h-40 mb-6 cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => setActiveTab("factors")}
+                    title="Click to see detailed quality factors"
+                  >
+                    <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 160 160">
                       {/* Gradient Definitions */}
                       <defs>
                         <linearGradient id="progressGradientGreen" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -295,28 +300,28 @@ export function PRQualityDetails() {
                       
                       {/* Background circle */}
                       <circle
-                        cx="72"
-                        cy="72"
-                        r="58"
+                        cx="80"
+                        cy="80"
+                        r="65"
                         stroke="currentColor"
-                        strokeWidth="10"
+                        strokeWidth="12"
                         fill="transparent"
                         className="text-muted/10 dark:text-muted/20"
                       />
                       
                       {/* Progress circle with gradient */}
                       <circle
-                        cx="72"
-                        cy="72"
-                        r="58"
+                        cx="80"
+                        cy="80"
+                        r="65"
                         stroke={`url(#progressGradient${
                           qualityData.aggregateScore >= 80 ? 'Green' : 
                           qualityData.aggregateScore >= 60 ? 'Yellow' : 'Red'
                         })`}
-                        strokeWidth="10"
+                        strokeWidth="12"
                         fill="transparent"
-                        strokeDasharray={`${2 * Math.PI * 58}`}
-                        strokeDashoffset={`${2 * Math.PI * 58 * (1 - qualityData.aggregateScore / 100)}`}
+                        strokeDasharray={`${2 * Math.PI * 65}`}
+                        strokeDashoffset={`${2 * Math.PI * 65 * (1 - qualityData.aggregateScore / 100)}`}
                         className="transition-all duration-1500 ease-out"
                         strokeLinecap="round"
                       />
@@ -325,8 +330,8 @@ export function PRQualityDetails() {
                       {[25, 50, 75].map((score) => (
                         <circle
                           key={score}
-                          cx={72 + 58 * Math.cos((score / 100) * 2 * Math.PI - Math.PI / 2)}
-                          cy={72 + 58 * Math.sin((score / 100) * 2 * Math.PI - Math.PI / 2)}
+                          cx={80 + 65 * Math.cos((score / 100) * 2 * Math.PI - Math.PI / 2)}
+                          cy={80 + 65 * Math.sin((score / 100) * 2 * Math.PI - Math.PI / 2)}
                           r="2"
                           fill="currentColor"
                           className="text-muted/40"
@@ -334,40 +339,27 @@ export function PRQualityDetails() {
                       ))}
                     </svg>
                     
-                    {/* Score text in center with enhanced styling */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className={`text-4xl font-black ${getScoreColor(qualityData.aggregateScore)}`}>
+                    {/* Score text in center with improved positioning */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <div className={`text-3xl font-black ${getScoreColor(qualityData.aggregateScore)} leading-none`}>
                         {qualityData.aggregateScore}
                       </div>
-                      <div className="text-xs text-muted-foreground font-semibold tracking-wider uppercase">
+                      <div className="text-[10px] text-muted-foreground font-semibold tracking-wider uppercase mt-1">
                         Quality Score
                       </div>
-                      <div className="text-xs text-muted-foreground/70 mt-1">
+                      <div className="text-[9px] text-muted-foreground/70">
                         out of 100
                       </div>
                     </div>
                   </div>
                   
-                  {/* Status indicator */}
+                  {/* Info text */}
                   <div className="text-center">
-                    {qualityData.aggregateScore >= 80 ? (
-                      <div className="flex items-center gap-2 text-green-500">
-                        <IconCheck size={18} />
-                        <span className="font-medium">Excellent Quality</span>
-                      </div>
-                    ) : qualityData.aggregateScore >= 60 ? (
-                      <div className="flex items-center gap-2 text-yellow-500">
-                        <IconAlertTriangle size={18} />
-                        <span className="font-medium">Room for Improvement</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-red-500">
-                        <IconX size={18} />
-                        <span className="font-medium">Quality Concerns</span>
-                      </div>
-                    )}
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground">
                       Based on {qualityData.qualityFactors.length} quality factors
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mt-2">
+                      Click the chart above to see detailed breakdown
                     </p>
                   </div>
                 </CardContent>

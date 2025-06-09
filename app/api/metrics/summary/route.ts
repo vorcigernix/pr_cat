@@ -3,12 +3,35 @@ import { getUserWithOrganizations } from '@/lib/auth-context';
 import { query } from '@/lib/db';
 
 export const runtime = 'nodejs';
-// Cache for 1 hour - engineering metrics don't need real-time updates
-export const revalidate = 3600;
+// Cache for 24 hours, revalidate in background
+export const revalidate = 86400; // 24 hours in seconds
 // Force dynamic rendering since we use headers()
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+// Helper to get "yesterday" as the latest complete day
+function getLatestCompleteDay(): Date {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(23, 59, 59, 999); // End of yesterday
+  return yesterday;
+}
+
+// Helper to check if we need fresh data
+function shouldRevalidateData(lastUpdated: Date | null): boolean {
+  if (!lastUpdated) return true;
+  
+  const latestCompleteDay = getLatestCompleteDay();
+  const lastUpdateDay = new Date(lastUpdated);
+  lastUpdateDay.setHours(23, 59, 59, 999);
+  
+  // Revalidate if we haven't updated since the latest complete day
+  return lastUpdateDay < latestCompleteDay;
+}
+
+// Main data fetching function with smart caching
+async function fetchMetricsSummary(request: NextRequest) {
+  const latestCompleteDay = getLatestCompleteDay();
+  
   try {
     // Use cached user context to avoid repeated queries
     const { user, primaryOrganization } = await getUserWithOrganizations(request);
@@ -111,9 +134,15 @@ export async function GET(request: NextRequest) {
     const weeklyPRVolumeChange = lastWeekMerged > 0 ? ((thisWeekMerged - lastWeekMerged) / lastWeekMerged) * 100 : 0;
     const mergeRate = recentPRs > 0 ? (recentMerged / recentPRs) * 100 : 0;
 
-    // Return both old and new format for backward compatibility
-    return NextResponse.json({
-      // Legacy format for existing components
+    // Important: Only include data up to yesterday
+    const dataUpToDate = latestCompleteDay.toISOString();
+    const lastUpdated = new Date().toISOString();
+
+    // Cache metadata
+    const cacheStrategy = 'daily-complete-data';
+    const nextUpdateDue = new Date(Date.now() + 86400000).toISOString(); // 24 hours from now
+
+    const data = {
       trackedRepositories,
       prsMergedThisWeek: thisWeekMerged,
       prsMergedLastWeek: lastWeekMerged,
@@ -121,24 +150,56 @@ export async function GET(request: NextRequest) {
       averagePRSize: avgPRSize,
       openPRCount,
       categorizationRate: Math.round(categorizationRate * 10) / 10,
-      
-      // New format for enhanced components
-      totalPRs,
-      recentPRs,
-      mergedPRs,
-      avgCycleTime: Math.round(avgCycleTime * 10) / 10,
-      avgReviewTime: Math.round(avgReviewTime * 10) / 10,
-      mergeRate: Math.round(mergeRate * 10) / 10,
-      
-      // Metadata
-      period: 'last 30 days',
-      organization: {
-        id: primaryOrganization.id,
-        name: primaryOrganization.name
-      }
-    });
+      dataUpToDate,
+      lastUpdated,
+      cacheStrategy,
+      nextUpdateDue
+    };
+    
+    return data;
   } catch (error) {
-    console.error('Error calculating metrics summary:', error);
-    return NextResponse.json({ error: 'Failed to calculate metrics' }, { status: 500 });
+    console.error('Error fetching metrics summary:', error);
+    throw error;
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Add cache headers for optimal caching
+    const headers = new Headers();
+    
+    // Cache for 24 hours, allow stale content for 7 days while revalidating
+    headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+    
+    // Add ETag for better cache validation
+    const latestCompleteDay = getLatestCompleteDay();
+    const etag = `"metrics-${latestCompleteDay.getTime()}"`;
+    headers.set('ETag', etag);
+    
+    // Check if client has fresh data
+    const clientETag = request.headers.get('if-none-match');
+    if (clientETag === etag) {
+      return new NextResponse(null, { status: 304, headers });
+    }
+    
+    const data = await fetchMetricsSummary(request);
+    
+    headers.set('Content-Type', 'application/json');
+    headers.set('X-Cache-Strategy', 'daily-complete-data');
+    headers.set('X-Data-Date', data.dataUpToDate);
+    
+    return NextResponse.json(data, { headers });
+  } catch (error) {
+    console.error('API Error:', error);
+    
+    // Return cached data if available, otherwise error
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch metrics', 
+        fallback: true,
+        message: 'Using cached data or default values'
+      },
+      { status: 500 }
+    );
   }
 } 

@@ -3,7 +3,7 @@
 import React from "react";
 import { IconRefresh } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { useRefreshAllMetrics } from "@/hooks/use-metrics";
+import { mutate } from "swr";
 
 interface RefreshButtonProps {
   variant?: "default" | "outline" | "ghost" | "link" | "destructive" | "secondary";
@@ -12,13 +12,17 @@ interface RefreshButtonProps {
 }
 
 export function RefreshButton({ variant = "outline", size = "sm", className }: RefreshButtonProps) {
-  const { refreshAll } = useRefreshAllMetrics();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refreshAll();
+      // Invalidate all metrics-related SWR cache keys
+      await mutate(
+        key => typeof key === 'string' && key.startsWith('/api/metrics'),
+        undefined,
+        { revalidate: true }
+      );
     } catch (error) {
       console.error("Failed to refresh metrics:", error);
     } finally {
