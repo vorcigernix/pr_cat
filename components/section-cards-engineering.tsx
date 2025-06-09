@@ -24,6 +24,21 @@ type ApiSummaryResponse = {
   categorizationRate: number;
 };
 
+// Cached data type (extends the API response with cache metadata)
+type CachedSummaryData = ApiSummaryResponse & {
+  dataUpToDate?: string;
+  lastUpdated?: string;
+  cacheStrategy?: string;
+  nextUpdateDue?: string;
+  _fetchedAt?: string;
+  _cacheHeaders?: {
+    etag?: string | null;
+    cacheControl?: string | null;
+    dataDate?: string | null;
+    cacheStrategy?: string | null;
+  };
+};
+
 // Metric configuration for cleaner code
 const METRICS_CONFIG = [
   {
@@ -65,7 +80,7 @@ const DEFAULT_METRICS: MetricsSummary = {
 };
 
 // Transform API data to metrics format
-const transformApiDataToMetrics = (data: ApiSummaryResponse): MetricsSummary => {
+const transformApiDataToMetrics = (data: CachedSummaryData): MetricsSummary => {
   const weeklyPRChange = data.prsMergedLastWeek > 0 
     ? ((data.prsMergedThisWeek - data.prsMergedLastWeek) / data.prsMergedLastWeek) * 100
     : 0;
@@ -170,7 +185,7 @@ function ErrorCard({ error, refresh }: { error: Error; refresh: () => void }) {
 export function SectionCardsEngineering() {
   const { data, isLoading, error, refresh } = useMetricsSummary();
   
-  const metrics = data ? transformApiDataToMetrics(data) : DEFAULT_METRICS;
+  const metrics = data ? transformApiDataToMetrics(data as CachedSummaryData) : DEFAULT_METRICS;
 
   if (isLoading && !data) return <LoadingSkeleton />;
   if (error && !data) return <ErrorCard error={error} refresh={refresh} />;
