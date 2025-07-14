@@ -118,12 +118,10 @@ export const config = {
       authorization: {
         params: {
           scope: 'read:user user:email repo read:org',
-          // This is the correct parameter to request organization access during OAuth
-          // It will show the organization access screen during authentication
-          allow_signup: 'true',
-          request_specific_authorization: 'true'
         },
       },
+      // Try without explicit PKCE configuration
+      // checks: ["pkce"],
     }),
   ],
   pages: {
@@ -213,6 +211,21 @@ export const config = {
   },
   session: {
     strategy: "jwt",
+  },
+  // Add additional security configuration
+  secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
+  // Add cookie configuration to help with PKCE
+  cookies: {
+    pkceCodeVerifier: {
+      name: 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
+        path: '/',
+        secure: true
+      }
+    }
   },
 } satisfies NextAuthConfig;
 
