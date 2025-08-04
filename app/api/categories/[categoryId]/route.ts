@@ -8,14 +8,15 @@ import {
 } from '@/lib/repositories/category-repository';
 import { getOrganizationRole } from '@/lib/repositories/user-repository';
 import { Category } from '@/lib/types';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
 
-interface UpdateCategoryRequestBody {
-  name?: string;
-  description?: string;
-  color?: string;
-}
+const updateCategorySchema = z.object({
+  name: z.string().min(1, "Category name is required").max(100, "Category name must be 100 characters or less").optional(),
+  description: z.string().max(500, "Description must be 500 characters or less").optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color must be a valid hex color (e.g., #FF5733)").optional()
+});
 
 export async function PUT(
   request: NextRequest,
@@ -54,23 +55,32 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid category state' }, { status: 500 });
     }
 
-    const body = await request.json() as UpdateCategoryRequestBody;
+    const body = await request.json();
+    
+    // Validate request body with zod
+    const validationResult = updateCategorySchema.safeParse(body);
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: errors 
+      }, { status: 400 });
+    }
+    
+    const { name, description, color } = validationResult.data;
     const updateData: Partial<Omit<Category, 'id' | 'created_at' | 'updated_at' | 'organization_id' | 'is_default'>> = {};
 
-    if (body.description !== undefined) {
-      updateData.description = body.description?.trim() || null;
+    if (description !== undefined) {
+      updateData.description = description?.trim() || null;
     }
-    if (body.color !== undefined) {
-      updateData.color = body.color?.trim() || null;
+    if (color !== undefined) {
+      updateData.color = color?.trim() || null;
     }
 
     // For non-default (custom) categories, allow name update
     if (!existingCategory.is_default) {
-      if (body.name !== undefined) {
-        if (typeof body.name !== 'string' || body.name.trim() === '') {
-          return NextResponse.json({ error: 'Category name must be a non-empty string.' }, { status: 400 });
-        }
-        updateData.name = body.name.trim();
+      if (name !== undefined) {
+        updateData.name = name.trim();
         
         // Check for duplicate name within the same organization if name is being changed
         if (existingCategory.organization_id && updateData.name.toLowerCase() !== existingCategory.name.toLowerCase()) {

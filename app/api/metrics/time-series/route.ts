@@ -19,15 +19,32 @@ type TimeSeriesDataPoint = {
 
 export async function GET(request: NextRequest) {
   try {
-    // Use cached user context to avoid repeated queries
-    const { user, primaryOrganization } = await getUserWithOrganizations(request);
-    const orgId = primaryOrganization.id;
-
-    // Parse query parameters
+    // Add cache headers for optimal caching
+    const headers = new Headers();
+    
+    // Parse query parameters early for ETag generation
     const { searchParams } = new URL(request.url);
     const repositoryId = searchParams.get('repositoryId');
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
+    
+    // Generate ETag based on parameters and current hour (for hourly cache invalidation)
+    const currentHour = new Date().getHours();
+    const etag = `"time-series-${repositoryId || 'all'}-${startDateParam || 'default'}-${endDateParam || 'default'}-${currentHour}"`;
+    headers.set('ETag', etag);
+    
+    // Cache for 1 hour, allow stale content for 24 hours while revalidating
+    headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    
+    // Check if client has fresh data
+    const clientETag = request.headers.get('if-none-match');
+    if (clientETag === etag) {
+      return new NextResponse(null, { status: 304, headers });
+    }
+    
+    // Use cached user context to avoid repeated queries
+    const { user, primaryOrganization } = await getUserWithOrganizations(request);
+    const orgId = primaryOrganization.id;
 
     // Set date range - default to last 14 days if not provided
     let startDate: Date, endDate: Date;
@@ -145,7 +162,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(timeSeriesData);
+    headers.set('Content-Type', 'application/json');
+    headers.set('X-Cache-Strategy', 'hourly-time-series');
+    headers.set('X-Data-Date', new Date().toISOString());
+    
+    return NextResponse.json(timeSeriesData, { headers });
   } catch (error) {
     console.error('Error calculating engineering metrics:', error);
     return NextResponse.json({ error: 'Failed to calculate metrics' }, { status: 500 });

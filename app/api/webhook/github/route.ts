@@ -40,6 +40,30 @@ function logOperation(operation: string, params: any) {
   console.log(`WEBHOOK DB OPERATION: ${operation}`, JSON.stringify(params, null, 2));
 }
 
+// Verify GitHub webhook signature
+function verifyGitHubSignature(payload: string, signature: string, secret: string): boolean {
+  if (!signature || !secret) {
+    return false;
+  }
+  
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload, 'utf8')
+    .digest('hex');
+  
+  const expectedSignatureWithPrefix = `sha256=${expectedSignature}`;
+  
+  // Use crypto.timingSafeEqual to prevent timing attacks
+  if (signature.length !== expectedSignatureWithPrefix.length) {
+    return false;
+  }
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature, 'utf8'),
+    Buffer.from(expectedSignatureWithPrefix, 'utf8')
+  );
+}
+
 // Helper to safely log errors with full stack trace and context
 function logError(context: string, error: any, extraData?: any) {
   console.error(`WEBHOOK ERROR in ${context}:`, error);
@@ -158,11 +182,27 @@ export async function POST(request: NextRequest) {
     
     console.log(`Received GitHub webhook event type: ${eventType}`);
     
-    // Clone the request to read the body in different ways
-    const requestClone = request.clone();
-    
     // Read the body as text first (for signature verification)
     const bodyText = await request.text();
+    
+    // Verify webhook signature for security
+    if (!webhookSecret) {
+      console.error("WEBHOOK: GITHUB_WEBHOOK_SECRET not configured");
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+    }
+    
+    if (!signature) {
+      console.error("WEBHOOK: Missing X-Hub-Signature-256 header");
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+    }
+    
+    if (!verifyGitHubSignature(bodyText, signature, webhookSecret)) {
+      console.error("WEBHOOK: Invalid signature");
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+    
+    console.log("WEBHOOK: Signature verified successfully");
+    
     let bodyJson;
     
     try {

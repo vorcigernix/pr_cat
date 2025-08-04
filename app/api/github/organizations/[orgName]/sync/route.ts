@@ -4,13 +4,15 @@ import { findUserById } from "@/lib/repositories";
 import { syncSingleOrganizationRepositories } from "@/lib/services/github-service";
 import { findOrganizationByNameAndUser } from "@/lib/repositories/organization-repository";
 
-export async function POST(request: NextRequest, context: any) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ orgName: string }> }
+) {
+  const { orgName } = await params;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-
-  const { orgName } = context.params;
   if (!orgName) {
     return NextResponse.json({ error: "Organization name is required" }, { status: 400 });
   }

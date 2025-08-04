@@ -151,13 +151,28 @@ export const config = {
       
       if (token.accessToken) {
         session.accessToken = token.accessToken as string;
-        session.organizations = await getOrganizationsForUser(session.user.id, session.accessToken);
+        
+        // Safely fetch organizations with error handling to prevent session failures
+        try {
+          session.organizations = await getOrganizationsForUser(session.user.id, session.accessToken);
+        } catch (error) {
+          console.error("Session callback: Failed to fetch organizations", error);
+          // Degrade gracefully - set empty organizations array
+          session.organizations = [];
+        }
       }
       
-      // Set session flags
-      const flags = await setSessionFlags(session.user.id, session.organizations);
-      session.newUser = flags.newUser;
-      session.hasGithubApp = flags.hasGithubApp;
+      // Set session flags with error handling
+      try {
+        const flags = await setSessionFlags(session.user.id, session.organizations);
+        session.newUser = flags.newUser;
+        session.hasGithubApp = flags.hasGithubApp;
+      } catch (error) {
+        console.error("Session callback: Failed to set session flags", error);
+        // Degrade gracefully with default values
+        session.newUser = false;
+        session.hasGithubApp = false;
+      }
       
       return session;
     },

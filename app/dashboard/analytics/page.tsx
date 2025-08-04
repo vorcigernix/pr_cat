@@ -7,6 +7,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
+import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { IconDownload } from "@tabler/icons-react"
 
 export default function AnalyticsPage() {
@@ -22,24 +23,26 @@ export default function AnalyticsPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader pageTitle="Analytics Overview" />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="flex justify-end items-center px-4 lg:px-6">
-                <Button variant="outline" size="sm">
-                  <IconDownload className="mr-2 h-4 w-4" />
-                  Export Analytics Report
-                </Button>
-              </div>
-              <div className="px-4 lg:px-6">
-                <InvestmentAreaDistribution />
-              </div>
-              <div className="px-4 lg:px-6">
-                <RecommendationsInsights />
+        <ErrorBoundary>
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <div className="flex justify-end items-center px-4 lg:px-6">
+                  <Button variant="outline" size="sm">
+                    <IconDownload className="mr-2 h-4 w-4" />
+                    Export Analytics Report
+                  </Button>
+                </div>
+                <div className="px-4 lg:px-6">
+                  <InvestmentAreaDistribution />
+                </div>
+                <div className="px-4 lg:px-6">
+                  <RecommendationsInsights />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </ErrorBoundary>
       </SidebarInset>
     </SidebarProvider>
   )

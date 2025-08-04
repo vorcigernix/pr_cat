@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getOrganizationCategories, createCategory } from '@/lib/repositories/category-repository';
 import { getOrganizationRole } from '@/lib/repositories/user-repository'; // Corrected function name
+import { z } from 'zod';
 
 export const runtime = 'nodejs'; // Or 'edge' if preferred and dependencies allow
 
@@ -39,11 +40,11 @@ export async function GET(
 
 // --- POST Handler to create a new custom category for an organization ---
 
-interface CreateCategoryRequestBody {
-  name: string;
-  description?: string;
-  color?: string; // Optional color
-}
+const createCategorySchema = z.object({
+  name: z.string().min(1, "Category name is required").max(100, "Category name must be 100 characters or less"),
+  description: z.string().max(500, "Description must be 500 characters or less").optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color must be a valid hex color (e.g., #FF5733)").optional()
+});
 
 export async function POST(
   request: NextRequest,
@@ -69,34 +70,36 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden. User not part of the organization.' }, { status: 403 });
     }
 
-    const body = await request.json() as CreateCategoryRequestBody;
-
-    if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
-      return NextResponse.json({ error: 'Category name is required and must be a non-empty string.' }, { status: 400 });
+    const body = await request.json();
+    
+    // Validate request body with zod
+    const validationResult = createCategorySchema.safeParse(body);
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: errors 
+      }, { status: 400 });
     }
-    if (body.description && typeof body.description !== 'string') {
-      return NextResponse.json({ error: 'Category description must be a string if provided.' }, { status: 400 });
-    }
-    if (body.color && typeof body.color !== 'string') {
-      return NextResponse.json({ error: 'Category color must be a string if provided.' }, { status: 400 });
-    }
+    
+    const { name, description, color } = validationResult.data;
     
     // Ensure this category is not a duplicate by name for this organization (excluding default categories)
     const existingOrgCategories = await getOrganizationCategories(orgIdInt);
     const duplicate = existingOrgCategories.find(
-      cat => !cat.is_default && cat.organization_id === orgIdInt && cat.name.toLowerCase() === body.name.trim().toLowerCase()
+      cat => !cat.is_default && cat.organization_id === orgIdInt && cat.name.toLowerCase() === name.trim().toLowerCase()
     );
 
     if (duplicate) {
-      return NextResponse.json({ error: `A category with the name '${body.name.trim()}' already exists for this organization.` }, { status: 409 }); // 409 Conflict
+      return NextResponse.json({ error: `A category with the name '${name.trim()}' already exists for this organization.` }, { status: 409 }); // 409 Conflict
     }
 
     const newCategoryData = {
-      name: body.name.trim(),
-      description: body.description?.trim() || null,
+      name: name.trim(),
+      description: description?.trim() || null,
       organization_id: orgIdInt,
       is_default: false,
-      color: body.color?.trim() || null, // Assign a default color later if needed, or let UI pick
+      color: color?.trim() || null, // Assign a default color later if needed, or let UI pick
     };
 
     const createdCategory = await createCategory(newCategoryData);

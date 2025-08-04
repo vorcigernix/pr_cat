@@ -7,6 +7,16 @@ import {
   UpdateAiSettingsPayload
 } from '@/lib/repositories';
 import { getOrganizationRole } from '@/lib/repositories/user-repository';
+import { z } from 'zod';
+
+const updateAiSettingsSchema = z.object({
+  provider: z.enum(['openai', 'google', 'anthropic']).nullable().optional(),
+  selectedModelId: z.string().nullable().optional(),
+  openaiApiKey: z.string().nullable().optional(),
+  googleApiKey: z.string().nullable().optional(),
+  anthropicApiKey: z.string().nullable().optional(),
+  categoryThreshold: z.number().min(0).max(100).optional()
+});
 
 // GET current AI settings for an organization
 export async function GET(
@@ -62,30 +72,23 @@ export async function PUT(
   }
 
   try {
-    const body = await request.json() as UpdateAiSettingsPayload;
+    const body = await request.json();
     
-    console.log(`Server: Received AI settings update for org ${orgId}:`, JSON.stringify(body, null, 2));
+    // Validate request body with zod
+    const validationResult = updateAiSettingsSchema.safeParse(body);
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: errors 
+      }, { status: 400 });
+    }
     
-    // Basic validation for the new payload
-    if (body.selectedModelId !== undefined && (typeof body.selectedModelId !== 'string' && body.selectedModelId !== null)) {
-      return NextResponse.json({ error: 'Invalid selectedModelId value' }, { status: 400 });
-    }
-
-    // Validate API keys: must be string or null if provided
-    if (body.openaiApiKey !== undefined && typeof body.openaiApiKey !== 'string' && body.openaiApiKey !== null) {
-      return NextResponse.json({ error: 'Invalid openaiApiKey value. Must be a string or null.' }, { status: 400 });
-    }
-    if (body.googleApiKey !== undefined && typeof body.googleApiKey !== 'string' && body.googleApiKey !== null) {
-      return NextResponse.json({ error: 'Invalid googleApiKey value. Must be a string or null.' }, { status: 400 });
-    }
-    if (body.anthropicApiKey !== undefined && typeof body.anthropicApiKey !== 'string' && body.anthropicApiKey !== null) {
-      return NextResponse.json({ error: 'Invalid anthropicApiKey value. Must be a string or null.' }, { status: 400 });
-    }
-    if (body.categoryThreshold !== undefined && (typeof body.categoryThreshold !== 'number' || body.categoryThreshold < 0 || body.categoryThreshold > 100)) {
-      return NextResponse.json({ error: 'Invalid categoryThreshold value. Must be a number between 0 and 100.' }, { status: 400 });
-    }
+    const validatedPayload = validationResult.data as UpdateAiSettingsPayload;
+    
+    console.log(`Server: Received AI settings update for org ${orgId}:`, JSON.stringify(validatedPayload, null, 2));
             
-    await updateOrganizationAiSettings(numericOrgId, body);
+    await updateOrganizationAiSettings(numericOrgId, validatedPayload);
     console.log(`Server: Successfully updated AI settings for org ${orgId}`);
     return NextResponse.json({ message: 'AI settings updated successfully' });
   } catch (error) {

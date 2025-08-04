@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/sidebar"
 import { getOrganizationInstallations } from '@/app/api/services/github-orgs';
 import { SettingsContent } from "@/components/settings-content";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 // Mark this route as dynamic since it uses headers() via getOrganizationInstallations
 export const dynamic = 'force-dynamic';
@@ -27,15 +28,17 @@ export default async function SettingsPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader pageTitle="Settings" />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <Suspense fallback={<div className="p-6">Loading settings...</div>}>
-                <SettingsContent organizationsPromise={organizationsPromise} />
-              </Suspense>
+        <ErrorBoundary>
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <Suspense fallback={<div className="p-6">Loading settings...</div>}>
+                  <SettingsContent organizationsPromise={organizationsPromise} />
+                </Suspense>
+              </div>
             </div>
           </div>
-        </div>
+        </ErrorBoundary>
       </SidebarInset>
     </SidebarProvider>
   )

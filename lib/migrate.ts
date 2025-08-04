@@ -155,6 +155,40 @@ CREATE TABLE IF NOT EXISTS embeddings (
 `;
 
 // Function to run schema migrations on database startup
+// Define migrations as embedded SQL to avoid file system operations in Edge Runtime
+const MIGRATIONS = [
+  {
+    version: 1,
+    name: 'initial_schema',
+    sql: SCHEMA_SQL
+  },
+  {
+    version: 2,
+    name: 'add_ai_status_columns',
+    sql: `
+      -- Add AI processing status columns to pull_requests table
+      ALTER TABLE pull_requests ADD COLUMN ai_status TEXT DEFAULT 'pending';
+      ALTER TABLE pull_requests ADD COLUMN error_message TEXT;
+    `
+  },
+  {
+    version: 3,
+    name: 'add_performance_indexes',
+    sql: `
+      -- Add performance indexes for common queries
+      CREATE INDEX IF NOT EXISTS idx_pull_requests_repo_number ON pull_requests(repository_id, number);
+      CREATE INDEX IF NOT EXISTS idx_pull_requests_github_id ON pull_requests(github_id);
+      CREATE INDEX IF NOT EXISTS idx_pr_reviews_pull_request_id ON pr_reviews(pull_request_id);
+      CREATE INDEX IF NOT EXISTS idx_repositories_organization_id ON repositories(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_user_organizations_user_org ON user_organizations(user_id, organization_id);
+      CREATE INDEX IF NOT EXISTS idx_pull_requests_author_id ON pull_requests(author_id);
+      CREATE INDEX IF NOT EXISTS idx_pull_requests_state_repo ON pull_requests(state, repository_id);
+      CREATE INDEX IF NOT EXISTS idx_pull_requests_created_at ON pull_requests(created_at);
+      CREATE INDEX IF NOT EXISTS idx_pr_reviews_reviewer_id ON pr_reviews(reviewer_id);
+    `
+  }
+];
+
 export async function runMigrations() {
   console.log('Checking database migrations...');
   
@@ -173,12 +207,21 @@ export async function runMigrations() {
     
     console.log(`Current database schema version: ${currentVersion}`);
     
-    // Run the schema SQL if no version exists yet
-    if (currentVersion === 0) {
-      console.log('Applying initial schema...');
+    // Apply any pending migrations
+    const pendingMigrations = MIGRATIONS.filter(m => m.version > currentVersion);
+    
+    if (pendingMigrations.length === 0) {
+      console.log('Database schema is up to date.');
+      return;
+    }
+    
+    console.log(`Applying ${pendingMigrations.length} pending migration(s)...`);
+    
+    for (const migration of pendingMigrations) {
+      console.log(`Applying migration ${migration.version}: ${migration.name}`);
       
-      // Split the schema into individual statements and execute them
-      const statements = SCHEMA_SQL
+      // Split the migration SQL into individual statements and execute them
+      const statements = migration.sql
         .split(';')
         .map(s => s.trim())
         .filter(s => s.length > 0);
@@ -187,16 +230,11 @@ export async function runMigrations() {
         await execute(`${statement};`);
       }
       
-      // Insert initial schema version
-      await execute('INSERT INTO schema_migrations (version) VALUES (1)');
+      // Record the migration as applied
+      await execute('INSERT INTO schema_migrations (version) VALUES (?)', [migration.version]);
       
-      console.log('Schema migration completed successfully.');
-    } else {
-      console.log('Database schema is up to date.');
+      console.log(`Migration ${migration.version} completed successfully.`);
     }
-    
-    // In a more complex system, we would have multiple migration files
-    // and apply only the ones with a version higher than currentVersion
     
     return { success: true };
   } catch (error) {
