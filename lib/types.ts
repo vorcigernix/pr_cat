@@ -113,6 +113,36 @@ export interface Embedding {
   created_at: string;
 }
 
+export interface Team {
+  id: number;
+  organization_id: number;
+  name: string;
+  description: string | null;
+  color: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamMember {
+  id: number;
+  team_id: number;
+  user_id: string;
+  role: 'member' | 'lead' | 'admin';
+  joined_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Extended types for UI components
+export interface TeamWithMembers extends Team {
+  members: (TeamMember & { user: User })[];
+  member_count: number;
+}
+
+export interface UserWithTeams extends User {
+  teams: (TeamMember & { team: Team })[];
+}
+
 // GitHub API response types
 
 export interface GitHubUser {

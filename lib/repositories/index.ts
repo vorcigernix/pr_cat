@@ -58,6 +58,25 @@ export {
   type UpdateAiSettingsPayload,
 } from './settings-repository';
 
+// Export team repository functions
+export {
+  findTeamById,
+  findTeamsByOrganization,
+  createTeam,
+  updateTeam,
+  deleteTeam,
+  findTeamMember,
+  addTeamMember,
+  updateTeamMember,
+  removeTeamMember,
+  getTeamMembers,
+  getTeamWithMembers,
+  getTeamsByOrganizationWithMembers,
+  getUserTeams,
+  getOrganizationMembers,
+  searchUsers,
+} from './team-repository';
+
 // Commented out sections for missing files remain for user to address
 // export { 
 //   getSettings, 

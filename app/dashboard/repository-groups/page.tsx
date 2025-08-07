@@ -1,12 +1,12 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
-import { TeamPerformanceMetrics } from "@/components/team-performance-metrics"
+import { RepositoryGroupMetrics } from "@/components/repository-group-metrics"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-export default function TeamPage() {
+export default function RepositoryGroupsPage() {
   return (
     <SidebarProvider
       style={
@@ -18,10 +18,10 @@ export default function TeamPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pageTitle="Team Performance" />
+        <SiteHeader pageTitle="Repository Groups" />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-            <TeamPerformanceMetrics />
+            <RepositoryGroupMetrics />
           </div>
         </div>
       </SidebarInset>

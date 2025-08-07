@@ -34,31 +34,31 @@ type TeamPerformanceMetrics = {
   reviewCoverage: number;
 };
 
-export function TeamPerformanceMetrics() {
+export function RepositoryGroupMetrics() {
   const [metrics, setMetrics] = React.useState<TeamPerformanceMetrics | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     fetchData();
-  }, [selectedTeamId]);
+  }, [selectedGroupId]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Build API URL with team filter
+      // Build API URL with repository group filter
       let url = '/api/metrics/team-performance';
-      if (selectedTeamId) {
-        // Get team repositories
-        const savedTeams = localStorage.getItem('prcat-teams');
-        if (savedTeams) {
-          const teams = JSON.parse(savedTeams);
-          const team = teams.find((t: any) => t.id === selectedTeamId);
-          if (team && team.repositories.length > 0) {
-            url += `?repositories=${team.repositories.join(',')}`;
+      if (selectedGroupId) {
+        // Get group repositories
+        const savedGroups = localStorage.getItem('prcat-repository-groups') || localStorage.getItem('prcat-teams');
+        if (savedGroups) {
+          const groups = JSON.parse(savedGroups);
+          const group = groups.find((g: any) => g.id === selectedGroupId);
+          if (group && group.repositories.length > 0) {
+            url += `?repositories=${group.repositories.join(',')}`;
           }
         }
       }
@@ -79,22 +79,22 @@ export function TeamPerformanceMetrics() {
     }
   };
 
-  const getTeamName = () => {
-    if (!selectedTeamId) return "Organization";
+  const getGroupName = () => {
+    if (!selectedGroupId) return "All Repositories";
     
-    const savedTeams = localStorage.getItem('prcat-teams');
-    if (savedTeams) {
-      const teams = JSON.parse(savedTeams);
-      const team = teams.find((t: any) => t.id === selectedTeamId);
-      return team?.name || "Unknown Team";
+    const savedGroups = localStorage.getItem('prcat-repository-groups') || localStorage.getItem('prcat-teams');
+    if (savedGroups) {
+      const groups = JSON.parse(savedGroups);
+      const group = groups.find((g: any) => g.id === selectedGroupId);
+      return group?.name || "Unknown Group";
     }
-    return "Unknown Team";
+    return "Unknown Group";
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <TeamSelector selectedTeamId={selectedTeamId} onTeamSelect={setSelectedTeamId} />
+        <RepositoryGroupSelector selectedGroupId={selectedGroupId} onGroupSelect={setSelectedGroupId} />
         <Card>
           <CardHeader>
             <CardTitle>Team Performance</CardTitle>
@@ -115,7 +115,7 @@ export function TeamPerformanceMetrics() {
   if (error) {
     return (
       <div className="space-y-6">
-        <TeamSelector selectedTeamId={selectedTeamId} onTeamSelect={setSelectedTeamId} />
+        <RepositoryGroupSelector selectedGroupId={selectedGroupId} onGroupSelect={setSelectedGroupId} />
         <Card>
           <CardHeader>
             <CardTitle>Team Performance</CardTitle>
@@ -138,15 +138,15 @@ export function TeamPerformanceMetrics() {
   if (!metrics || metrics.teamMembers.length === 0) {
     return (
       <div className="space-y-6">
-        <TeamSelector selectedTeamId={selectedTeamId} onTeamSelect={setSelectedTeamId} />
+        <RepositoryGroupSelector selectedGroupId={selectedGroupId} onGroupSelect={setSelectedGroupId} />
         <Card>
           <CardHeader>
-            <CardTitle>{getTeamName()} Performance</CardTitle>
+            <CardTitle>{getGroupName()} Performance</CardTitle>
             <CardDescription>No team data available</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              {selectedTeamId 
+              {selectedGroupId 
                 ? "No activity found for this team's repositories in the last 30 days."
                 : "No team activity found in the last 30 days."
               }
@@ -160,7 +160,7 @@ export function TeamPerformanceMetrics() {
   return (
     <div className="space-y-6">
       {/* Team Selector */}
-      <TeamSelector selectedTeamId={selectedTeamId} onTeamSelect={setSelectedTeamId} />
+      <RepositoryGroupSelector selectedGroupId={selectedGroupId} onGroupSelect={setSelectedGroupId} />
       
       {/* Team Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -172,7 +172,7 @@ export function TeamPerformanceMetrics() {
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalContributors}</div>
             <p className="text-xs text-muted-foreground">
-              {selectedTeamId ? `${getTeamName()} members` : "Organization-wide"}
+              {selectedGroupId ? `${getGroupName()} members` : "Organization-wide"}
             </p>
           </CardContent>
         </Card>
@@ -214,10 +214,10 @@ export function TeamPerformanceMetrics() {
       {/* Individual Contributors */}
       <Card>
         <CardHeader>
-          <CardTitle>{getTeamName()} Contributors</CardTitle>
+          <CardTitle>{getGroupName()} Contributors</CardTitle>
           <CardDescription>
-            {selectedTeamId 
-              ? `Performance metrics for ${getTeamName()} members based on their repository contributions`
+            {selectedGroupId 
+              ? `Performance metrics for ${getGroupName()} members based on their repository contributions`
               : "Performance metrics for all organization contributors"
             }
           </CardDescription>
@@ -280,7 +280,7 @@ export function TeamPerformanceMetrics() {
           </div>
           
           {/* Team Insights */}
-          {selectedTeamId && (
+          {selectedGroupId && (
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <h4 className="font-semibold text-blue-800 mb-2">Team Insights</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">

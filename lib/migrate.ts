@@ -186,6 +186,44 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_pull_requests_created_at ON pull_requests(created_at);
       CREATE INDEX IF NOT EXISTS idx_pr_reviews_reviewer_id ON pr_reviews(reviewer_id);
     `
+  },
+  {
+    version: 4,
+    name: 'add_teams_schema',
+    sql: `
+      -- Teams table - each team belongs to an organization
+      CREATE TABLE IF NOT EXISTS teams (
+        id INTEGER PRIMARY KEY,
+        organization_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        color TEXT, -- For UI display (hex color code)
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+        UNIQUE (organization_id, name) -- Team names must be unique within an organization
+      );
+
+      -- Team members table - many-to-many relationship between users and teams
+      -- Users can be members of multiple teams
+      CREATE TABLE IF NOT EXISTS team_members (
+        id INTEGER PRIMARY KEY,
+        team_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'member', -- 'member', 'lead', 'admin'
+        joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE (team_id, user_id) -- User can only be in a team once
+      );
+
+      -- Create indexes for better query performance
+      CREATE INDEX IF NOT EXISTS idx_teams_organization_id ON teams(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);
+      CREATE INDEX IF NOT EXISTS idx_team_members_user_id ON team_members(user_id);
+    `
   }
 ];
 

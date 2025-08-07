@@ -1,41 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { runMigrations, seedDefaultCategories } from '@/lib/migrate';
-import { auth } from '@/auth';
+import { NextResponse } from 'next/server';
+import { runMigrations } from '@/lib/migrate';
 
-// Force Node.js runtime - this API cannot run in Edge runtime
 export const runtime = 'nodejs';
 
-// Add this to avoid Auth.js throwing an error about invalid middleware configuration
-export const dynamic = 'force-dynamic';
-
-export async function GET(request: NextRequest) {
+export async function POST() {
   try {
-    // Temporarily bypass authentication for initial setup
-    // This allows initializing the database without being logged in
-    // IMPORTANT: In production, you should restore authentication checks
-    
-    // Run the migrations
-    const migrationResult = await runMigrations();
-    
-    // Seed default categories if migrations succeeded
-    let seedResult: { success: boolean; error?: unknown };
-    if (migrationResult.success) {
-      seedResult = await seedDefaultCategories();
+    // In development, allow migrations without auth
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Running database migrations in development mode...');
     } else {
-      seedResult = { 
-        success: false, 
-        error: 'Migrations failed, skipping category seeding' 
-      };
+      console.log('Running database migrations...');
+      // In production, you might want to add authentication here
     }
     
-    return NextResponse.json({
-      migration: migrationResult,
-      seed: seedResult
+    const result = await runMigrations();
+    
+    if (result?.success === false) {
+      console.error('Migration failed:', result.error);
+      return NextResponse.json({ 
+        error: 'Migration failed', 
+        details: result.error 
+      }, { status: 500 });
+    }
+    
+    console.log('Migrations completed successfully');
+    return NextResponse.json({ 
+      message: 'Migrations completed successfully' 
     });
   } catch (error) {
-    console.error('Migration API error:', error);
-    return NextResponse.json({
-      error: `Failed to run migrations: ${error instanceof Error ? error.message : 'Unknown error'}`
+    console.error('Migration error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ 
+      error: 'Migration failed', 
+      details: errorMessage 
     }, { status: 500 });
   }
-} 
+}

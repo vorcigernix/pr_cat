@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { OrganizationSettingsTab } from "@/components/ui/organization-settings-tab";
 import { AiSettingsTab } from "@/components/ui/ai-settings-tab";
 import { GitHubOrganizationManager } from "@/components/ui/github-organization-manager";
+import { TeamManagement } from "@/components/ui/team-management";
 import type { OrganizationWithInstallation } from "@/components/ui/github-org-setup-item";
 
 interface SettingsContentProps {
@@ -34,6 +35,7 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
     <Tabs defaultValue="github" className="px-4 lg:px-6">
       <TabsList>
         <TabsTrigger value="github">GitHub</TabsTrigger>
+        <TabsTrigger value="teams">Teams</TabsTrigger>
         <TabsTrigger value="ai">AI Settings</TabsTrigger>
         <TabsTrigger value="categories">Categories</TabsTrigger>
       </TabsList>
@@ -99,6 +101,23 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
             )}
           </div>
         </div>
+      </TabsContent>
+      
+      <TabsContent value="teams" className="py-4">
+        {selectedOrganization ? (
+          <TeamManagement organizationId={selectedOrganization.github_id} />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Please select an organization from the GitHub tab to manage teams.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </TabsContent>
       
       <TabsContent value="ai">
