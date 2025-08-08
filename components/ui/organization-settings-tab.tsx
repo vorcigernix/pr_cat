@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { OrganizationCategoryManager } from './organization-category-manager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
@@ -15,7 +14,6 @@ interface OrganizationSettingsTabProps {
 }
 
 export function OrganizationSettingsTab({ organizations, selectedOrganization: parentSelectedOrg }: OrganizationSettingsTabProps) {
-  const { data: session, status } = useSession();
   const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithInstallation | null>(null); // Local selection for categories
 
   // Organizations are now passed as props from parent
@@ -26,11 +24,7 @@ export function OrganizationSettingsTab({ organizations, selectedOrganization: p
     }
   }, [parentSelectedOrg]);
 
-  if (status === 'loading') {
-    return <p>Loading organization data...</p>;
-  }
-
-  if (!session || organizations.length === 0) {
+  if (organizations.length === 0) {
     return (
       <Card>
         <CardHeader>

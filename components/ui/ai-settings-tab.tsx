@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -22,7 +21,6 @@ interface AiSettingsTabProps {
 }
 
 export function AiSettingsTab({ organizations, selectedOrganization: parentSelectedOrg }: AiSettingsTabProps) {
-  const { data: session, status: sessionStatus } = useSession();
   const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithInstallation | null>(null);
 
   const [fetchedSettings, setFetchedSettings] = useState<FetchedAiSettings | null>(null);
@@ -227,11 +225,7 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
   // Debug current state
   console.log('Current state - Provider:', selectedProvider, 'Model:', selectedModelId, 'Fetched:', fetchedSettings);
 
-  if (sessionStatus === 'loading') {
-    return <p>Loading session data...</p>;
-  }
-
-  if (!session || organizations.length === 0) {
+  if (organizations.length === 0) {
     return (
       <Card>
         <CardHeader>

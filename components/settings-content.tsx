@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { use } from 'react';
 import { 
   Card, 
@@ -30,6 +30,14 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
   const handleOrganizationSelected = (org: OrganizationWithInstallation | null) => {
     setSelectedOrganization(org);
   };
+
+  // Auto-select first available organization (prefer one with the app installed)
+  useEffect(() => {
+    if (!selectedOrganization && organizations && organizations.length > 0) {
+      const preferred = organizations.find((o) => (o as any).hasAppInstalled) || organizations[0];
+      setSelectedOrganization(preferred);
+    }
+  }, [organizations, selectedOrganization]);
 
   return (
     <Tabs defaultValue="github" className="px-4 lg:px-6">
