@@ -1,0 +1,30 @@
+# Authentication
+NEXTAUTH_SECRET=            # Generate with: openssl rand -base64 32
+NEXTAUTH_URL=               # http://localhost:3000 (local) or https://your-domain.com (production)
+
+# GitHub OAuth App (for user authentication)
+# Create at: GitHub Settings → Developer settings → OAuth Apps
+GITHUB_CLIENT_ID=           # OAuth App Client ID
+GITHUB_CLIENT_SECRET=       # OAuth App Client Secret
+
+# GitHub App (for repository access and webhooks)
+# Create at: GitHub Settings → Developer settings → GitHub Apps
+GITHUB_APP_ID=              # Numeric App ID
+GITHUB_APP_PRIVATE_KEY=     # Full .pem file contents (including BEGIN/END lines)
+NEXT_PUBLIC_GITHUB_APP_SLUG= # The slug from github.com/apps/<your-app-slug>
+
+# GitHub Webhook Security (optional but recommended for production)
+# If not set, falls back to GITHUB_CLIENT_SECRET for signature verification
+# In development, webhook verification is skipped if neither is set
+GITHUB_WEBHOOK_SECRET=      # Set this in GitHub App → Webhook → Secret
+
+# Application URL
+APP_URL=                    # Same as NEXTAUTH_URL
+
+# Turso Database
+# Get from: https://turso.tech dashboard
+TURSO_URL=                  # libsql://your-database.turso.io
+TURSO_TOKEN=                # Your database auth token
+
+# Optional Configuration
+TURSO_POOL_SIZE=5          # Database connection pool size (default: 5)
