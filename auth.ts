@@ -190,8 +190,9 @@ export const config = {
       return token;
     },
     async signIn({ user, account, profile }) {
-      if (!user.email || !profile || typeof profile.id === 'undefined' || profile.id === null) {
-        console.error("SignIn: Missing required data");
+      // GitHub may not return an email even with user:email scope; don't block sign-in on missing email
+      if (!profile || typeof profile.id === 'undefined' || profile.id === null) {
+        console.error("SignIn: Missing required profile.id");
         return false;
       }
 
@@ -201,7 +202,8 @@ export const config = {
         // Upsert user
         await upsertUser(githubId, {
           name: user.name ?? profile.login ?? null,
-          email: user.email,
+          // Email may be null/undefined if not provided by GitHub; allow null in DB
+          email: user.email ?? null,
           image: user.image ?? profile.avatar_url ?? null
         });
         
