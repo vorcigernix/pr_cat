@@ -6,6 +6,12 @@ const requestCache = new WeakMap<Request, {
   userWithOrganizations?: { user: any; organizations: any[] };
 }>();
 
+/**
+ * Gets the authenticated user from the session and database
+ * @param request Optional request object for caching optimization
+ * @returns The authenticated user object from the database
+ * @throws Error if user is not authenticated or not found in database
+ */
 export async function getAuthenticatedUser(request?: Request) {
   const session = await auth();
   
@@ -96,6 +102,12 @@ export async function getUserOrganizations(request?: Request) {
   return result.organizations;
 }
 
+/**
+ * Gets the authenticated user along with their organizations in a single optimized query
+ * @param request Optional request object for caching optimization
+ * @returns Object containing user, organizations array, and primary organization
+ * @throws Error if user is not authenticated, not found, or has no organizations
+ */
 export async function getUserWithOrganizations(request?: Request) {
   const session = await auth();
   

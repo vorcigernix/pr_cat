@@ -7,19 +7,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './car
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 import { Button } from './button'; // If needed for styling list items
 import { Organization } from '@/lib/types'; // Use the existing Organization type
+import type { OrganizationWithInstallation } from '@/components/ui/github-org-setup-item';
 
-export function OrganizationSettingsTab() {
+interface OrganizationSettingsTabProps {
+  organizations: OrganizationWithInstallation[];
+  selectedOrganization: OrganizationWithInstallation | null;
+}
+
+export function OrganizationSettingsTab({ organizations, selectedOrganization: parentSelectedOrg }: OrganizationSettingsTabProps) {
   const { data: session, status } = useSession();
-  const [organizations, setOrganizations] = useState<Organization[]>([]); // Use Organization type
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null); // Use Organization type
+  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithInstallation | null>(null); // Local selection for categories
 
+  // Organizations are now passed as props from parent
+  // Set initial selection based on parent's selected organization
   useEffect(() => {
-    if (session?.organizations && Array.isArray(session.organizations)) {
-      // Assuming session.organizations contains objects compatible with the Organization type from @/lib/types
-      // especially ensuring `id` is the internal database ID.
-      setOrganizations(session.organizations as Organization[]);
+    if (parentSelectedOrg) {
+      setSelectedOrganization(parentSelectedOrg);
     }
-  }, [session]);
+  }, [parentSelectedOrg]);
 
   if (status === 'loading') {
     return <p>Loading organization data...</p>;

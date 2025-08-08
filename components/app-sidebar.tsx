@@ -8,12 +8,9 @@ import {
   IconDashboard,
   IconFolder,
   IconLifebuoy,
-  IconHelp,
   IconListDetails,
   IconSettings,
   IconUsers,
-  IconFileStack,
-  IconWebhook,
   IconFolders,
 } from "@tabler/icons-react"
 
@@ -29,8 +26,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarGroup,
-  SidebarGroupContent,
 } from "@/components/ui/sidebar"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

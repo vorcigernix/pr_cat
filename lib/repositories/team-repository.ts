@@ -2,11 +2,22 @@ import { query, execute, transaction } from '@/lib/db';
 import { Team, TeamMember, User, TeamWithMembers, UserWithTeams } from '@/lib/types';
 
 // Team CRUD operations
+
+/**
+ * Finds a team by its ID
+ * @param id The team ID to search for
+ * @returns The team object if found, null otherwise
+ */
 export async function findTeamById(id: number): Promise<Team | null> {
   const teams = await query<Team>('SELECT * FROM teams WHERE id = ?', [id]);
   return teams.length > 0 ? teams[0] : null;
 }
 
+/**
+ * Retrieves all teams belonging to a specific organization
+ * @param organizationId The organization ID to filter by
+ * @returns Array of teams ordered by name
+ */
 export async function findTeamsByOrganization(organizationId: number): Promise<Team[]> {
   return query<Team>(
     'SELECT * FROM teams WHERE organization_id = ? ORDER BY name',
@@ -14,6 +25,12 @@ export async function findTeamsByOrganization(organizationId: number): Promise<T
   );
 }
 
+/**
+ * Creates a new team in the database
+ * @param team Team data without id, created_at, and updated_at fields
+ * @returns The newly created team with generated ID and timestamps
+ * @throws Error if team creation fails
+ */
 export async function createTeam(team: Omit<Team, 'id' | 'created_at' | 'updated_at'>): Promise<Team> {
   const result = await execute(
     'INSERT INTO teams (organization_id, name, description, color) VALUES (?, ?, ?, ?)',
@@ -75,17 +92,23 @@ export async function findTeamMember(teamId: number, userId: string): Promise<Te
   return members.length > 0 ? members[0] : null;
 }
 
-export async function addTeamMember(teamMember: Omit<TeamMember, 'id' | 'created_at' | 'updated_at'>): Promise<TeamMember> {
+export async function addTeamMember(teamMember: Omit<TeamMember, 'id' | 'created_at' | 'updated_at' | 'joined_at'> & { joined_at?: string }): Promise<TeamMember> {
   // Check if member already exists
   const existing = await findTeamMember(teamMember.team_id, teamMember.user_id);
   if (existing) {
     throw new Error('User is already a member of this team');
   }
 
-  const result = await execute(
-    'INSERT INTO team_members (team_id, user_id, role, joined_at) VALUES (?, ?, ?, ?)',
-    [teamMember.team_id, teamMember.user_id, teamMember.role, teamMember.joined_at]
-  );
+  // Use provided joined_at or let database use default
+  const result = teamMember.joined_at 
+    ? await execute(
+        'INSERT INTO team_members (team_id, user_id, role, joined_at) VALUES (?, ?, ?, ?)',
+        [teamMember.team_id, teamMember.user_id, teamMember.role, teamMember.joined_at]
+      )
+    : await execute(
+        'INSERT INTO team_members (team_id, user_id, role) VALUES (?, ?, ?)',
+        [teamMember.team_id, teamMember.user_id, teamMember.role]
+      );
   
   const id = result.lastInsertId;
   if (!id) {

@@ -105,7 +105,7 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
       
       <TabsContent value="teams" className="py-4">
         {selectedOrganization ? (
-          <TeamManagement organizationId={selectedOrganization.github_id} />
+          <TeamManagement organizationId={selectedOrganization.id} />
         ) : (
           <Card>
             <CardHeader>
@@ -121,11 +121,17 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
       </TabsContent>
       
       <TabsContent value="ai">
-        <AiSettingsTab />
+        <AiSettingsTab 
+          organizations={organizations}
+          selectedOrganization={selectedOrganization}
+        />
       </TabsContent>
       
       <TabsContent value="categories">
-        <OrganizationSettingsTab />
+        <OrganizationSettingsTab 
+          organizations={organizations}
+          selectedOrganization={selectedOrganization}
+        />
       </TabsContent>
     </Tabs>
   );

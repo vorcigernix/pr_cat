@@ -43,7 +43,7 @@ import { TeamWithMembers, User } from '@/lib/types';
 import { toast } from 'sonner';
 
 interface TeamManagementProps {
-  organizationId: number;
+  organizationId: number; // Database ID of the organization, not GitHub ID
 }
 
 interface CreateTeamFormData {

@@ -12,13 +12,18 @@ import { toast } from 'sonner';
 import { AiSettings as FetchedAiSettings, UpdateAiSettingsPayload } from '@/lib/repositories';
 import { AIProvider } from '@/lib/repositories/settings-repository';
 import { Organization } from '@/lib/types';
+import type { OrganizationWithInstallation } from '@/components/ui/github-org-setup-item';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 import { allModels, ModelDefinition } from '@/lib/ai-models';
 
-export function AiSettingsTab() {
+interface AiSettingsTabProps {
+  organizations: OrganizationWithInstallation[];
+  selectedOrganization: OrganizationWithInstallation | null;
+}
+
+export function AiSettingsTab({ organizations, selectedOrganization: parentSelectedOrg }: AiSettingsTabProps) {
   const { data: session, status: sessionStatus } = useSession();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithInstallation | null>(null);
 
   const [fetchedSettings, setFetchedSettings] = useState<FetchedAiSettings | null>(null);
   
@@ -37,11 +42,13 @@ export function AiSettingsTab() {
     ? allModels.filter(model => model.provider === selectedProvider)
     : [];
 
+  // Organizations are now passed as props from parent
+  // Set initial selection based on parent's selected organization
   useEffect(() => {
-    if (session?.organizations && Array.isArray(session.organizations)) {
-      setOrganizations(session.organizations as Organization[]);
+    if (parentSelectedOrg) {
+      setSelectedOrganization(parentSelectedOrg);
     }
-  }, [session]);
+  }, [parentSelectedOrg]);
 
   useEffect(() => {
     async function fetchSettings() {

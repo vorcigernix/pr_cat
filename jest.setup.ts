@@ -29,7 +29,7 @@ process.env.NEXT_PUBLIC_GITHUB_APP_SLUG = 'test-pr-cat';
 process.env.NEXTAUTH_URL = 'http://localhost:3000';
 process.env.NEXTAUTH_SECRET = 'test-nextauth-secret-minimum-32-characters-long';
 process.env.APP_URL = 'http://localhost:3000';
-process.env.NODE_ENV = 'test';
+(process.env as any).NODE_ENV = 'test';
 
 // Mock console methods to reduce noise in tests
 const originalConsoleError = console.error;
