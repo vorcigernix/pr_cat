@@ -1,6 +1,9 @@
 import { OrganizationWithInstallation } from '@/components/ui/github-org-setup-item';
 import { cookies } from 'next/headers';
 import { auth } from '@/auth';
+import { findUserWithOrganizations } from '@/lib/repositories/user-repository';
+import { generateAppJwt } from '@/lib/github-app';
+import { Octokit } from '@octokit/rest';
 
 // This file is for server components only - it uses next/headers
 
@@ -19,7 +22,7 @@ function getBaseUrl() {
 
 /**
  * Fetch organization installations data (server component)
- * This requires authentication to work properly
+ * This directly queries the database and GitHub App API instead of making HTTP requests
  */
 export async function getOrganizationInstallations(): Promise<OrganizationWithInstallation[]> {
   console.log('getOrganizationInstallations: Started');
@@ -27,45 +30,61 @@ export async function getOrganizationInstallations(): Promise<OrganizationWithIn
     // Get the user session to check authentication
     const session = await auth();
     
-    if (!session) {
+    if (!session || !session.user) {
       console.log("getOrganizationInstallations: No session found");
       return [];
     }
     
-    if (!session.accessToken) {
-      console.log("getOrganizationInstallations: No access token in session");
-      return [];
-    }
-
-    const baseUrl = getBaseUrl();
-    console.log(`getOrganizationInstallations: Using baseUrl ${baseUrl}`);
+    const userId = session.user.id;
+    console.log('getOrganizationInstallations: Fetching organizations for user:', userId);
     
-    // Get cookies and await both the cookies() call and toString()
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.toString();
+    // Directly fetch user with organizations from database
+    const result = await findUserWithOrganizations(userId);
     
-    // In Next.js Server Components, we need to manually add the authorization header
-    // since the automatic cookie handling only works with client components
-    console.log('getOrganizationInstallations: Fetching installation status (DB + App)');
-    const response = await fetch(`${baseUrl}/api/github/organizations/with-installations`, {
-      cache: 'no-store',
-      headers: {
-        'Cookie': cookieHeader,
-        // If the API expects Authorization header, add it
-        'Authorization': `Bearer ${session.accessToken || ''}`
-      }
-    });
-    
-    if (!response.ok) {
-      console.error(`getOrganizationInstallations: Failed to fetch organizations - ${response.status} ${response.statusText}`);
+    if (!result || !result.organizations || result.organizations.length === 0) {
+      console.log('getOrganizationInstallations: No organizations found in database');
       return [];
     }
     
-    const data = await response.json();
-    const installations = data.installations || [];
-    console.log(`getOrganizationInstallations: Received ${installations.length} organizations`);
+    console.log(`getOrganizationInstallations: Found ${result.organizations.length} organizations in database`);
     
-    return installations;
+    try {
+      // List GitHub App installations to enrich with installation status
+      console.log('getOrganizationInstallations: Generating GitHub App JWT');
+      const appJwt = await generateAppJwt();
+      const appOctokit = new Octokit({ auth: appJwt });
+      
+      console.log('getOrganizationInstallations: Fetching app installations');
+      const { data: installationsData } = await appOctokit.apps.listInstallations();
+      console.log(`getOrganizationInstallations: Found ${installationsData.length} app installations`);
+      
+      // Map database organizations with GitHub App installation status
+      const enriched = result.organizations.map((org: any) => {
+        const installation = installationsData.find(
+          (install) => install.account && install.account.login.toLowerCase() === org.name.toLowerCase()
+        );
+        const hasAppInstalled = !!installation;
+        
+        console.log(`getOrganizationInstallations: Org ${org.name} hasAppInstalled=${hasAppInstalled}`);
+        
+        return {
+          ...org,
+          hasAppInstalled,
+          installationId: installation?.id ?? null,
+        };
+      });
+      
+      console.log(`getOrganizationInstallations: Returning ${enriched.length} organizations with installation status`);
+      return enriched;
+    } catch (appError) {
+      console.error('getOrganizationInstallations: Error fetching GitHub App installations:', appError);
+      // Return organizations without installation status if GitHub App API fails
+      return result.organizations.map((org: any) => ({
+        ...org,
+        hasAppInstalled: false,
+        installationId: null,
+      }));
+    }
   } catch (error) {
     console.error("Error fetching organization installations:", error);
     // Return empty array instead of throwing to prevent component failure
