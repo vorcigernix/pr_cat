@@ -1,0 +1,15 @@
+NEXTAUTH_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+# Optional: Webhook signing secret. If unset, code falls back to GITHUB_CLIENT_SECRET.
+# - For GitHub App webhooks: set the same value in your GitHub App settings under "Webhook secret".
+# - For repository webhooks we create via API: this value is used as the webhook secret.
+# - In non-production, if neither is set, signature verification is skipped.
+GITHUB_WEBHOOK_SECRET=
+TURSO_TOKEN=
+NEXT_PUBLIC_GITHUB_APP_SLUG=
+GITHUB_APP_ID=
+GITHUB_APP_PRIVATE_KEY=
+APP_URL=
+NEXTAUTH_URL=
+TURSO_URL=

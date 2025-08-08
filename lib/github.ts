@@ -263,7 +263,7 @@ export class GitHubClient {
         config: {
           url: webhookUrl,
           content_type: 'json',
-          secret: process.env.GITHUB_WEBHOOK_SECRET,
+          secret: process.env.GITHUB_WEBHOOK_SECRET ?? process.env.GITHUB_CLIENT_SECRET,
         },
         events: ['pull_request', 'pull_request_review']
       });

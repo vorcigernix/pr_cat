@@ -32,6 +32,11 @@ Between the initial review and this update, major improvements were implemented:
 - Single JOIN queries for team+member fetching
 - Batch operations and memory-efficient result grouping
 
+### ✅ **Settings Consistency**
+- Unified organization loading across Settings tabs via parent `components/settings-content.tsx`
+- Teams tab now passes database `organizationId` (not GitHub ID) to `TeamManagement`, fixing API access and lookups
+- AI Settings and Categories tabs now receive `organizations` and `selectedOrganization` via props; removed duplicate `useSession()` org fetching
+
 ## Executive Summary
 **Updated**: After comprehensive improvements to the PR Cat codebase, the application has been significantly enhanced across security, performance, testing, and user experience. **Most critical issues have been resolved** and the application now includes a robust team management system, comprehensive test coverage, and enterprise-grade security features.
 
@@ -129,6 +134,7 @@ CREATE INDEX idx_users_email ON users(email);
 ### 3. Client-Side Data Fetching
 **Issue**: Multiple API calls from components  
 **Solution**: Implement React Query or SWR for caching and deduplication
+- Settings tabs de-duplicated: organizations and selection are centralized in `SettingsContent`
 
 ## 🎯 Type Safety Improvements
 
@@ -324,7 +330,7 @@ test('should create and manage teams', async ({ page }) => {
 
 1. ✅ **Add loading skeletons** to all data-fetching components - **COMPLETED** (team components)
 2. ✅ **Implement request/response logging** for debugging - **PARTIALLY COMPLETED** (console logging added)
-3. ⬜ **Add health check endpoint** that validates all services
+3. ✅ **Add health check endpoint** that validates all services (`app/api/health/route.ts`)
 4. ⬜ **Create API documentation** using OpenAPI/Swagger
 5. ⬜ **Add monitoring** with Sentry or similar service
 6. ⬜ **Implement feature flags** for gradual rollouts

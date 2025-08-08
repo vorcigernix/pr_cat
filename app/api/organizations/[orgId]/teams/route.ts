@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getTeamsByOrganizationWithMembers, createTeam } from '@/lib/repositories/team-repository';
-import { getOrganizationRole } from '@/lib/repositories/user-repository';
+import { TeamService } from '@/lib/services';
+import { unauthorized, badRequest, forbidden, errorResponse } from '@/lib/api-errors';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -14,28 +14,17 @@ export async function GET(
   try {
     const { orgId } = await params;
     const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user?.id) throw unauthorized();
 
     const orgIdInt = parseInt(orgId, 10);
-    if (isNaN(orgIdInt)) {
-      return NextResponse.json({ error: 'Invalid organization ID' }, { status: 400 });
-    }
+    if (isNaN(orgIdInt)) throw badRequest('Invalid organization ID');
 
-    // Authorization: Check if the user is part of the organization
-    const userRole = await getOrganizationRole(session.user.id, orgIdInt);
-    if (!userRole) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const teams = await getTeamsByOrganizationWithMembers(orgIdInt);
+    const teams = await TeamService.getOrganizationTeams(session.user.id, orgIdInt);
     return NextResponse.json(teams);
 
   } catch (error) {
     console.error('Error fetching organization teams:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ error: 'Failed to fetch teams', details: errorMessage }, { status: 500 });
+    return errorResponse(error, 'Failed to fetch teams');
   }
 }
 
@@ -53,32 +42,16 @@ export async function POST(
   try {
     const { orgId } = await params;
     const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user?.id) throw unauthorized();
 
     const orgIdInt = parseInt(orgId, 10);
-    if (isNaN(orgIdInt)) {
-      return NextResponse.json({ error: 'Invalid organization ID' }, { status: 400 });
-    }
-
-    // Authorization: Check if the user is part of the organization
-    const userRole = await getOrganizationRole(session.user.id, orgIdInt);
-    if (!userRole) {
-      return NextResponse.json({ error: 'Forbidden. User not part of the organization.' }, { status: 403 });
-    }
+    if (isNaN(orgIdInt)) throw badRequest('Invalid organization ID');
 
     const body = await request.json();
     
     // Validate request body with zod
     const validationResult = createTeamSchema.safeParse(body);
-    if (!validationResult.success) {
-      const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
-      return NextResponse.json({ 
-        error: 'Validation failed', 
-        details: errors 
-      }, { status: 400 });
-    }
+    if (!validationResult.success) throw badRequest('Validation failed', validationResult.error.flatten());
     
     const { name, description, color } = validationResult.data;
     
@@ -89,15 +62,16 @@ export async function POST(
       color: color?.trim() || null,
     };
 
-    const createdTeam = await createTeam(newTeamData);
+    const createdTeam = await TeamService.createTeam(session.user.id, {
+      organizationId: orgIdInt,
+      name: name.trim(),
+      description: description?.trim(),
+      color: color?.trim(),
+    });
     return NextResponse.json(createdTeam, { status: 201 });
 
   } catch (error) {
     console.error('Error creating team:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    if (errorMessage.includes('UNIQUE constraint failed: teams.organization_id, teams.name')) {
-      return NextResponse.json({ error: 'A team with this name already exists for this organization.', details: errorMessage }, { status: 409 });
-    }
-    return NextResponse.json({ error: 'Failed to create team', details: errorMessage }, { status: 500 });
+    return errorResponse(error, 'Failed to create team');
   }
 }

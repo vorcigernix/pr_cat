@@ -5,6 +5,7 @@ const envSchema = z.object({
   // Database
   TURSO_URL: z.string().url().min(1, "TURSO_URL is required"),
   TURSO_TOKEN: z.string().min(1, "TURSO_TOKEN is required"),
+  TURSO_POOL_SIZE: z.string().regex(/^\d+$/).optional(),
   
   // GitHub OAuth
   GITHUB_CLIENT_ID: z.string().min(1, "GITHUB_CLIENT_ID is required"),
@@ -13,7 +14,8 @@ const envSchema = z.object({
   // GitHub App
   GITHUB_APP_ID: z.string().min(1, "GITHUB_APP_ID is required"),
   GITHUB_APP_PRIVATE_KEY: z.string().min(1, "GITHUB_APP_PRIVATE_KEY is required"),
-  GITHUB_WEBHOOK_SECRET: z.string().min(1, "GITHUB_WEBHOOK_SECRET is required"),
+  // If you don't use a separate webhook secret, we will fallback to GITHUB_CLIENT_SECRET at runtime
+  GITHUB_WEBHOOK_SECRET: z.string().optional(),
   NEXT_PUBLIC_GITHUB_APP_SLUG: z.string().min(1, "GitHub App slug is required"),
   
   // NextAuth

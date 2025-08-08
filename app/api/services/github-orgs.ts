@@ -46,8 +46,8 @@ export async function getOrganizationInstallations(): Promise<OrganizationWithIn
     
     // In Next.js Server Components, we need to manually add the authorization header
     // since the automatic cookie handling only works with client components
-    console.log('getOrganizationInstallations: Fetching installation status');
-    const response = await fetch(`${baseUrl}/api/github/organizations/installation-status`, {
+    console.log('getOrganizationInstallations: Fetching installation status (DB + App)');
+    const response = await fetch(`${baseUrl}/api/github/organizations/with-installations`, {
       cache: 'no-store',
       headers: {
         'Cookie': cookieHeader,

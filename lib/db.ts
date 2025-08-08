@@ -1,30 +1,44 @@
 import { createClient } from '@libsql/client';
 
-// Singleton client with better error handling
-let client: ReturnType<typeof createClient> | null = null;
+// Lightweight connection pool for libsql client
+// Note: libsql is HTTP-based; pooling primarily helps with parallelism and keep-alive reuse
+let pool: Array<ReturnType<typeof createClient>> = [];
+let poolInitialized = false;
+let poolNextIndex = 0;
 let isConnected = false;
 
-export function getDbClient() {
-  if (!client) {
-    const url = process.env.TURSO_URL;
-    const authToken = process.env.TURSO_TOKEN;
+function initializePool() {
+  if (poolInitialized) return;
 
-    if (!url) {
-      throw new Error('TURSO_URL environment variable is required');
-    }
+  const url = process.env.TURSO_URL;
+  const authToken = process.env.TURSO_TOKEN;
+  const poolSizeEnv = process.env.TURSO_POOL_SIZE || '4';
+  const parsedSize = Number.parseInt(poolSizeEnv, 10);
+  const poolSize = Number.isFinite(parsedSize) && parsedSize > 0 ? parsedSize : 4;
 
-    try {
-      client = createClient({
-        url,
-        authToken,
-      });
-      isConnected = true;
-    } catch (error) {
-      console.error('Failed to create database client:', error);
-      throw new Error('Database connection failed');
-    }
+  if (!url) {
+    throw new Error('TURSO_URL environment variable is required');
   }
 
+  try {
+    pool = new Array(poolSize).fill(null).map(() =>
+      createClient({ url, authToken })
+    );
+    poolInitialized = true;
+    isConnected = true;
+  } catch (error) {
+    console.error('Failed to create database client pool:', error);
+    throw new Error('Database connection pool initialization failed');
+  }
+}
+
+export function getDbClient() {
+  if (!poolInitialized) {
+    initializePool();
+  }
+  // Round-robin selection
+  const client = pool[poolNextIndex % pool.length];
+  poolNextIndex = (poolNextIndex + 1) % pool.length;
   return client;
 }
 
@@ -85,6 +99,7 @@ export async function execute(
 export async function transaction<T>(
   callback: (tx: { query: typeof query; execute: typeof execute }) => Promise<T>
 ): Promise<T> {
+  // Ensure a single client is used for the entire transaction
   const db = getDbClient();
   
   try {
@@ -123,6 +138,6 @@ export async function transaction<T>(
 export function getConnectionStatus() {
   return {
     isConnected,
-    hasClient: !!client
+    hasClient: poolInitialized && pool.length > 0
   };
 } 

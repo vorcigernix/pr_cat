@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getTeamWithMembers, updateTeam, deleteTeam } from '@/lib/repositories/team-repository';
-import { getOrganizationRole } from '@/lib/repositories/user-repository';
+import { TeamService } from '@/lib/services';
+import { unauthorized, badRequest, notFound, errorResponse } from '@/lib/api-errors';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -14,38 +14,18 @@ export async function GET(
   try {
     const { orgId, teamId } = await params;
     const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user?.id) throw unauthorized();
 
     const orgIdInt = parseInt(orgId, 10);
     const teamIdInt = parseInt(teamId, 10);
-    if (isNaN(orgIdInt) || isNaN(teamIdInt)) {
-      return NextResponse.json({ error: 'Invalid organization or team ID' }, { status: 400 });
-    }
+    if (isNaN(orgIdInt) || isNaN(teamIdInt)) throw badRequest('Invalid organization or team ID');
 
-    // Authorization: Check if the user is part of the organization
-    const userRole = await getOrganizationRole(session.user.id, orgIdInt);
-    if (!userRole) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const team = await getTeamWithMembers(teamIdInt);
-    if (!team) {
-      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
-    }
-
-    // Ensure the team belongs to the organization
-    if (team.organization_id !== orgIdInt) {
-      return NextResponse.json({ error: 'Team not found in this organization' }, { status: 404 });
-    }
-
+    const team = await TeamService.getTeamWithMembers(session.user.id, teamIdInt, orgIdInt);
     return NextResponse.json(team);
 
   } catch (error) {
     console.error('Error fetching team:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ error: 'Failed to fetch team', details: errorMessage }, { status: 500 });
+    return errorResponse(error, 'Failed to fetch team');
   }
 }
 
@@ -63,27 +43,11 @@ export async function PUT(
   try {
     const { orgId, teamId } = await params;
     const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user?.id) throw unauthorized();
 
     const orgIdInt = parseInt(orgId, 10);
     const teamIdInt = parseInt(teamId, 10);
-    if (isNaN(orgIdInt) || isNaN(teamIdInt)) {
-      return NextResponse.json({ error: 'Invalid organization or team ID' }, { status: 400 });
-    }
-
-    // Authorization: Check if the user is part of the organization
-    const userRole = await getOrganizationRole(session.user.id, orgIdInt);
-    if (!userRole) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Verify team exists and belongs to organization
-    const existingTeam = await getTeamWithMembers(teamIdInt);
-    if (!existingTeam || existingTeam.organization_id !== orgIdInt) {
-      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
-    }
+    if (isNaN(orgIdInt) || isNaN(teamIdInt)) throw badRequest('Invalid organization or team ID');
 
     const body = await request.json();
     
@@ -110,20 +74,17 @@ export async function PUT(
       updateData.color = updateData.color.trim();
     }
 
-    const updatedTeam = await updateTeam(teamIdInt, updateData);
-    if (!updatedTeam) {
-      return NextResponse.json({ error: 'Failed to update team' }, { status: 500 });
-    }
-
+    const updatedTeam = await TeamService.updateTeam(
+      session.user.id,
+      teamIdInt,
+      orgIdInt,
+      updateData
+    );
     return NextResponse.json(updatedTeam);
 
   } catch (error) {
     console.error('Error updating team:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    if (errorMessage.includes('UNIQUE constraint failed: teams.organization_id, teams.name')) {
-      return NextResponse.json({ error: 'A team with this name already exists for this organization.', details: errorMessage }, { status: 409 });
-    }
-    return NextResponse.json({ error: 'Failed to update team', details: errorMessage }, { status: 500 });
+    return errorResponse(error, 'Failed to update team');
   }
 }
 
@@ -135,38 +96,25 @@ export async function DELETE(
   try {
     const { orgId, teamId } = await params;
     const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user?.id) throw unauthorized();
 
     const orgIdInt = parseInt(orgId, 10);
     const teamIdInt = parseInt(teamId, 10);
-    if (isNaN(orgIdInt) || isNaN(teamIdInt)) {
-      return NextResponse.json({ error: 'Invalid organization or team ID' }, { status: 400 });
-    }
+    if (isNaN(orgIdInt) || isNaN(teamIdInt)) throw badRequest('Invalid organization or team ID');
 
-    // Authorization: Check if the user is part of the organization
-    const userRole = await getOrganizationRole(session.user.id, orgIdInt);
-    if (!userRole) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    // Reuse update permission checks inside service by attempting a noop update or extend service with delete
+    const success = await (async () => {
+      // Implement delete via repository for now, reusing service authorization by fetching with service
+      await TeamService.getTeamWithMembers(session.user.id, teamIdInt, orgIdInt);
+      const { deleteTeam } = await import('@/lib/repositories/team-repository');
+      return deleteTeam(teamIdInt);
+    })();
 
-    // Verify team exists and belongs to organization
-    const existingTeam = await getTeamWithMembers(teamIdInt);
-    if (!existingTeam || existingTeam.organization_id !== orgIdInt) {
-      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
-    }
-
-    const success = await deleteTeam(teamIdInt);
-    if (!success) {
-      return NextResponse.json({ error: 'Failed to delete team' }, { status: 500 });
-    }
-
+    if (!success) throw notFound('Failed to delete team');
     return NextResponse.json({ message: 'Team deleted successfully' });
 
   } catch (error) {
     console.error('Error deleting team:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ error: 'Failed to delete team', details: errorMessage }, { status: 500 });
+    return errorResponse(error, 'Failed to delete team');
   }
 }

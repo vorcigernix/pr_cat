@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get headers first
     const signature = request.headers.get('x-hub-signature-256');
-    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? process.env.GITHUB_CLIENT_SECRET;
     const eventType = request.headers.get('x-github-event');
     
     console.log(`Received GitHub webhook event type: ${eventType}`);
@@ -187,16 +187,20 @@ export async function POST(request: NextRequest) {
     
     // Verify webhook signature for security
     if (!webhookSecret) {
-      console.error("WEBHOOK: GITHUB_WEBHOOK_SECRET not configured");
-      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn("WEBHOOK: GITHUB_WEBHOOK_SECRET not configured - skipping signature verification in non-production environment");
+      } else {
+        console.error("WEBHOOK: GITHUB_WEBHOOK_SECRET not configured");
+        return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+      }
     }
     
-    if (!signature) {
+    if (!signature && webhookSecret) {
       console.error("WEBHOOK: Missing X-Hub-Signature-256 header");
       return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     }
     
-    if (!verifyGitHubSignature(bodyText, signature, webhookSecret)) {
+    if (webhookSecret && signature && !verifyGitHubSignature(bodyText, signature, webhookSecret)) {
       console.error("WEBHOOK: Invalid signature");
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
@@ -232,7 +236,7 @@ export async function POST(request: NextRequest) {
       
       return handleWebhookEvent(bodyJson, eventType || 'unknown');
     } else {
-      // If no secret is configured, or GitHub didn't send a signature, process without verification
+      // If no secret is configured (dev) or GitHub didn't send a signature, process without verification
       return handleWebhookEvent(bodyJson, eventType || 'unknown');
     }
   } catch (error) {
