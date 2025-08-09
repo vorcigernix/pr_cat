@@ -108,7 +108,17 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
       const response = await fetch(`/api/organizations/${organizationId}/teams`);
       if (response.ok) {
         const data = await response.json();
-        setTeams(data);
+        const normalized: TeamWithMembers[] = Array.isArray(data)
+          ? data.map((team: any) => ({
+              ...team,
+              members: Array.isArray(team?.members) ? team.members : [],
+              member_count:
+                typeof team?.member_count === 'number'
+                  ? team.member_count
+                  : (Array.isArray(team?.members) ? team.members.length : 0),
+            }))
+          : [];
+        setTeams(normalized);
       } else {
         toast.error('Failed to fetch teams');
       }
@@ -124,7 +134,7 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
       const response = await fetch(`/api/organizations/${organizationId}/members`);
       if (response.ok) {
         const data = await response.json();
-        setOrgMembers(data);
+        setOrgMembers(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error('Error fetching organization members:', error);
@@ -298,8 +308,9 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
 
   // Get available members (not already in the team)
   const getAvailableMembers = (team: TeamWithMembers) => {
-    const teamMemberIds = new Set(team.members.map(m => m.user_id));
-    return orgMembers.filter(member => !teamMemberIds.has(member.id));
+    const teamMemberIds = new Set((team.members ?? []).map(m => m.user_id));
+    const pool = Array.isArray(orgMembers) ? orgMembers : [];
+    return pool.filter(member => !teamMemberIds.has(member.id));
   };
 
   if (loading) {
@@ -446,7 +457,7 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">
-                      {team.member_count} {team.member_count === 1 ? 'member' : 'members'}
+                      {(team.member_count ?? (team.members?.length ?? 0))} {(team.member_count ?? (team.members?.length ?? 0)) === 1 ? 'member' : 'members'}
                     </span>
                     <Button 
                       variant="outline" 
@@ -458,19 +469,19 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
                     </Button>
                   </div>
                   
-                  {team.members.length > 0 && (
+                  {(team.members?.length ?? 0) > 0 && (
                     <div className="space-y-2">
-                      {team.members.slice(0, 3).map((member) => (
+                      {(team.members ?? []).slice(0, 3).map((member) => (
                         <div key={member.user_id} className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={member.user.image || undefined} />
+                              <AvatarImage src={member.user?.image || undefined} />
                               <AvatarFallback className="text-xs">
-                                {member.user.name?.substring(0, 2).toUpperCase() || 'U'}
+                                {member.user?.name?.substring(0, 2).toUpperCase() || 'U'}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-sm font-medium">
-                              {member.user.name || member.user.email}
+                              {member.user?.name || member.user?.email}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
@@ -487,7 +498,7 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to remove {member.user.name || member.user.email} from "{team.name}"?
+                                    Are you sure you want to remove {member.user?.name || member.user?.email} from "{team.name}"?
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -501,9 +512,9 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
                           </div>
                         </div>
                       ))}
-                      {team.members.length > 3 && (
+                      {(team.members?.length ?? 0) > 3 && (
                         <p className="text-xs text-muted-foreground">
-                          +{team.members.length - 3} more members
+                          +{(team.members?.length ?? 0) - 3} more members
                         </p>
                       )}
                     </div>
