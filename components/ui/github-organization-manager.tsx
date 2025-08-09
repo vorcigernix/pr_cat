@@ -9,20 +9,20 @@ import { toast } from 'sonner';
 import { GitHubOrgSetupItem, OrganizationWithInstallation } from '@/components/ui/github-org-setup-item';
 
 interface GitHubOrganizationManagerProps {
-  initialOrganizations: OrganizationWithInstallation[];
+  organizations: OrganizationWithInstallation[];
   onOrganizationSelected: (org: OrganizationWithInstallation | null) => void;
   selectedOrganization: OrganizationWithInstallation | null;
+  onOrganizationsUpdated: (orgs: OrganizationWithInstallation[]) => void;
 }
 
 export function GitHubOrganizationManager({
-  initialOrganizations = [],  // Provide a default empty array
+  organizations = [],  // Provided from parent as source of truth
   onOrganizationSelected,
-  selectedOrganization
+  selectedOrganization,
+  onOrganizationsUpdated,
 }: GitHubOrganizationManagerProps) {
   const { data: session } = useSession();
   
-  // Ensure organizations is always an array even if initialOrganizations is undefined
-  const [organizations, setOrganizations] = useState<OrganizationWithInstallation[]>(initialOrganizations || []);
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
@@ -38,7 +38,7 @@ export function GitHubOrganizationManager({
       }
       const data = await response.json();
       const fetchedOrgs = data.installations || [];
-      setOrganizations(fetchedOrgs);
+      onOrganizationsUpdated(fetchedOrgs);
 
       if (selectedOrganization) {
         const currentSelectedOrgInNewList = fetchedOrgs.find(

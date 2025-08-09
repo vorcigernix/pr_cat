@@ -26,18 +26,24 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
   const organizations = use(organizationsPromise);
   
   const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithInstallation | null>(null);
+  const [orgsState, setOrgsState] = useState<OrganizationWithInstallation[]>(organizations || []);
 
   const handleOrganizationSelected = (org: OrganizationWithInstallation | null) => {
     setSelectedOrganization(org);
   };
 
+  // Keep local organizations state in sync with server-provided list
+  useEffect(() => {
+    setOrgsState(organizations || []);
+  }, [organizations]);
+
   // Auto-select first available organization (prefer one with the app installed)
   useEffect(() => {
-    if (!selectedOrganization && organizations && organizations.length > 0) {
-      const preferred = organizations.find((o) => (o as any).hasAppInstalled) || organizations[0];
+    if (!selectedOrganization && orgsState && orgsState.length > 0) {
+      const preferred = orgsState.find((o) => (o as any).hasAppInstalled) || orgsState[0];
       setSelectedOrganization(preferred);
     }
-  }, [organizations, selectedOrganization]);
+  }, [orgsState, selectedOrganization]);
 
   return (
     <Tabs defaultValue="github" className="px-4 lg:px-6">
@@ -69,9 +75,10 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
           {/* Column 2: Organization Management & Repositories (takes 2/3 on lg screens) */}
           <div className="lg:col-span-2 space-y-6">
             <GitHubOrganizationManager
-              initialOrganizations={organizations}
+              organizations={orgsState}
               selectedOrganization={selectedOrganization}
               onOrganizationSelected={handleOrganizationSelected}
+              onOrganizationsUpdated={setOrgsState}
             />
 
             {selectedOrganization && selectedOrganization.hasAppInstalled && (
@@ -130,14 +137,14 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
       
       <TabsContent value="ai">
         <AiSettingsTab 
-          organizations={organizations}
+          organizations={orgsState}
           selectedOrganization={selectedOrganization}
         />
       </TabsContent>
       
       <TabsContent value="categories">
         <OrganizationSettingsTab 
-          organizations={organizations}
+          organizations={orgsState}
           selectedOrganization={selectedOrganization}
         />
       </TabsContent>

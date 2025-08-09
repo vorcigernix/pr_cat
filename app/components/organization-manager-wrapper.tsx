@@ -33,9 +33,10 @@ export default async function OrganizationManagerWrapper({
   return (
     <Suspense fallback={<OrganizationManagerSkeleton />}>
       <GitHubOrganizationManager
-        initialOrganizations={organizations}
+        organizations={organizations}
         onOrganizationSelected={onOrganizationSelected}
         selectedOrganization={selectedOrganization}
+        onOrganizationsUpdated={() => {}}
       />
     </Suspense>
   );
