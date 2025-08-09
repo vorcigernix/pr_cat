@@ -222,12 +222,12 @@ export function GitHubOrganizationRepositories({
       </CardHeader>
       <CardContent>
         {repositories.length > 0 && repositories.some(repo => !accessibleRepos.has(repo.full_name)) && (
-          <div className="text-sm bg-amber-50 p-3 rounded-md mb-4 border border-amber-200">
+          <div className="text-sm bg-amber-50 dark:bg-amber-950/30 p-3 rounded-md mb-4 border border-amber-200 dark:border-amber-800 text-foreground">
             <div className="flex items-center mb-1">
-              <IconAlertTriangle className="h-4 w-4 text-amber-500 mr-2" /> 
-              <span className="font-medium">Some repositories are not accessible</span>
+              <IconAlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mr-2" /> 
+              <span className="font-medium text-amber-900 dark:text-amber-100">Some repositories are not accessible</span>
             </div>
-            <p>You've approved PR Cat for only selected repositories. Repositories marked "No Access" need additional permissions.</p>
+            <p className="text-foreground">You've approved PR Cat for only selected repositories. Repositories marked "No Access" need additional permissions.</p>
             <a 
               href={`https://github.com/apps/pr-cat/installations/new/permissions?target_id=${organizationId}`}
               target="_blank" 

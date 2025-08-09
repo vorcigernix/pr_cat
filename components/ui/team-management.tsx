@@ -79,6 +79,7 @@ const getRoleColor = (role: string) => {
 export function TeamManagement({ organizationId }: TeamManagementProps) {
   const [teams, setTeams] = useState<TeamWithMembers[]>([]);
   const [orgMembers, setOrgMembers] = useState<User[]>([]);
+  const [memberSearch, setMemberSearch] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<TeamWithMembers | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -131,7 +132,8 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
   // Fetch organization members
   const fetchOrgMembers = async () => {
     try {
-      const response = await fetch(`/api/organizations/${organizationId}/members`);
+      const qs = memberSearch ? `?search=${encodeURIComponent(memberSearch)}` : '';
+      const response = await fetch(`/api/organizations/${organizationId}/members${qs}`);
       if (response.ok) {
         const data = await response.json();
         setOrgMembers(Array.isArray(data) ? data : []);
@@ -149,6 +151,13 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
     };
     loadData();
   }, [organizationId]);
+
+  // When opening add-member dialog, refresh member list (and support search)
+  useEffect(() => {
+    if (showAddMemberDialog) {
+      fetchOrgMembers();
+    }
+  }, [showAddMemberDialog, memberSearch]);
 
   // Create team
   const handleCreateTeam = async (e: React.FormEvent) => {
@@ -589,6 +598,12 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
           <form onSubmit={handleAddMember} className="space-y-4">
             <div>
               <Label htmlFor="select-user">Select User</Label>
+              <Input
+                placeholder="Search by name or email"
+                className="mb-2"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+              />
               <Select value={addMemberForm.user_id} onValueChange={(value) => setAddMemberForm({ ...addMemberForm, user_id: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a team member" />

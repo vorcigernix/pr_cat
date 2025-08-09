@@ -161,20 +161,44 @@ export async function removeTeamMember(teamId: number, userId: string): Promise<
 }
 
 export async function getTeamMembers(teamId: number): Promise<(TeamMember & { user: User })[]> {
-  return query<TeamMember & { user: User }>(`
+  const rows = await query<any>(`
     SELECT 
-      tm.*,
-      u.id as user_id,
-      u.name as user_name,
-      u.email as user_email,
-      u.image as user_image,
-      u.created_at as user_created_at,
-      u.updated_at as user_updated_at
+      tm.id as tm_id,
+      tm.team_id as tm_team_id,
+      tm.user_id as tm_user_id,
+      tm.role as tm_role,
+      tm.joined_at as tm_joined_at,
+      tm.created_at as tm_created_at,
+      tm.updated_at as tm_updated_at,
+      u.id as u_id,
+      u.name as u_name,
+      u.email as u_email,
+      u.image as u_image,
+      u.created_at as u_created_at,
+      u.updated_at as u_updated_at
     FROM team_members tm
     JOIN users u ON tm.user_id = u.id
     WHERE tm.team_id = ?
     ORDER BY u.name
   `, [teamId]);
+
+  return rows.map((row: any) => ({
+    id: row.tm_id,
+    team_id: row.tm_team_id,
+    user_id: row.tm_user_id,
+    role: row.tm_role,
+    joined_at: row.tm_joined_at,
+    created_at: row.tm_created_at,
+    updated_at: row.tm_updated_at,
+    user: {
+      id: row.u_id,
+      name: row.u_name,
+      email: row.u_email,
+      image: row.u_image,
+      created_at: row.u_created_at,
+      updated_at: row.u_updated_at,
+    },
+  }));
 }
 
 // Advanced queries
