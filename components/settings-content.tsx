@@ -16,6 +16,7 @@ import { AiSettingsTab } from "@/components/ui/ai-settings-tab";
 import { GitHubOrganizationManager } from "@/components/ui/github-organization-manager";
 import { TeamManagement } from "@/components/ui/team-management";
 import type { OrganizationWithInstallation } from "@/components/ui/github-org-setup-item";
+import type { User } from "@/lib/types";
 
 interface SettingsContentProps {
   organizationsPromise: Promise<OrganizationWithInstallation[]>;
@@ -27,6 +28,7 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
   
   const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithInstallation | null>(null);
   const [orgsState, setOrgsState] = useState<OrganizationWithInstallation[]>(organizations || []);
+  const [organizationMembers, setOrganizationMembers] = useState<User[]>([]);
 
   const handleOrganizationSelected = (org: OrganizationWithInstallation | null) => {
     setSelectedOrganization(org);
@@ -44,6 +46,34 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
       setSelectedOrganization(preferred);
     }
   }, [orgsState, selectedOrganization]);
+
+  // Load members when organization selection changes
+  useEffect(() => {
+    async function loadMembers() {
+      if (!selectedOrganization?.id) {
+        setOrganizationMembers([]);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/organizations/${selectedOrganization.id}/members`);
+        if (!res.ok) return setOrganizationMembers([]);
+        const data: User[] = await res.json();
+        setOrganizationMembers(Array.isArray(data) ? data : []);
+      } catch {
+        setOrganizationMembers([]);
+      }
+    }
+    loadMembers();
+  }, [selectedOrganization?.id]);
+
+  const refreshMembers = async (search?: string) => {
+    if (!selectedOrganization?.id) return;
+    const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+    const res = await fetch(`/api/organizations/${selectedOrganization.id}/members${qs}`);
+    if (!res.ok) return;
+    const data: User[] = await res.json();
+    setOrganizationMembers(Array.isArray(data) ? data : []);
+  };
 
   return (
     <Tabs defaultValue="github" className="px-4 lg:px-6">
@@ -120,7 +150,11 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
       
       <TabsContent value="teams" className="py-4">
         {selectedOrganization ? (
-          <TeamManagement organizationId={selectedOrganization.id} />
+          <TeamManagement 
+            organizationId={selectedOrganization.id}
+            organizationMembers={organizationMembers}
+            onRefreshMembers={refreshMembers}
+          />
         ) : (
           <Card>
             <CardHeader>

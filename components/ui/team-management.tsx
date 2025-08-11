@@ -44,6 +44,8 @@ import { toast } from 'sonner';
 
 interface TeamManagementProps {
   organizationId: number; // Database ID of the organization, not GitHub ID
+  organizationMembers?: User[];
+  onRefreshMembers?: (search?: string) => Promise<void> | void;
 }
 
 interface CreateTeamFormData {
@@ -76,9 +78,9 @@ const getRoleColor = (role: string) => {
   }
 };
 
-export function TeamManagement({ organizationId }: TeamManagementProps) {
+export function TeamManagement({ organizationId, organizationMembers, onRefreshMembers }: TeamManagementProps) {
   const [teams, setTeams] = useState<TeamWithMembers[]>([]);
-  const [orgMembers, setOrgMembers] = useState<User[]>([]);
+  const [orgMembers, setOrgMembers] = useState<User[]>(organizationMembers || []);
   const [memberSearch, setMemberSearch] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<TeamWithMembers | null>(null);
@@ -129,8 +131,19 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
     }
   };
 
+  // Keep local member list in sync if parent provides it
+  useEffect(() => {
+    if (organizationMembers) {
+      setOrgMembers(organizationMembers);
+    }
+  }, [organizationMembers]);
+
   // Fetch organization members
   const fetchOrgMembers = async () => {
+    if (organizationMembers && organizationMembers.length > 0) {
+      setOrgMembers(organizationMembers);
+      return;
+    }
     try {
       const qs = memberSearch ? `?search=${encodeURIComponent(memberSearch)}` : '';
       const response = await fetch(`/api/organizations/${organizationId}/members${qs}`);
@@ -155,7 +168,13 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
   // When opening add-member dialog, refresh member list (and support search)
   useEffect(() => {
     if (showAddMemberDialog) {
-      fetchOrgMembers();
+      if (onRefreshMembers) {
+        Promise.resolve(onRefreshMembers(memberSearch)).then(() => {
+          // parent will update organizationMembers prop; sync will pick it up via effect
+        });
+      } else {
+        fetchOrgMembers();
+      }
     }
   }, [showAddMemberDialog, memberSearch]);
 
