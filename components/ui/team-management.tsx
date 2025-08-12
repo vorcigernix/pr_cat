@@ -19,7 +19,9 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger 
+  DialogTrigger, 
+  DialogDescription,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { 
   Select, 
@@ -440,7 +442,7 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map((team) => (
-            <Card key={team.id} className="relative">
+            <Card key={team.id} className="relative hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -484,67 +486,74 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      {(team.member_count ?? (team.members?.length ?? 0))} {(team.member_count ?? (team.members?.length ?? 0)) === 1 ? 'member' : 'members'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">
+                        {(team.member_count ?? (team.members?.length ?? 0))} {(team.member_count ?? (team.members?.length ?? 0)) === 1 ? 'member' : 'members'}
+                      </span>
+                    </div>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => openAddMemberDialog(team)}
                     >
                       <UserPlus className="h-4 w-4 mr-1" />
-                      Add
+                      Manage
                     </Button>
                   </div>
                   
-                  {(team.members?.length ?? 0) > 0 && (
+                  {(team.members?.length ?? 0) > 0 ? (
                     <div className="space-y-2">
-                      {(team.members ?? []).slice(0, 3).map((member) => (
-                        <div key={member.user_id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Members</span>
+                        <div className="flex gap-1">
+                          {(team.members ?? []).slice(0, 5).map((member) => (
+                            <Avatar key={member.user_id} className="h-6 w-6 border-2 border-background">
                               <AvatarImage src={member.user?.image || undefined} />
                               <AvatarFallback className="text-xs">
-                                {member.user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                                {member.user?.name?.substring(0, 2).toUpperCase() || member.user?.email?.substring(0, 2).toUpperCase() || 'U'}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-sm font-medium">
-                              {member.user?.name || member.user?.email}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
+                          ))}
+                          {(team.members?.length ?? 0) > 5 && (
+                            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
+                              <span className="text-xs font-medium">+{(team.members?.length ?? 0) - 5}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        {(team.members ?? []).slice(0, 3).map((member) => (
+                          <div key={member.user_id} className="flex items-center justify-between py-1">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={member.user?.image || undefined} />
+                                <AvatarFallback className="text-xs">
+                                  {member.user?.name?.substring(0, 2).toUpperCase() || member.user?.email?.substring(0, 2).toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs font-medium truncate max-w-24">
+                                {member.user?.name || member.user?.email || 'Unknown'}
+                              </span>
+                            </div>
                             <Badge variant="secondary" className={`text-xs ${getRoleColor(member.role)}`}>
                               {member.role}
                             </Badge>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <UserMinus className="h-3 w-3" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to remove {member.user?.name || member.user?.email} from "{team.name}"?
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleRemoveMember(team.id, member.user_id)}>
-                                    Remove
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
                           </div>
-                        </div>
-                      ))}
-                      {(team.members?.length ?? 0) > 3 && (
-                        <p className="text-xs text-muted-foreground">
-                          +{(team.members?.length ?? 0) - 3} more members
-                        </p>
-                      )}
+                        ))}
+                        {(team.members?.length ?? 0) > 3 && (
+                          <p className="text-xs text-muted-foreground text-center pt-1">
+                            +{(team.members?.length ?? 0) - 3} more members
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No members yet</p>
+                      <p className="text-xs">Click "Manage" to add team members</p>
                     </div>
                   )}
                 </div>
@@ -610,58 +619,182 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
 
       {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Add Team Member</DialogTitle>
+            <DialogTitle>Manage Team Members</DialogTitle>
+            <DialogDescription>
+              Add new members to "{selectedTeam?.name}" or manage existing ones
+            </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleAddMember} className="space-y-4">
+          
+          <div className="space-y-6">
+            {/* Search and Filter Section */}
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <Label htmlFor="member-search">Search Members</Label>
+                <Input
+                  id="member-search"
+                  placeholder="Search by name, email, or role..."
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="w-48">
+                <Label htmlFor="role-filter">Filter by Role</Label>
+                <Select 
+                  value={memberSearch} 
+                  onValueChange={(value) => setMemberSearch(value)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="All roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="lead">Lead</SelectItem>
+                    <SelectItem value="member">Member</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Available Members Section */}
             <div>
-              <Label htmlFor="select-user">Select User</Label>
-              <Input
-                placeholder="Search by name or email"
-                className="mb-2"
-                value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
-              />
-              <Select value={addMemberForm.user_id} onValueChange={(value) => setAddMemberForm({ ...addMemberForm, user_id: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a team member" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedTeam && getAvailableMembers(selectedTeam).map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name || user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">Available Organization Members</h4>
+                <Badge variant="secondary">
+                  {selectedTeam ? getAvailableMembers(selectedTeam).length : 0} available
+                </Badge>
+              </div>
+              
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                {!selectedTeam || getAvailableMembers(selectedTeam).length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    <Users className="h-8 w-8 mx-auto mb-2" />
+                    <p>No available members to add</p>
+                    <p className="text-sm">All organization members are already part of this team</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {getAvailableMembers(selectedTeam)
+                      .filter(user => 
+                        !memberSearch || 
+                        user.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        user.email?.toLowerCase().includes(memberSearch.toLowerCase())
+                      )
+                      .map((user) => (
+                        <div key={user.id} className="p-3 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={user.image || undefined} />
+                                <AvatarFallback className="text-sm">
+                                  {user.name?.substring(0, 2).toUpperCase() || user.email?.substring(0, 2).toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{user.name || 'No name'}</p>
+                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Select 
+                                value={addMemberForm.role} 
+                                onValueChange={(value: 'member' | 'lead' | 'admin') => setAddMemberForm({ ...addMemberForm, role: value })}
+                              >
+                                <SelectTrigger className="w-24">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="member">Member</SelectItem>
+                                  <SelectItem value="lead">Lead</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button 
+                                size="sm"
+                                onClick={() => {
+                                  setAddMemberForm({ ...addMemberForm, user_id: user.id });
+                                  handleAddMember({ preventDefault: () => {} } as React.FormEvent);
+                                }}
+                              >
+                                <UserPlus className="h-4 w-4 mr-1" />
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <Label htmlFor="select-role">Role</Label>
-              <Select value={addMemberForm.role} onValueChange={(value: 'member' | 'lead' | 'admin') => setAddMemberForm({ ...addMemberForm, role: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="lead">Lead</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1" disabled={!addMemberForm.user_id}>
-                Add Member
-              </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setShowAddMemberDialog(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
+
+            {/* Current Team Members Section */}
+            {selectedTeam && (selectedTeam.members?.length ?? 0) > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium">Current Team Members</h4>
+                  <Badge variant="secondary">
+                    {(selectedTeam.members?.length ?? 0)} members
+                  </Badge>
+                </div>
+                
+                <div className="border rounded-lg max-h-64 overflow-y-auto">
+                  <div className="divide-y">
+                    {(selectedTeam.members ?? [])
+                      .filter(member => 
+                        !memberSearch || 
+                        member.user?.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        member.user?.email?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        member.role.toLowerCase().includes(memberSearch.toLowerCase())
+                      )
+                      .map((member) => (
+                        <div key={member.user_id} className="p-3 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={member.user?.image || undefined} />
+                                <AvatarFallback className="text-sm">
+                                  {member.user?.name?.substring(0, 2).toUpperCase() || member.user?.email?.substring(0, 2).toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{member.user?.name || 'No name'}</p>
+                                <p className="text-sm text-muted-foreground">{member.user?.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className={getRoleColor(member.role)}>
+                                {member.role}
+                              </Badge>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleRemoveMember(selectedTeam.id, member.user_id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <UserMinus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddMemberDialog(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
