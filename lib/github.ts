@@ -108,6 +108,16 @@ export class GitHubClient {
       return data as GitHubRepository[];
     });
   }
+
+  async getOrganizationMembers(org: string): Promise<GitHubUser[]> {
+    return this.executeWithTokenRefresh(async () => {
+      const { data } = await this.octokit.orgs.listMembers({
+        org,
+        per_page: 100
+      });
+      return data as GitHubUser[];
+    });
+  }
   
   async getUserRepositories(): Promise<GitHubRepository[]> {
     return this.executeWithTokenRefresh(async () => {

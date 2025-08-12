@@ -12,7 +12,8 @@ import {
   findRepositoryById,
   findRepositoryByGitHubId,
   addUserToOrganization,
-  findOrCreateUserByGitHubId
+  findOrCreateUserByGitHubId,
+  findOrganizationById
 } from '@/lib/repositories';
 import { GitHubRepository, GitHubPullRequest, GitHubOrganization, GitHubUser, PRReview, Repository } from '@/lib/types';
 import { createInstallationClient } from "@/lib/github-app";
@@ -53,6 +54,9 @@ export class GitHubService {
         // Fetch and sync repositories for this organization 
         await this.syncOrganizationRepositories(org.login);
         
+        // Fetch and sync members for this organization
+        await this.syncOrganizationMembers(org.login, dbOrg.id);
+        
         return dbOrg;
       })
     );
@@ -88,6 +92,52 @@ export class GitHubService {
     );
     
     return githubRepos;
+  }
+
+  async syncOrganizationMembers(organizationName: string, organizationId?: number): Promise<void> {
+    try {
+      // Fetch organization members from GitHub
+      const members = await this.client.getOrganizationMembers(organizationName);
+      console.log(`Found ${members.length} members in organization ${organizationName}`);
+      
+      // Find organization in database by name if ID not provided
+      let org;
+      if (organizationId) {
+        org = await findOrganizationById(organizationId);
+      } else {
+        org = await findOrCreateOrganization({
+          github_id: 0, // We'll need to get this from somewhere else
+          name: organizationName,
+          avatar_url: '',
+        });
+      }
+      
+      if (!org) {
+        console.error(`Organization ${organizationName} not found in database`);
+        return;
+      }
+      
+      // Store members in the database
+      await Promise.all(
+        members.map(async (member: any) => {
+          // Ensure user exists in our database
+          const dbUser = await findOrCreateUserByGitHubId({
+            id: member.id.toString(),
+            login: member.login,
+            avatar_url: member.avatar_url,
+            name: member.name || member.login
+          });
+          
+          // Link user to organization if not already linked
+          await addUserToOrganization(dbUser.id, org.id, 'member');
+        })
+      );
+      
+      console.log(`Successfully synced ${members.length} members for organization ${organizationName}`);
+    } catch (error) {
+      console.error(`Error syncing members for organization ${organizationName}:`, error);
+      // Don't throw - this is not critical for the main sync
+    }
   }
   
   async syncRepositoryPullRequests(owner: string, repo: string, repositoryId: number): Promise<GitHubPullRequest[]> {
