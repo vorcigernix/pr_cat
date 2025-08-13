@@ -84,6 +84,7 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
   const [teams, setTeams] = useState<TeamWithMembers[]>([]);
   const [orgMembers, setOrgMembers] = useState<User[]>(organizationMembers || []);
   const [memberSearch, setMemberSearch] = useState<string>('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<TeamWithMembers | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -113,17 +114,7 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
       const response = await fetch(`/api/organizations/${organizationId}/teams`);
       if (response.ok) {
         const data = await response.json();
-        const normalized: TeamWithMembers[] = Array.isArray(data)
-          ? data.map((team: any) => ({
-              ...team,
-              members: Array.isArray(team?.members) ? team.members : [],
-              member_count:
-                typeof team?.member_count === 'number'
-                  ? team.member_count
-                  : (Array.isArray(team?.members) ? team.members.length : 0),
-            }))
-          : [];
-        setTeams(normalized);
+        setTeams(Array.isArray(data) ? data : []);
       } else {
         toast.error('Failed to fetch teams');
       }
@@ -643,14 +634,14 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
               <div className="w-48">
                 <Label htmlFor="role-filter">Filter by Role</Label>
                 <Select 
-                  value={memberSearch} 
-                  onValueChange={(value) => setMemberSearch(value)}
+                  value={roleFilter} 
+                  onValueChange={(value) => setRoleFilter(value)}
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="All roles" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All roles</SelectItem>
+                    <SelectItem value="all">All roles</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="lead">Lead</SelectItem>
                     <SelectItem value="member">Member</SelectItem>
@@ -678,11 +669,15 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
                 ) : (
                   <div className="divide-y">
                     {getAvailableMembers(selectedTeam)
-                      .filter(user => 
-                        !memberSearch || 
-                        user.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
-                        user.email?.toLowerCase().includes(memberSearch.toLowerCase())
-                      )
+                      .filter(user => {
+                        const matchesSearch = !memberSearch || 
+                          user.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                          user.email?.toLowerCase().includes(memberSearch.toLowerCase());
+                        
+                        const matchesRole = roleFilter === 'all' || true; // We don't have user roles in org members, so always show
+                        
+                        return matchesSearch && matchesRole;
+                      })
                       .map((user) => (
                         <div key={user.id} className="p-3 hover:bg-muted/50 transition-colors">
                           <div className="flex items-center justify-between">

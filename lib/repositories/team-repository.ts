@@ -26,6 +26,63 @@ export async function findTeamsByOrganization(organizationId: number): Promise<T
 }
 
 /**
+ * Finds all teams for an organization with member information
+ */
+export async function findTeamsByOrganizationWithMembers(organizationId: number): Promise<TeamWithMembers[]> {
+  const teams = await query<Team>(
+    'SELECT * FROM teams WHERE organization_id = ? ORDER BY name',
+    [organizationId]
+  );
+
+  if (teams.length === 0) {
+    return [];
+  }
+
+  // Get all team members for these teams in a single query
+  const teamIds = teams.map(t => t.id);
+  const placeholders = teamIds.map(() => '?').join(',');
+  
+  const members = await query<TeamMember & { name: string; email: string; image: string | null }>(
+    `SELECT 
+      tm.*,
+      u.name,
+      u.email,
+      u.image
+    FROM team_members tm
+    JOIN users u ON tm.user_id = u.id
+    WHERE tm.team_id IN (${placeholders})
+    ORDER BY tm.team_id, tm.joined_at`,
+    teamIds
+  );
+
+  // Group members by team
+  const membersByTeam = new Map<number, (TeamMember & { user: User })[]>();
+  members.forEach(member => {
+    if (!membersByTeam.has(member.team_id)) {
+      membersByTeam.set(member.team_id, []);
+    }
+    membersByTeam.get(member.team_id)!.push({
+      ...member,
+      user: {
+        id: member.user_id,
+        name: member.name,
+        email: member.email,
+        image: member.image,
+        created_at: '',
+        updated_at: ''
+      } as User
+    });
+  });
+
+  // Combine teams with their members
+  return teams.map(team => ({
+    ...team,
+    members: membersByTeam.get(team.id) || [],
+    member_count: membersByTeam.get(team.id)?.length || 0
+  }));
+}
+
+/**
  * Creates a new team in the database
  * @param team Team data without id, created_at, and updated_at fields
  * @returns The newly created team with generated ID and timestamps

@@ -6,19 +6,22 @@
  * API routes and repository functions.
  */
 
-import { 
-  findTeamById, 
-  findTeamsByOrganization, 
-  createTeam, 
-  updateTeam, 
+import {
+  findTeamById,
+  findTeamsByOrganization,
+  findTeamsByOrganizationWithMembers,
+  createTeam,
+  updateTeam,
   deleteTeam,
   addTeamMember,
+  updateTeamMember,
   removeTeamMember,
   getTeamWithMembers,
-  getOrganizationMembers
-} from '@/lib/repositories/team-repository';
-import { getOrganizationRole } from '@/lib/repositories/user-repository';
-import { Team, TeamMember } from '@/lib/types';
+  getTeamMembers,
+  findTeamMember,
+  getOrganizationRole,
+} from '@/lib/repositories';
+import { Team, TeamMember, TeamWithMembers } from '@/lib/types';
 
 /**
  * Data Transfer Objects for clean API interfaces
@@ -213,7 +216,7 @@ export class TeamService {
   /**
    * Gets teams for an organization with member count
    */
-  static async getOrganizationTeams(userId: string, organizationId: number): Promise<Team[]> {
+  static async getOrganizationTeams(userId: string, organizationId: number): Promise<TeamWithMembers[]> {
     // Authorization: User must be part of the organization
     const userRole = await getOrganizationRole(userId, organizationId);
     if (!userRole) {
@@ -224,7 +227,7 @@ export class TeamService {
       );
     }
 
-    return await findTeamsByOrganization(organizationId);
+    return await findTeamsByOrganizationWithMembers(organizationId);
   }
 
   /**

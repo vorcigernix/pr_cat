@@ -60,8 +60,9 @@ export {
 
 // Export team repository functions
 export {
-  findTeamById,
   findTeamsByOrganization,
+  findTeamsByOrganizationWithMembers,
+  findTeamById,
   createTeam,
   updateTeam,
   deleteTeam,
