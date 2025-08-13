@@ -243,25 +243,48 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
     }
   };
 
+  // Reset add member form
+  const resetAddMemberForm = () => {
+    setAddMemberForm({ user_id: '', role: 'member' });
+  };
+
   // Add team member
-  const handleAddMember = async (e: React.FormEvent) => {
+  const handleAddMember = async (e: React.FormEvent, formData?: AddMemberFormData) => {
     e.preventDefault();
     if (!selectedTeam) return;
+
+    // Use passed formData or fall back to state
+    const dataToSend = formData || addMemberForm;
+
+    // Debug: log what we're about to send
+    console.log('handleAddMember called with form data:', dataToSend);
+    console.log('Selected team:', selectedTeam);
 
     try {
       const response = await fetch(`/api/organizations/${organizationId}/teams/${selectedTeam.id}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(addMemberForm)
+        body: JSON.stringify(dataToSend)
       });
 
       if (response.ok) {
         toast.success('Member added successfully');
-        setShowAddMemberDialog(false);
-        setAddMemberForm({ user_id: '', role: 'member' });
+        // Don't close the dialog - allow adding multiple members
+        // setShowAddMemberDialog(false);
+        resetAddMemberForm();
         fetchTeams();
+        // Refresh the selected team data to show the new member
+        const updatedTeams = await fetch(`/api/organizations/${organizationId}/teams`);
+        if (updatedTeams.ok) {
+          const data = await updatedTeams.json();
+          const updatedTeam = data.find((t: TeamWithMembers) => t.id === selectedTeam.id);
+          if (updatedTeam) {
+            setSelectedTeam(updatedTeam);
+          }
+        }
       } else {
         const error = await response.json();
+        console.error('API error response:', error);
         toast.error(error.error || 'Failed to add member');
       }
     } catch (error) {
@@ -324,6 +347,8 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
 
   const openAddMemberDialog = (team: TeamWithMembers) => {
     setSelectedTeam(team);
+    // Reset the form to ensure proper initialization
+    setAddMemberForm({ user_id: '', role: 'member' });
     setShowAddMemberDialog(true);
   };
 
@@ -699,7 +724,7 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
                                 onValueChange={(value: 'member' | 'lead' | 'admin') => setAddMemberForm({ ...addMemberForm, role: value })}
                               >
                                 <SelectTrigger className="w-24">
-                                  <SelectValue />
+                                  <SelectValue placeholder="Select role" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="member">Member</SelectItem>
@@ -709,9 +734,27 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
                               </Select>
                               <Button 
                                 size="sm"
-                                onClick={() => {
-                                  setAddMemberForm({ ...addMemberForm, user_id: user.id });
-                                  handleAddMember({ preventDefault: () => {} } as React.FormEvent);
+                                onClick={async () => {
+                                  // Ensure we have the complete form data
+                                  const completeForm = {
+                                    user_id: user.id,
+                                    role: addMemberForm.role || 'member'
+                                  };
+                                  
+                                  // Debug: log what we're sending with actual values
+                                  console.log('Adding member with form data:', {
+                                    user_id: completeForm.user_id,
+                                    role: completeForm.role,
+                                    user_name: user.name,
+                                    user_email: user.email
+                                  });
+                                  
+                                  // Update the form state first
+                                  setAddMemberForm(completeForm);
+                                  
+                                  // Then submit with the complete data
+                                  const mockEvent = { preventDefault: () => {} } as React.FormEvent;
+                                  await handleAddMember(mockEvent, completeForm);
                                 }}
                               >
                                 <UserPlus className="h-4 w-4 mr-1" />
@@ -782,12 +825,18 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={resetAddMemberForm}
+            >
+              Reset Form
+            </Button>
             <Button 
               variant="outline" 
               onClick={() => setShowAddMemberDialog(false)}
             >
-              Close
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>
