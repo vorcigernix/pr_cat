@@ -260,6 +260,40 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
     console.log('handleAddMember called with form data:', dataToSend);
     console.log('Selected team:', selectedTeam);
 
+    // Optimistic update: immediately add the member to the UI
+    const newMember = {
+      id: Date.now(), // Temporary ID for optimistic update
+      team_id: selectedTeam.id,
+      user_id: dataToSend.user_id,
+      role: dataToSend.role,
+      joined_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user: orgMembers.find(u => u.id === dataToSend.user_id) || {
+        id: dataToSend.user_id,
+        name: 'Loading...',
+        email: 'Loading...',
+        image: null,
+        created_at: '',
+        updated_at: ''
+      }
+    };
+
+    // Update local state immediately
+    const updatedTeam = {
+      ...selectedTeam,
+      members: [...(selectedTeam.members || []), newMember],
+      member_count: (selectedTeam.member_count || 0) + 1
+    };
+    setSelectedTeam(updatedTeam);
+
+    // Update teams list optimistically
+    setTeams(prevTeams => 
+      prevTeams.map(team => 
+        team.id === selectedTeam.id ? updatedTeam : team
+      )
+    );
+
     try {
       const response = await fetch(`/api/organizations/${organizationId}/teams/${selectedTeam.id}/members`, {
         method: 'POST',
@@ -272,24 +306,50 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
         // Don't close the dialog - allow adding multiple members
         // setShowAddMemberDialog(false);
         resetAddMemberForm();
+        
+        // Refresh data in background to get the real server state
         fetchTeams();
-        // Refresh the selected team data to show the new member
+        
+        // Refresh the selected team data to show the new member with real data
         const updatedTeams = await fetch(`/api/organizations/${organizationId}/teams`);
         if (updatedTeams.ok) {
           const data = await updatedTeams.json();
-          const updatedTeam = data.find((t: TeamWithMembers) => t.id === selectedTeam.id);
-          if (updatedTeam) {
-            setSelectedTeam(updatedTeam);
+          const serverUpdatedTeam = data.find((t: TeamWithMembers) => t.id === selectedTeam.id);
+          if (serverUpdatedTeam) {
+            setSelectedTeam(serverUpdatedTeam);
+            setTeams(prevTeams => 
+              prevTeams.map(team => 
+                team.id === selectedTeam.id ? serverUpdatedTeam : team
+              )
+            );
           }
         }
       } else {
+        // Revert optimistic update on error
         const error = await response.json();
         console.error('API error response:', error);
         toast.error(error.error || 'Failed to add member');
+        
+        // Revert to previous state
+        setSelectedTeam(selectedTeam);
+        setTeams(prevTeams => 
+          prevTeams.map(team => 
+            team.id === selectedTeam.id ? selectedTeam : team
+          )
+        );
       }
     } catch (error) {
+      // Revert optimistic update on error
       console.error('Error adding member:', error);
       toast.error('Failed to add member');
+      
+      // Revert to previous state
+      setSelectedTeam(selectedTeam);
+      setTeams(prevTeams => 
+        prevTeams.map(team => 
+          team.id === selectedTeam.id ? selectedTeam : team
+        )
+      );
     }
   };
 
@@ -635,7 +695,7 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
 
       {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
+        <DialogContent className="max-w-6xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Manage Team Members</DialogTitle>
             <DialogDescription>
