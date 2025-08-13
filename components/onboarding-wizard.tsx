@@ -561,7 +561,7 @@ export function OnboardingWizard() {
                               />
                               <Label 
                                 htmlFor={`repo-${repo.id}`}
-                                className="flex-grow cursor-pointer"
+                                className="grow cursor-pointer"
                               >
                                 {repo.name}
                                 {repo.private && (

@@ -31,7 +31,7 @@ function PRHeroSection({ session }: PRHeroSectionProps) {
         lightLineColor: "#3a3a3a",
         darkLineColor: "#2a2a2a",
       }}
-      className="bg-gradient-to-b from-white to-gray-50 dark:from-black dark:to-zinc-900"
+      className="bg-linear-to-b from-white to-gray-50 dark:from-black dark:to-zinc-900"
     />
   )
 }

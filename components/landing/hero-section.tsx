@@ -62,9 +62,9 @@ export function HeroSection() {
       <div className="mx-auto -mt-16 max-w-7xl">
         <div className="mr-0 pl-8 lg:mr-0 lg:pl-16" style={{ perspective: '1200px' }}>
           <div style={{ transform: 'rotateX(20deg)' }}>
-            <div className="lg:h-[44rem] relative" style={{ transform: 'skewX(0.36rad)' }}>
+            <div className="lg:h-176 relative" style={{ transform: 'skewX(0.36rad)' }}>
               <Image
-                className="rounded-lg z-[2] relative border border-border/20"
+                className="rounded-lg z-2 relative border border-border/20"
                 src="/dashboard2.png"
                 alt="PR Cat Dashboard Screenshot"
                 width={2880}

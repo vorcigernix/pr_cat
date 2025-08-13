@@ -89,11 +89,11 @@ export function ActionableRecommendations() {
   const getImpactGradient = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'from-blue-100 via-blue-200/50 to-blue-50/30 dark:from-blue-950/60 dark:via-blue-800/10 dark:to-blue-900/5';
+        return 'from-purple-50 via-purple-100/30 to-purple-25/20 dark:from-purple-950/30 dark:via-purple-900/5 dark:to-purple-950/10';
       case 'medium':
-        return 'from-cyan-100 via-cyan-200/50 to-cyan-50/30 dark:from-cyan-950/60 dark:via-cyan-800/10 dark:to-cyan-900/5';
+        return 'from-purple-50 via-purple-100/30 to-purple-25/20 dark:from-purple-950/30 dark:via-purple-900/5 dark:to-purple-950/10';
       case 'low':
-        return 'from-green-100 via-green-200/50 to-green-50/30 dark:from-green-950/60 dark:via-green-800/10 dark:to-green-900/5';
+        return 'from-emerald-50 via-emerald-100/30 to-emerald-25/20 dark:from-emerald-950/30 dark:via-emerald-900/5 dark:to-emerald-950/10';
       default:
         return 'from-gray-100 to-gray-50/30 dark:from-gray-950/60 dark:to-gray-900/10';
     }
@@ -156,7 +156,7 @@ export function ActionableRecommendations() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-linear-to-br from-green-400 to-emerald-500 flex items-center justify-center">
               <IconCheck className="h-6 w-6 text-white" />
             </div>
             <h3 className="text-lg font-semibold mb-2">All Systems Running Well</h3>
@@ -225,11 +225,11 @@ export function ActionableRecommendations() {
               {groupedRecs.high.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-blue-200/60 dark:border-blue-800/30`}
+                  className={`bg-linear-to-tl ${getImpactGradient(rec.priority)} border-purple-200/40 dark:border-purple-800/20`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-blue-600 dark:text-blue-400">
+                      <div className="mt-0.5 text-purple-500 dark:text-purple-300">
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">
@@ -274,11 +274,11 @@ export function ActionableRecommendations() {
               {groupedRecs.medium.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-cyan-200/60 dark:border-cyan-800/30`}
+                  className={`bg-linear-to-tl ${getImpactGradient(rec.priority)} border-purple-200/40 dark:border-purple-800/20`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-cyan-600 dark:text-cyan-400">
+                      <div className="mt-0.5 text-purple-500 dark:text-purple-300">
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">
@@ -323,11 +323,11 @@ export function ActionableRecommendations() {
               {groupedRecs.low.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} border-green-200/60 dark:border-green-800/30`}
+                  className={`bg-linear-to-tl ${getImpactGradient(rec.priority)} border-emerald-200/40 dark:border-emerald-800/20`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-green-600 dark:text-green-400">
+                      <div className="mt-0.5 text-emerald-500 dark:text-emerald-300">
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">

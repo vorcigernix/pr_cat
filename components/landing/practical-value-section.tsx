@@ -40,7 +40,7 @@ export function PracticalValueSection() {
                 </div>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 p-6 rounded-xl">
+            <div className="bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 p-6 rounded-xl">
               <h4 className="font-semibold mb-3">Sprint Retrospective Template</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center py-1 border-b border-blue-200/20 dark:border-blue-800/20">

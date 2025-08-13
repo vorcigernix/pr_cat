@@ -75,11 +75,11 @@ export function RecommendationsInsights() {
   const getImpactBadge = (priority: string) => {
     switch (priority) {
       case "high":
-        return <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">High Impact Opportunity</Badge>;
+        return <Badge className="bg-rose-500 text-white hover:bg-rose-600">High Impact Opportunity</Badge>;
       case "medium":
-        return <Badge className="bg-blue-500 text-white hover:bg-blue-600">Quick Win Available</Badge>;
+        return <Badge className="bg-indigo-400 text-white hover:bg-indigo-500">Quick Win Available</Badge>;
       case "low":
-        return <Badge className="bg-green-500 text-white hover:bg-green-600">Minor Improvement</Badge>;
+        return <Badge className="bg-emerald-400 text-white hover:bg-emerald-500">Minor Improvement</Badge>;
       default:
         return <Badge variant="outline">{priority}</Badge>;
     }
@@ -88,13 +88,13 @@ export function RecommendationsInsights() {
   const getCategoryBadge = (category: string) => {
     switch (category) {
       case "performance":
-        return <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400">Performance</Badge>;
+        return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">Performance</Badge>;
       case "quality":
-        return <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Quality</Badge>;
+        return <Badge variant="outline" className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-400">Quality</Badge>;
       case "collaboration":
         return <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Collaboration</Badge>;
       case "process":
-        return <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-400">Process</Badge>;
+        return <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400">Process</Badge>;
       default:
         return <Badge variant="outline">{category}</Badge>;
     }
@@ -147,7 +147,7 @@ export function RecommendationsInsights() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-linear-to-br from-green-400 to-emerald-500 flex items-center justify-center">
               <IconCheck className="h-6 w-6 text-white" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Great Work!</h3>
@@ -164,7 +164,7 @@ export function RecommendationsInsights() {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <IconBulb size={24} className="text-yellow-500" />
+          <IconBulb size={24} className="text-amber-400" />
           <CardTitle>Improvement Quests</CardTitle>
         </div>
         <CardDescription>
@@ -177,18 +177,18 @@ export function RecommendationsInsights() {
             <Card 
               key={recommendation.id} 
               className={`border-l-4 ${
-                recommendation.priority === 'high' ? 'border-l-yellow-500' : recommendation.priority === 'medium' ? 'border-l-blue-500' : 'border-l-green-500'
+                recommendation.priority === 'high' ? 'border-l-rose-400' : recommendation.priority === 'medium' ? 'border-l-indigo-400' : 'border-l-emerald-400'
               }`}
             >
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     {recommendation.priority === 'high' ? (
-                      <IconAlertCircle size={18} className="text-yellow-500" />
+                      <IconAlertCircle size={18} className="text-rose-400" />
                     ) : recommendation.priority === 'medium' ? (
-                      <IconAlertCircle size={18} className="text-blue-500" />
+                      <IconAlertCircle size={18} className="text-indigo-400" />
                     ) : (
-                      <IconCheck size={18} className="text-green-500" />
+                      <IconCheck size={18} className="text-emerald-400" />
                     )}
                     <CardTitle className="text-base">
                       {recommendation.title}

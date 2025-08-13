@@ -1,6 +1,7 @@
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { PrcatLogo } from "@/components/ui/prcat-logo"
+import { ModeToggle } from "@/components/ui/mode-toggle"
 
 export function SiteHeader({ pageTitle }: { pageTitle?: string }) {
   return (
@@ -13,10 +14,13 @@ export function SiteHeader({ pageTitle }: { pageTitle?: string }) {
             className="mx-2 data-[orientation=vertical]:h-4"
           />
           {pageTitle ? (
-            <h1 className="text-2xl font-semibold">{pageTitle}</h1>
+            <h1 className="text-2xl font-semibold ml-4 py-2">{pageTitle}</h1>
           ) : (
             <PrcatLogo fontSize="text-base" iconSize="h-4 w-4" />
           )}
+        </div>
+        <div className="flex items-center gap-2">
+          <ModeToggle />
         </div>
       </div>
     </header>

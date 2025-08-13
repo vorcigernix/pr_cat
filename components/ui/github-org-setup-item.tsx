@@ -48,12 +48,12 @@ export function GitHubOrgSetupItem({
       onClick={handleItemClick}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3 flex-grow min-w-0">
+        <div className="flex items-center space-x-3 grow min-w-0">
           <Avatar className="h-10 w-10">
             <AvatarImage src={org.avatar_url || undefined} alt={org.name} />
             <AvatarFallback>{org.name.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <div className="flex-grow min-w-0">
+          <div className="grow min-w-0">
             <p className="font-medium text-lg truncate">{org.name}</p>
             {org.hasAppInstalled ? (
               <Badge variant="outline" className="text-green-600 border-green-600">
@@ -69,7 +69,7 @@ export function GitHubOrgSetupItem({
           </div>
         </div>
         
-        <div className="flex-shrink-0 ml-2">
+        <div className="shrink-0 ml-2">
             {!org.hasAppInstalled ? (
             <InstallGitHubApp 
                 size="sm" 

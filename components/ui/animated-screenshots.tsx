@@ -23,7 +23,7 @@ export function AnimatedScreenshots() {
       )}
     >
       {/* Main container with perspective */}
-      <div className="absolute inset-0 [perspective:1200px]">
+      <div className="absolute inset-0 perspective-distant">
         {/* The container that applies the rotation */}
         <div className="relative h-full w-full" style={{ transformStyle: "preserve-3d", transform: "rotateX(20deg)" }}>
           

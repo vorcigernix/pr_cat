@@ -176,7 +176,7 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
             value={timeRange}
             onValueChange={setTimeRange}
             variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
+            className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
           >
             <ToggleGroupItem value="7d">7 days</ToggleGroupItem>
             <ToggleGroupItem value="30d">30 days</ToggleGroupItem>

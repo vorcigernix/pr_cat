@@ -102,11 +102,11 @@ export function PRActivityTable() {
       case "new features":
       case "feature":
       case "enhancement":
-        return <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900">{area}</Badge>;
+        return <Badge variant="outline" className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900">{area}</Badge>;
       case "technical debt":
       case "tech debt":
       case "refactoring":
-        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900">{area}</Badge>;
+        return <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900">{area}</Badge>;
       case "product debt":
       case "ux improvement":
       case "ui":

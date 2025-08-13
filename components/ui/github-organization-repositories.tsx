@@ -250,7 +250,7 @@ export function GitHubOrganizationRepositories({
                 
                 return (
                 <div key={repo.id} className="flex items-center justify-between gap-3 p-3 rounded-md border hover:shadow-sm">
-                <div className="flex items-center gap-3 flex-grow min-w-0">
+                <div className="flex items-center gap-3 grow min-w-0">
                       <IconBrandGithub className="h-5 w-5" />
                       <div className="truncate">
                         <span className="font-medium">{repo.name}</span>
