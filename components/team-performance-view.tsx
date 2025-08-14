@@ -95,13 +95,19 @@ export function TeamPerformanceView() {
     }
   }, [selectedOrgId]);
 
-  // Fetch team details and metrics when team changes
+  // Fetch team details when team changes
   React.useEffect(() => {
     if (selectedTeamId) {
       fetchTeamDetails();
-      fetchTeamMetrics();
     }
   }, [selectedTeamId]);
+
+  // Fetch metrics when team details are loaded
+  React.useEffect(() => {
+    if (selectedTeam && selectedTeam.members) {
+      fetchTeamMetrics();
+    }
+  }, [selectedTeam]);
 
   const fetchOrganizations = async () => {
     try {
@@ -593,7 +599,7 @@ export function TeamPerformanceView() {
                   No performance data available for this team yet. Team members need to create pull requests 
                   and reviews to generate performance metrics.
                 </p>
-              </div>
+                </div>
             </div>
           </CardContent>
         </Card>
