@@ -579,7 +579,7 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
                   </div>
                   
                   {(team.members?.length ?? 0) > 0 ? (
-                    <div className="space-y-2">
+                    <div className="divide-y divide-border/50">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Members</span>
                         <div className="flex gap-1">
@@ -695,35 +695,25 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
 
       {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
-        <DialogContent className="max-w-6xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Manage Team Members</DialogTitle>
-            <DialogDescription>
-              Add new members to "{selectedTeam?.name}" or manage existing ones
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Search and Filter Section */}
+        <DialogContent className="min-w-[50vw] max-w-[90vw] w-[80vw] h-[90vh] p-0 flex flex-col overflow-hidden">
+          {/* Search Section */}
+          <div className="p-4 border-b shrink-0">
             <div className="flex gap-4 items-end">
               <div className="flex-1">
-                <Label htmlFor="member-search">Search Members</Label>
+                <Label htmlFor="member-search" className="text-sm font-medium">Search & Filter</Label>
                 <Input
                   id="member-search"
                   placeholder="Search by name, email, or role..."
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
-                  className="mt-1"
+                  className="mt-2"
                 />
               </div>
-              <div className="w-48">
-                <Label htmlFor="role-filter">Filter by Role</Label>
-                <Select 
-                  value={roleFilter} 
-                  onValueChange={(value) => setRoleFilter(value)}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="All roles" />
+              <div className="w-40">
+                <Label htmlFor="role-filter" className="text-sm font-medium">Role</Label>
+                <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value)}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="All" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All roles</SelectItem>
@@ -734,57 +724,56 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
                 </Select>
               </div>
             </div>
+          </div>
 
-            {/* Available Members Section */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium">Available Organization Members</h4>
-                <Badge variant="secondary">
-                  {selectedTeam ? getAvailableMembers(selectedTeam).length : 0} available
+          {/* Two Column Lists */}
+          <div className="flex-1 min-h-0 p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden">
+            {/* Available Members */}
+            <div className="flex flex-col min-h-0">
+              <div className="flex items-center gap-2 mb-3">
+                <UserPlus className="h-5 w-5 text-green-600" />
+                <h4 className="text-base font-medium">Available Members</h4>
+                <Badge variant="outline" className="ml-auto">
+                  {selectedTeam ? getAvailableMembers(selectedTeam).length : 0}
                 </Badge>
               </div>
               
-              <div className="border rounded-lg max-h-64 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-auto">
                 {!selectedTeam || getAvailableMembers(selectedTeam).length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    <Users className="h-8 w-8 mx-auto mb-2" />
-                    <p>No available members to add</p>
-                    <p className="text-sm">All organization members are already part of this team</p>
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <Users className="h-12 w-12 mb-3" />
+                    <p className="font-medium">No available members</p>
+                    <p className="text-sm text-center">All members are already on this team</p>
                   </div>
                 ) : (
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/50">
                     {getAvailableMembers(selectedTeam)
                       .filter(user => {
                         const matchesSearch = !memberSearch || 
                           user.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
                           user.email?.toLowerCase().includes(memberSearch.toLowerCase());
-                        
-                        const matchesRole = roleFilter === 'all' || true; // We don't have user roles in org members, so always show
-                        
-                        return matchesSearch && matchesRole;
+                        return matchesSearch;
                       })
                       .map((user) => (
-                        <div key={user.id} className="p-3 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={user.image || undefined} />
-                                <AvatarFallback className="text-sm">
-                                  {user.name?.substring(0, 2).toUpperCase() || user.email?.substring(0, 2).toUpperCase() || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{user.name || 'No name'}</p>
-                                <p className="text-sm text-muted-foreground">{user.email}</p>
-                              </div>
+                        <div key={user.id} className="p-2 hover:bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={user.image || undefined} />
+                              <AvatarFallback>
+                                {user.name?.substring(0, 2).toUpperCase() || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate text-sm">{user.name || 'No name'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Select 
                                 value={addMemberForm.role} 
                                 onValueChange={(value: 'member' | 'lead' | 'admin') => setAddMemberForm({ ...addMemberForm, role: value })}
                               >
-                                <SelectTrigger className="w-24">
-                                  <SelectValue placeholder="Select role" />
+                                <SelectTrigger className="w-20 h-7 text-xs">
+                                  <SelectValue placeholder="Role" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="member">Member</SelectItem>
@@ -794,30 +783,18 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
                               </Select>
                               <Button 
                                 size="sm"
+                                className="h-7 px-2 bg-green-600 hover:bg-green-700 text-xs"
                                 onClick={async () => {
-                                  // Ensure we have the complete form data
                                   const completeForm = {
                                     user_id: user.id,
                                     role: addMemberForm.role || 'member'
                                   };
-                                  
-                                  // Debug: log what we're sending with actual values
-                                  console.log('Adding member with form data:', {
-                                    user_id: completeForm.user_id,
-                                    role: completeForm.role,
-                                    user_name: user.name,
-                                    user_email: user.email
-                                  });
-                                  
-                                  // Update the form state first
                                   setAddMemberForm(completeForm);
-                                  
-                                  // Then submit with the complete data
                                   const mockEvent = { preventDefault: () => {} } as React.FormEvent;
                                   await handleAddMember(mockEvent, completeForm);
                                 }}
                               >
-                                <UserPlus className="h-4 w-4 mr-1" />
+                                <UserPlus className="h-3 w-3 mr-1" />
                                 Add
                               </Button>
                             </div>
@@ -829,18 +806,25 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
               </div>
             </div>
 
-            {/* Current Team Members Section */}
-            {selectedTeam && (selectedTeam.members?.length ?? 0) > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium">Current Team Members</h4>
-                  <Badge variant="secondary">
-                    {(selectedTeam.members?.length ?? 0)} members
-                  </Badge>
-                </div>
-                
-                <div className="border rounded-lg max-h-64 overflow-y-auto">
-                  <div className="divide-y">
+            {/* Current Team Members */}
+            <div className="flex flex-col min-h-0">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="h-5 w-5 text-blue-600" />
+                <h4 className="text-base font-medium">Team Members</h4>
+                <Badge variant="outline" className="ml-auto">
+                  {selectedTeam?.members?.length ?? 0}
+                </Badge>
+              </div>
+              
+              <div className="flex-1 min-h-0 overflow-auto">
+                {!selectedTeam || (selectedTeam.members?.length ?? 0) === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <Users className="h-12 w-12 mb-3" />
+                    <p className="font-medium">No team members</p>
+                    <p className="text-sm text-center">Add members from the left</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border/50">
                     {(selectedTeam.members ?? [])
                       .filter(member => 
                         !memberSearch || 
@@ -849,56 +833,50 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
                         member.role.toLowerCase().includes(memberSearch.toLowerCase())
                       )
                       .map((member) => (
-                        <div key={member.user_id} className="p-3 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={member.user?.image || undefined} />
-                                <AvatarFallback className="text-sm">
-                                  {member.user?.name?.substring(0, 2).toUpperCase() || member.user?.email?.substring(0, 2).toUpperCase() || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{member.user?.name || 'No name'}</p>
-                                <p className="text-sm text-muted-foreground">{member.user?.email}</p>
-                              </div>
+                        <div key={member.user_id} className="p-2 hover:bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={member.user?.image || undefined} />
+                              <AvatarFallback>
+                                {member.user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate text-sm">{member.user?.name || 'No name'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{member.user?.email}</p>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className={getRoleColor(member.role)}>
+                              <Badge variant="secondary" className={`${getRoleColor(member.role)} text-xs`}>
                                 {member.role}
                               </Badge>
                               <Button 
-                                variant="ghost" 
+                                variant="outline" 
                                 size="sm"
+                                className="h-7 px-2 text-destructive hover:bg-destructive/10 border-destructive/20"
                                 onClick={() => handleRemoveMember(selectedTeam.id, member.user_id)}
-                                className="text-destructive hover:text-destructive"
                               >
-                                <UserMinus className="h-4 w-4" />
+                                <UserMinus className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
                         </div>
                       ))}
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
-          <DialogFooter className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={resetAddMemberForm}
-            >
-              Reset Form
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowAddMemberDialog(false)}
-            >
-              Done
-            </Button>
-          </DialogFooter>
+          {/* Footer */}
+          <div className="p-4 border-t flex justify-between items-center">
+            <div className="text-sm text-muted-foreground">
+              Managing: <span className="font-medium text-foreground">{selectedTeam?.name}</span>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={resetAddMemberForm}>Clear Search</Button>
+              <Button onClick={() => setShowAddMemberDialog(false)} className="bg-blue-600 hover:bg-blue-700">Close</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

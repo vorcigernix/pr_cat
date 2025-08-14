@@ -11,7 +11,6 @@ import {
   IconListDetails,
   IconSettings,
   IconUsers,
-  IconFolders,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -61,12 +60,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/dashboard/teams",
       icon: IconUsers,
       isActive: pathname === "/dashboard/teams"
-    },
-    {
-      title: "Repository Groups",
-      url: "/dashboard/repository-groups",
-      icon: IconFolders,
-      isActive: pathname === "/dashboard/repository-groups"
     },
   ]
 

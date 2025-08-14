@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { IconUsers, IconUser, IconCode, IconGitPullRequest, IconMessageCircle } from "@tabler/icons-react"
+import { IconUsers, IconUser, IconCode, IconGitPullRequest, IconMessageCircle, IconTrendingUp, IconTrendingDown, IconEye, IconClock } from "@tabler/icons-react"
 import {
   Card,
   CardContent,
@@ -48,32 +48,44 @@ type TeamMember = {
   };
 };
 
-type MemberMetrics = {
+type TeamMemberStats = {
   userId: string;
   name: string;
-  email: string;
-  image?: string;
   prsCreated: number;
   prsReviewed: number;
-  commentsGiven: number;
-  avgTimeToMerge: number;
-  codeChurn: number;
+  avgCycleTime: number;
+  avgPRSize: number;
+  reviewThoroughness: number;
+  contributionScore: number;
 };
+
+type TeamPerformanceMetrics = {
+  teamMembers: TeamMemberStats[];
+  totalContributors: number;
+  avgTeamCycleTime: number;
+  avgTeamPRSize: number;
+  collaborationIndex: number;
+  reviewCoverage: number;
+};
+
+
 
 export function TeamPerformanceView() {
   const [teams, setTeams] = React.useState<Team[]>([]);
   const [selectedTeamId, setSelectedTeamId] = React.useState<number | null>(null);
   const [selectedTeam, setSelectedTeam] = React.useState<Team | null>(null);
-  const [memberMetrics, setMemberMetrics] = React.useState<MemberMetrics[]>([]);
+  const [teamMetrics, setTeamMetrics] = React.useState<TeamPerformanceMetrics | null>(null);
   const [organizations, setOrganizations] = React.useState<any[]>([]);
   const [selectedOrgId, setSelectedOrgId] = React.useState<number | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [metricsLoading, setMetricsLoading] = React.useState(false);
+  const [repositories, setRepositories] = React.useState<any[]>([]);
 
-  // Fetch organizations on mount
+  // Fetch organizations and repositories on mount
   React.useEffect(() => {
     fetchOrganizations();
+    fetchRepositories();
   }, []);
 
   // Fetch teams when organization changes
@@ -156,6 +168,18 @@ export function TeamPerformanceView() {
     }
   };
 
+  const fetchRepositories = async () => {
+    try {
+      const response = await fetch('/api/repositories');
+      if (response.ok) {
+        const data = await response.json();
+        setRepositories(data.repositories || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch repositories:', error);
+    }
+  };
+
   const fetchTeamDetails = async () => {
     if (!selectedOrgId || !selectedTeamId) return;
     
@@ -172,28 +196,52 @@ export function TeamPerformanceView() {
   };
 
   const fetchTeamMetrics = async () => {
-    if (!selectedTeam || !selectedTeam.members) return;
+    if (!selectedTeam || !selectedTeam.members) {
+      setTeamMetrics(null);
+      return;
+    }
     
     try {
       setMetricsLoading(true);
+      setError(null);
       
-      // For now, we'll generate mock metrics for team members
-      // In a real implementation, this would fetch actual PR/commit data
-      const metrics: MemberMetrics[] = selectedTeam.members.map(member => ({
-        userId: member.user_id,
-        name: member.user?.name || 'Unknown',
-        email: member.user?.email || '',
-        image: member.user?.image || undefined,
-        prsCreated: Math.floor(Math.random() * 20) + 5,
-        prsReviewed: Math.floor(Math.random() * 30) + 10,
-        commentsGiven: Math.floor(Math.random() * 50) + 20,
-        avgTimeToMerge: Math.floor(Math.random() * 48) + 12,
-        codeChurn: Math.floor(Math.random() * 30) + 10,
-      }));
+      // Get team member user IDs
+      const teamMemberIds = selectedTeam.members.map(member => member.user_id);
       
-      setMemberMetrics(metrics);
+      // Fetch performance metrics for all repositories 
+      const response = await fetch('/api/metrics/team-performance');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch team metrics: ${response.status} ${response.statusText}`);
+      }
+      
+      const data: TeamPerformanceMetrics = await response.json();
+      
+      // Filter metrics to only include team members
+      const filteredTeamMembers = data.teamMembers.filter(member => 
+        teamMemberIds.includes(member.userId)
+      );
+      
+      // Calculate team-level metrics for this specific team
+      const teamMetricsData: TeamPerformanceMetrics = {
+        teamMembers: filteredTeamMembers,
+        totalContributors: filteredTeamMembers.length,
+        avgTeamCycleTime: filteredTeamMembers.length > 0 
+          ? filteredTeamMembers.reduce((sum, member) => sum + member.avgCycleTime, 0) / filteredTeamMembers.length
+          : 0,
+        avgTeamPRSize: filteredTeamMembers.length > 0
+          ? filteredTeamMembers.reduce((sum, member) => sum + member.avgPRSize, 0) / filteredTeamMembers.length  
+          : 0,
+        collaborationIndex: filteredTeamMembers.length > 0
+          ? filteredTeamMembers.reduce((sum, member) => sum + member.prsReviewed, 0) / filteredTeamMembers.reduce((sum, member) => sum + member.prsCreated, 0) || 0
+          : 0,
+        reviewCoverage: data.reviewCoverage // Use organization-wide review coverage for context
+      };
+      
+      setTeamMetrics(teamMetricsData);
     } catch (error) {
       console.error('Failed to fetch team metrics:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load team performance data');
     } finally {
       setMetricsLoading(false);
     }
@@ -290,7 +338,7 @@ export function TeamPerformanceView() {
                 Team Performance
               </CardTitle>
               <CardDescription>
-                View metrics and performance data for your teams
+                View performance metrics and contributions for your teams
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
@@ -339,8 +387,163 @@ export function TeamPerformanceView() {
         </CardHeader>
       </Card>
 
-      {/* Team Overview */}
-      {selectedTeam && (
+      {/* Team Performance Metrics */}
+      {selectedTeam && teamMetrics && (
+        <>
+          {/* Team Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Contributors</CardTitle>
+                <IconUser className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{teamMetrics.totalContributors}</div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedTeam.name} team members
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Cycle Time</CardTitle>
+                <IconClock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{Math.round(teamMetrics.avgTeamCycleTime * 10) / 10}h</div>
+                <p className="text-xs text-muted-foreground">From creation to merge</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Collaboration Index</CardTitle>
+                <IconEye className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{Math.round(teamMetrics.collaborationIndex * 10) / 10}</div>
+                <p className="text-xs text-muted-foreground">Reviews per PR</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Org Review Coverage</CardTitle>
+                <IconGitPullRequest className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{teamMetrics.reviewCoverage}%</div>
+                <p className="text-xs text-muted-foreground">Organization-wide</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Individual Contributors */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{selectedTeam.name} Contributors</CardTitle>
+              <CardDescription>
+                Performance metrics for {selectedTeam.name} team members based on their contributions across all repositories
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {metricsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : teamMetrics.teamMembers.length === 0 ? (
+                <div className="text-center py-8">
+                  <IconUsers className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
+                    No activity found for this team's members in the last 30 days.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {teamMetrics.teamMembers.map((member, index) => (
+                    <div key={member.userId} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={`https://avatars.githubusercontent.com/u/${member.userId}?v=4`} />
+                            <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{member.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Contribution Score: {member.contributionScore}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-6 text-sm">
+                        <div className="text-center">
+                          <p className="font-medium">{member.prsCreated}</p>
+                          <p className="text-xs text-muted-foreground">PRs Created</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className="font-medium">{member.prsReviewed}</p>
+                          <p className="text-xs text-muted-foreground">Reviews Given</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className="font-medium">{member.avgCycleTime}h</p>
+                          <p className="text-xs text-muted-foreground">Avg Cycle Time</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className="font-medium">{member.avgPRSize}</p>
+                          <p className="text-xs text-muted-foreground">Avg PR Size</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="flex items-center space-x-1">
+                            <p className="font-medium">{member.reviewThoroughness}%</p>
+                            {member.reviewThoroughness > 100 ? (
+                              <IconTrendingUp className="h-3 w-3 text-green-500" />
+                            ) : member.reviewThoroughness < 50 ? (
+                              <IconTrendingDown className="h-3 w-3 text-orange-500" />
+                            ) : null}
+                          </div>
+                          <p className="text-xs text-muted-foreground">Review Ratio</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Team Insights */}
+              {selectedTeam && teamMetrics.teamMembers.length > 0 && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-2">Team Insights</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-blue-700">
+                        <strong>Cross-Repository Performance:</strong> This team's metrics include contributions 
+                        across all repositories in your organization, providing a comprehensive view of team productivity.
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-blue-700">
+                        <strong>Team Collaboration:</strong> These metrics show how well team members collaborate 
+                        with each other and the broader organization through code reviews and contributions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Team Overview when no metrics available */}
+      {selectedTeam && !teamMetrics && !metricsLoading && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -364,7 +567,6 @@ export function TeamPerformanceView() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Team Members */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Team Members</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -386,154 +588,15 @@ export function TeamPerformanceView() {
                   </div>
                 ))}
               </div>
+              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-orange-800 text-sm">
+                  No performance data available for this team yet. Team members need to create pull requests 
+                  and reviews to generate performance metrics.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* Performance Metrics */}
-      {selectedTeam && memberMetrics.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Metrics</CardTitle>
-            <CardDescription>Individual contribution metrics for the last 30 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {metricsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">Member</th>
-                        <th className="text-center p-2">
-                          <div className="flex flex-col items-center">
-                            <IconGitPullRequest className="h-4 w-4 mb-1" />
-                            <span className="text-xs">PRs Created</span>
-                          </div>
-                        </th>
-                        <th className="text-center p-2">
-                          <div className="flex flex-col items-center">
-                            <IconCode className="h-4 w-4 mb-1" />
-                            <span className="text-xs">PRs Reviewed</span>
-                          </div>
-                        </th>
-                        <th className="text-center p-2">
-                          <div className="flex flex-col items-center">
-                            <IconMessageCircle className="h-4 w-4 mb-1" />
-                            <span className="text-xs">Comments</span>
-                          </div>
-                        </th>
-                        <th className="text-center p-2">
-                          <div className="flex flex-col items-center">
-                            <span className="text-xs">Avg Time to Merge</span>
-                          </div>
-                        </th>
-                        <th className="text-center p-2">
-                          <div className="flex flex-col items-center">
-                            <span className="text-xs">Code Churn</span>
-                          </div>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {memberMetrics.map(member => (
-                        <tr key={member.userId} className="border-b">
-                          <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={member.image} />
-                                <AvatarFallback>
-                                  {member.name.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-sm font-medium">{member.name}</p>
-                                <p className="text-xs text-muted-foreground">{member.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="text-center p-2">
-                            <Badge variant="outline">{member.prsCreated}</Badge>
-                          </td>
-                          <td className="text-center p-2">
-                            <Badge variant="outline">{member.prsReviewed}</Badge>
-                          </td>
-                          <td className="text-center p-2">
-                            <Badge variant="outline">{member.commentsGiven}</Badge>
-                          </td>
-                          <td className="text-center p-2">
-                            <span className="text-sm">{member.avgTimeToMerge}h</span>
-                          </td>
-                          <td className="text-center p-2">
-                            <span className="text-sm">{member.codeChurn}%</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Summary Stats */}
-      {selectedTeam && memberMetrics.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Total PRs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {memberMetrics.reduce((sum, m) => sum + m.prsCreated, 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">Created this month</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Reviews</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {memberMetrics.reduce((sum, m) => sum + m.prsReviewed, 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">Total reviews given</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Avg Merge Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(memberMetrics.reduce((sum, m) => sum + m.avgTimeToMerge, 0) / memberMetrics.length)}h
-              </div>
-              <p className="text-xs text-muted-foreground">Hours to merge</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Team Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {memberMetrics.reduce((sum, m) => sum + m.commentsGiven, 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">Total comments</p>
-            </CardContent>
-          </Card>
-        </div>
       )}
     </div>
   );
