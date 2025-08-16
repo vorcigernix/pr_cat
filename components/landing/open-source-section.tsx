@@ -8,23 +8,17 @@ const FEATURES = [
   {
     icon: IconCode,
     title: "Complete Transparency",
-    description: "See exactly how your data is processed. No hidden algorithms, no mysterious \"proprietary metrics.\" Every calculation is open for inspection.",
-    link: "https://github.com/vorcigernix/pr_cat",
-    linkText: "View the source code →"
+    description: "See exactly how your data is processed. No hidden algorithms, no mysterious \"proprietary metrics.\" Every calculation is open for inspection."
   },
   {
     icon: IconTrendingUp,
     title: "Your Data, Your Infrastructure",
-    description: "Deploy on your own servers. Your sensitive engineering data never leaves your environment. Full control, zero vendor dependency.",
-    link: "https://github.com/vorcigernix/pr_cat#deployment",
-    linkText: "Deployment guide →"
+    description: "Deploy on your own servers. Your sensitive engineering data never leaves your environment. Full control, zero vendor dependency."
   },
   {
     icon: IconUsers,
     title: "Built by Engineers",
-    description: "Features requested by real engineering teams. No corporate roadmap driven by sales targets. Just tools that actually help developers.",
-    link: "https://github.com/vorcigernix/pr_cat/discussions",
-    linkText: "Join the discussion →"
+    description: "Features requested by real engineering teams. No corporate roadmap driven by sales targets. Just tools that actually help developers."
   }
 ]
 
@@ -40,18 +34,15 @@ export function OpenSourceSection() {
         </div>
         
         <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto mb-16">
-          {FEATURES.map(({ icon: Icon, title, description, link, linkText }) => (
-            <div key={title} className="bg-background p-6 rounded-xl shadow-sm">
-              <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-                <Icon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          {FEATURES.map(({ icon: Icon, title, description }) => (
+            <div key={title} className="bg-muted/30 p-6 rounded-lg text-center">
+              <div className="flex justify-center mb-3">
+                <Icon className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-3">{title}</h3>
-              <p className="text-muted-foreground mb-4">
+              <h3 className="text-lg font-bold mb-1">{title}</h3>
+              <p className="text-sm text-muted-foreground">
                 {description}
               </p>
-              <Link href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
-                {linkText}
-              </Link>
             </div>
           ))}
         </div>

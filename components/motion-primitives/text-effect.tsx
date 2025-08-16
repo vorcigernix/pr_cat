@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 interface TextEffectProps {
   children: string
   per?: "word" | "char" | "line"
-  as?: keyof JSX.IntrinsicElements
+  as?: keyof React.JSX.IntrinsicElements
   variants?: Variants
   className?: string
   preset?: "fade-in-blur" | "slide-up" | "scale-in"

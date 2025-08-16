@@ -4,17 +4,15 @@ import { ArrowRight, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { IconBrandGithub } from "@tabler/icons-react"
+import { TextLoop } from '@/components/motion-primitives/text-loop'
+import { TextRoll } from '@/components/motion-primitives/text-roll'
+import { Tilt } from '@/components/motion-primitives/tilt'
+import { GlowEffect } from '@/components/motion-primitives/glow-effect'
 
 export function HeroSection() {
     return (
         <main className="overflow-hidden">
-            <div
-                aria-hidden
-                className="absolute inset-0 isolate hidden opacity-65 contain-strict lg:block">
-                <div className="w-140 h-320 -translate-y-87.5 absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)]" />
-                <div className="h-320 absolute left-0 top-0 w-60 -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.06)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)] [translate:5%_-50%]" />
-                <div className="h-320 -translate-y-87.5 absolute left-0 top-0 w-60 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]" />
-            </div>
+
             <section>
                 <div className="relative pt-24 md:pt-36">
                     <div className="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,#0b0b0b_75%)]"></div>
@@ -39,19 +37,41 @@ export function HeroSection() {
                             </Link>
 
                             <h1 className="mt-8 text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem] font-bold tracking-tight text-white">
-                                Engineering Analytics<br />
-                                You Can Actually Trust
+                                <TextRoll duration={0.6}>
+                                    Data &gt; Feelings
+                                </TextRoll>
                             </h1>
+                            <div className="mx-auto mt-6 max-w-2xl text-balance text-xl md:text-2xl text-[#e4e4e7]">
+                                <TextLoop 
+                                    className="inline-block" 
+                                    interval={4}
+                                    transition={{ duration: 0.5 }}
+                                    variants={{
+                                        initial: { opacity: 0, y: 20 },
+                                        animate: { opacity: 1, y: 0 },
+                                        exit: { opacity: 0, y: -20 }
+                                    }}
+                                >
+                                    <span>Team alignment &gt; Individual performance</span>
+                                    <span>Continuous improvement &gt; Managerial push</span>
+                                    <span>Transparency &gt; Politics</span>
+                                </TextLoop>
+                            </div>
                             <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-[#a1a1aa]">
-                                Self-hosted GitHub PR analytics for developers and their teams who want transparency, control, and insights that actually help everyone grow together.
+                                Self-hosted GitHub analytics that puts evidence-based decisions first, fostering team growth through transparency and continuous improvement.
                             </p>
 
                             <div className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
-                                <div className="bg-white/10 rounded-[calc(1.5rem+0.125rem)] border border-[#262626]/60 p-0.5">
+                                <div className="relative">
+                                    <GlowEffect
+                                        colors={['#8B5CF6', '#C959DD', '#A78BFA', '#D946EF']}
+                                        mode='static'
+                                        blur='medium'
+                                    />
                                     <Button
                                         asChild
                                         size="lg"
-                                        className="rounded-xl px-5 text-base bg-white text-black hover:bg-gray-100">
+                                        className="relative rounded-xl px-5 text-base bg-white/90 backdrop-blur-sm text-black hover:bg-white/95 shadow-lg border border-white/30">
                                         <Link href="https://github.com/vorcigernix/pr_cat" target="_blank" rel="noopener noreferrer">
                                             <IconBrandGithub className="mr-2 h-4 w-4" />
                                             <span className="text-nowrap">Start Building</span>
@@ -71,20 +91,28 @@ export function HeroSection() {
                         </div>
                     </div>
 
-                    <div className="relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
+                    <div className="relative -mr-56 mt-8 px-2 sm:mr-0 sm:mt-12 md:mt-20">
                         <div
                             aria-hidden
-                            className="bg-gradient-to-b to-[#0b0b0b] absolute inset-0 z-10 from-transparent from-35%"
+                            className="bg-gradient-to-b to-[#0b0b0b] absolute inset-0 z-10 from-transparent from-35% pointer-events-none"
                         />
-                        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-[#262626]/60 p-4 shadow-lg shadow-black/30 ring-1 ring-[#262626]/30 bg-[#0b0b0b]/80 backdrop-blur-sm">
-                            <Image
-                                className="bg-[#0b0b0b] aspect-[15/8] relative rounded-2xl"
-                                src="/dashboard2.png"
-                                alt="PR Cat Dashboard Screenshot"
-                                width="2700"
-                                height="1440"
-                                priority
-                            />
+                        <div className="relative mx-auto max-w-6xl">
+                            <Tilt 
+                                rotationFactor={8} 
+                                isRevese={false}
+                                className="w-full"
+                            >
+                                <div className="overflow-hidden rounded-2xl border border-[#262626]/60 p-4 shadow-lg shadow-black/30 ring-1 ring-[#262626]/30 bg-[#0b0b0b]/80 backdrop-blur-sm">
+                                    <Image
+                                        className="bg-[#0b0b0b] aspect-[15/8] relative rounded-2xl"
+                                        src="/dashboard2.png"
+                                        alt="PR Cat Dashboard Screenshot"
+                                        width="2700"
+                                        height="1440"
+                                        priority
+                                    />
+                                </div>
+                            </Tilt>
                         </div>
                     </div>
                 </div>

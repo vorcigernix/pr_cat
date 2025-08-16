@@ -8,7 +8,7 @@ interface AnimatedGroupProps {
   children: React.ReactNode
   variants?: any // Allow more flexible variant structure
   className?: string
-  as?: keyof JSX.IntrinsicElements
+  as?: keyof React.JSX.IntrinsicElements
   delay?: number
 }
 

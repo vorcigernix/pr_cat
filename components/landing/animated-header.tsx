@@ -32,7 +32,7 @@ export function AnimatedHeader() {
     <header className="fixed z-20 w-full px-2">
       <div className={cn(
         'mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12',
-        isScrolled && 'bg-[#0c0c0c]/95 max-w-4xl rounded-2xl border border-[#262626]/60 backdrop-blur-lg shadow-xl shadow-black/30 lg:px-5'
+        isScrolled && 'bg-[#0c0c0c]/50 max-w-4xl rounded-2xl border border-[#262626]/60 backdrop-blur-lg shadow-xl shadow-black/30 lg:px-5'
       )}>
         <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
           <Link href="/" className="flex items-center space-x-2">
