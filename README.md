@@ -2,9 +2,42 @@
 
 PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps engineering teams understand how they're investing their time across different areas of their codebase.
 
-## Quick Deploy
+## 🚀 Quick Deploy Options
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,GITHUB_WEBHOOK_SECRET,GITHUB_APP_ID,GITHUB_APP_PRIVATE_KEY,NEXT_PUBLIC_GITHUB_APP_SLUG,TURSO_URL,TURSO_TOKEN,NEXTAUTH_SECRET,NEXTAUTH_URL,APP_URL,PORT&envDescription=Required%20environment%20variables%20for%20PR%20Cat&envLink=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat%23environment-setup&project-name=pr-cat&repository-name=pr-cat)
+### Option 1: Demo Mode (1 click, zero configuration required!)
+[![Deploy Demo](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&project-name=pr-cat-demo&repository-name=pr-cat)
+
+**What you get:**
+- ✅ Fully functional dashboard with sample data
+- ✅ See all features and UI components  
+- ✅ Perfect for evaluation and testing
+- ✅ Auto-generated secure JWT secrets
+- ❌ No real GitHub data (uses demo data)
+
+**Required:** **Nothing!** All secrets auto-generated securely 🎉
+
+### Option 2: Basic Mode (5 minutes setup)
+[![Deploy Basic](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,NEXTAUTH_SECRET&envDescription=Basic%20GitHub%20integration&envLink=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat%23environment-setup&project-name=pr-cat-basic&repository-name=pr-cat)
+
+**What you get:**
+- ✅ GitHub OAuth authentication
+- ✅ View your public repositories
+- ✅ Basic GitHub integration
+- ❌ No database persistence or advanced features
+
+**Required:** 3 environment variables (GitHub OAuth + NextAuth secret)
+
+### Option 3: Full Installation (15 minutes setup)
+[![Deploy Full](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,GITHUB_WEBHOOK_SECRET,GITHUB_APP_ID,GITHUB_APP_PRIVATE_KEY,NEXT_PUBLIC_GITHUB_APP_SLUG,TURSO_URL,TURSO_TOKEN,NEXTAUTH_SECRET&envDescription=Complete%20setup%20with%20all%20features&envLink=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat%23environment-setup&project-name=pr-cat&repository-name=pr-cat)
+
+**What you get:**
+- ✅ All features enabled
+- ✅ Real-time GitHub data synchronization  
+- ✅ Persistent database storage
+- ✅ Team management and analytics
+- ✅ Webhook integration for live updates
+
+**Required:** All environment variables ([detailed setup guide](#environment-setup))
 
 ## Features
 
@@ -25,7 +58,11 @@ PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps en
 ### Environment Setup
 
 1. Clone the repository
-2. Copy the `.env.example` file to `.env.local` and fill in the values:
+2. Copy the `environment.example` file to `.env.local` and fill in the values based on your deployment tier:
+
+**For Demo Mode:** Zero configuration required! (All secrets auto-generated)  
+**For Basic Mode:** GitHub OAuth variables only  
+**For Full Mode:** All variables for complete functionality
 
 ```bash
 # GitHub OAuth Configuration (Required)

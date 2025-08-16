@@ -1,0 +1,79 @@
+# PR Cat Environment Variables Template
+# Copy this file to .env.local and fill in your values
+
+# ===========================================
+# AUTHENTICATION (Required)
+# ===========================================
+
+# Generate with: openssl rand -base64 32
+NEXTAUTH_SECRET=your-random-32-character-secret-here
+
+# For local development: http://localhost:3000
+# For production: https://your-domain.vercel.app
+NEXTAUTH_URL=http://localhost:3000
+APP_URL=http://localhost:3000
+
+# ===========================================
+# GITHUB OAUTH APP (Required)
+# ===========================================
+# Create at: https://github.com/settings/developers
+# Callback URL: ${NEXTAUTH_URL}/api/auth/callback/github
+
+GITHUB_CLIENT_ID=your_github_oauth_client_id
+GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+
+# ===========================================
+# GITHUB APP (Required for repository access)
+# ===========================================
+# Create at: https://github.com/settings/apps
+# See ENVIRONMENT_SETUP.md for detailed permissions
+
+GITHUB_APP_ID=your_github_app_id
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
+YOUR_PRIVATE_KEY_HERE
+-----END RSA PRIVATE KEY-----"
+NEXT_PUBLIC_GITHUB_APP_SLUG=your-github-app-slug
+
+# Optional but recommended for production
+GITHUB_WEBHOOK_SECRET=your_webhook_secret
+
+# ===========================================
+# DATABASE (Required)
+# ===========================================
+# Turso database - Sign up at: https://turso.tech
+# Quick setup:
+# 1. Install Turso CLI: curl -sSfL https://get.tur.so/install.sh | bash
+# 2. Create database: turso db create pr-cat
+# 3. Get URL: turso db show pr-cat --url
+# 4. Create token: turso db tokens create pr-cat
+
+TURSO_URL=libsql://your-database.turso.io
+TURSO_TOKEN=your_turso_auth_token
+
+# Optional: Connection pool size (default: 5)
+TURSO_POOL_SIZE=5
+
+# ===========================================
+# AI PROVIDERS (Optional)
+# ===========================================
+# Choose one provider or set AI_PROVIDER=none to disable AI features
+
+AI_PROVIDER=none
+# AI_PROVIDER=openai
+# OPENAI_API_KEY=your_openai_api_key
+
+# AI_PROVIDER=anthropic
+# ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# AI_PROVIDER=google
+# GOOGLE_API_KEY=your_google_api_key
+
+# ===========================================
+# APPLICATION (Optional)
+# ===========================================
+
+# Port for local development (default: 3000)
+PORT=3000
+
+# Environment (development | test | production)
+NODE_ENV=development

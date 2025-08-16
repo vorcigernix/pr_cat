@@ -3,10 +3,11 @@ import * as PRRepository from '@/lib/repositories/pr-repository';
 import * as UserRepository from '@/lib/repositories/user-repository';
 import { getUserWithOrganizations } from '@/lib/auth-context';
 import { query } from '@/lib/db';
+import { withDemoFallback } from '@/lib/demo-fallback';
 
 export const runtime = 'nodejs';
 
-export async function GET(request: NextRequest) {
+async function getRecentPRs(request: NextRequest) {
   try {
     // Use cached user context to avoid repeated queries
     const { user, primaryOrganization } = await getUserWithOrganizations(request);
@@ -133,4 +134,11 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching recent pull requests:', error);
     return NextResponse.json({ error: 'Failed to fetch pull requests' }, { status: 500 });
   }
-} 
+}
+
+// Export wrapped handler with demo fallback
+export const GET = withDemoFallback(getRecentPRs, {
+  demoDataUrl: '/api/pull-requests/demo',
+  requiresDatabase: true,
+  requiresAuth: true,
+}); 

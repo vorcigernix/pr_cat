@@ -12,6 +12,8 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { SetupStatusAlert } from "@/components/ui/setup-status-alert"
+import { DemoModeBanner } from "@/components/ui/demo-mode-banner"
+import { getDemoModeInfo } from "@/lib/demo-mode"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { auth } from "@/auth"
 import { ensureUserExists } from "@/lib/user-utils"
@@ -97,6 +99,8 @@ export default async function DashboardPage() {
   // Ensure user exists in database - this handles all user creation/update logic
   await ensureUserExists(session.user)
   
+  // Get demo mode info for banner
+  const demoInfo = getDemoModeInfo()
   const setupIncomplete = session.hasGithubApp === false
 
   return (
@@ -105,7 +109,13 @@ export default async function DashboardPage() {
       <SidebarInset>
         <SiteHeader pageTitle="Dashboard Overview" />
         
-        {setupIncomplete && (
+        {demoInfo.isDemoMode && (
+          <div className="px-4 pt-4 lg:px-6">
+            <DemoModeBanner missingServices={demoInfo.missingServices} />
+          </div>
+        )}
+        
+        {setupIncomplete && !demoInfo.isDemoMode && (
           <div className="px-4 pt-4 lg:px-6">
             <SetupStatusAlert />
           </div>

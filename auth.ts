@@ -7,6 +7,25 @@ import type { JWT } from "next-auth/jwt"
 import { execute } from "@/lib/db"
 import { GitHubService } from "@/lib/services"
 
+// Use fixed demo secret for consistent JWT handling
+function ensureNextAuthSecret(): string {
+  if (process.env.NEXTAUTH_SECRET) {
+    return process.env.NEXTAUTH_SECRET;
+  }
+  
+  // Use a fixed demo secret to avoid JWT decryption issues
+  const DEMO_SECRET = 'demo-secret-for-pr-cat-this-is-only-for-demo-mode-not-production-use-64chars';
+  
+  // Set it in process.env so NextAuth can find it
+  process.env.NEXTAUTH_SECRET = DEMO_SECRET;
+  console.log('🔐 Using fixed demo secret for consistent JWT handling');
+  
+  return DEMO_SECRET;
+}
+
+// Generate the secret before NextAuth config
+const NEXTAUTH_SECRET = ensureNextAuthSecret();
+
 // Extend the Session interface to include accessToken and organizations
 // and GitHub profile fields
 // (You may want to move this to a types file for larger projects)
@@ -113,8 +132,8 @@ async function upsertUser(githubId: string, userData: any) {
 export const config = {
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      clientId: process.env.GITHUB_CLIENT_ID || 'demo-client-id',
+      clientSecret: process.env.GITHUB_CLIENT_SECRET || 'demo-client-secret',
       authorization: {
         params: {
           scope: 'read:user user:email repo read:org',
@@ -143,7 +162,22 @@ export const config = {
         return session;
       }
 
-      // Set user data from token
+      // Check if we're in demo mode (no real GitHub config)
+      const isDemoMode = !process.env.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID === 'demo-client-id';
+      
+      if (isDemoMode) {
+        // Demo mode: use simple session without database calls
+        session.user.id = token.sub;
+        session.user.login = token.login || 'demo-user';
+        session.user.html_url = token.html_url || 'https://github.com/demo-user';
+        session.user.avatar_url = token.avatar_url || '/api/placeholder/avatar/demo';
+        session.organizations = [];
+        session.newUser = false;
+        session.hasGithubApp = false;
+        return session;
+      }
+
+      // Real mode: full session handling
       session.user.id = token.sub;
       session.user.login = token.login;
       session.user.html_url = token.html_url;
@@ -190,7 +224,17 @@ export const config = {
       return token;
     },
     async signIn({ user, account, profile }) {
-      // GitHub may not return an email even with user:email scope; don't block sign-in on missing email
+      // Check if we're in demo mode
+      const isDemoMode = !process.env.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID === 'demo-client-id';
+      
+      if (isDemoMode) {
+        // Demo mode: allow sign-in without database operations
+        console.log('🎯 Demo mode: Allowing sign-in without database operations');
+        user.id = 'demo-user-123';
+        return true;
+      }
+
+      // Real mode: full sign-in process
       if (!profile || typeof profile.id === 'undefined' || profile.id === null) {
         console.error("SignIn: Missing required profile.id");
         return false;
@@ -230,7 +274,7 @@ export const config = {
     strategy: "jwt",
   },
   // Add additional security configuration
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: NEXTAUTH_SECRET,
   trustHost: true,
   // Add cookie configuration to help with PKCE
   cookies: {

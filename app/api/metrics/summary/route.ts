@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserWithOrganizations } from '@/lib/auth-context';
 import { query } from '@/lib/db';
+import { withDemoFallback, queryWithFallback } from '@/lib/demo-fallback';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 export const runtime = 'nodejs';
 // Cache for 24 hours, revalidate in background

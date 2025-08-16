@@ -9,7 +9,7 @@ import { CTASection } from '@/components/landing/cta-section'
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-[#0b0b0b] text-[#f5f5f5]">
       <AnimatedHeader />
       <HeroSection />
       <OpenSourceSection />
