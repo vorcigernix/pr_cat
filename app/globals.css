@@ -150,6 +150,18 @@
 
 
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
