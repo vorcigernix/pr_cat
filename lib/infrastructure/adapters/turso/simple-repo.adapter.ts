@@ -87,7 +87,5 @@ export class SimpleTursoRepository implements IRepository {
     return this.demoFallback.getActivitySummary(repositoryId, timeRange)
   }
 
-  async getInsights(organizationId: string): Promise<any> {
-    return this.demoFallback.getInsights(organizationId)
-  }
+
 }

@@ -9,9 +9,9 @@ import {
   PullRequestSummary,
   Organization,
   User,
-  Repository,
-  Category
+  Repository
 } from '../../../core/domain/entities'
+import { Category } from '../../../core/domain/value-objects'
 
 /**
  * Maps database PullRequest to domain PullRequest
@@ -21,34 +21,22 @@ export function mapDbPullRequestToDomain(dbPR: DbTypes.PullRequest): PullRequest
     id: dbPR.id.toString(),
     number: dbPR.number,
     title: dbPR.title,
-    description: dbPR.description,
-    state: dbPR.state,
-    author: {
+    developer: {
       id: dbPR.author_id || 'unknown',
-      login: 'unknown', // Would need to join with users table
-      name: null,
-      avatarUrl: ''
+      name: 'unknown' // Would need to join with users table
     },
     repository: {
       id: dbPR.repository_id.toString(),
-      name: 'unknown', // Would need to join with repositories table
-      fullName: 'unknown'
+      name: 'unknown' // Would need to join with repositories table
     },
-    category: dbPR.category_id ? {
-      id: dbPR.category_id.toString(),
-      name: 'unknown' // Would need to join with categories table
-    } : undefined,
-    createdAt: new Date(dbPR.created_at),
-    updatedAt: new Date(dbPR.updated_at),
-    mergedAt: dbPR.merged_at ? new Date(dbPR.merged_at) : null,
-    closedAt: dbPR.closed_at ? new Date(dbPR.closed_at) : null,
-    isDraft: dbPR.draft,
-    additions: dbPR.additions || 0,
-    deletions: dbPR.deletions || 0,
-    changedFiles: dbPR.changed_files || 0,
-    reviewers: [], // Would need to join with reviews table
-    labels: [], // Would need to join with labels table if implemented
-    htmlUrl: `https://github.com/unknown/pull/${dbPR.number}` // Would need repository info
+    status: dbPR.state as 'open' | 'closed' | 'merged',
+    createdAt: new Date(dbPR.created_at).toISOString(),
+    mergedAt: dbPR.merged_at ? new Date(dbPR.merged_at).toISOString() : '',
+    cycleTime: dbPR.merged_at ? 
+      calculateCycleTimeHours(new Date(dbPR.created_at).toISOString(), new Date(dbPR.merged_at).toISOString()) : 0,
+    investmentArea: 'Feature Development', // Would need category lookup
+    linesAdded: dbPR.additions || 0,
+    files: dbPR.changed_files || 0
   }
 }
 
@@ -66,22 +54,22 @@ export function mapDbPullRequestToSummary(
     id: dbPR.id.toString(),
     number: dbPR.number,
     title: dbPR.title,
-    state: dbPR.state,
-    author: {
-      login: authorLogin || 'unknown',
-      avatarUrl: authorAvatar || ''
+    developer: {
+      id: dbPR.author_id || 'unknown',
+      name: authorLogin || 'unknown'
     },
     repository: {
+      id: dbPR.repository_id.toString(),
       name: repositoryName || 'unknown'
     },
-    category: categoryName ? {
-      name: categoryName
-    } : undefined,
-    createdAt: new Date(dbPR.created_at),
-    mergedAt: dbPR.merged_at ? new Date(dbPR.merged_at) : null,
-    additions: dbPR.additions || 0,
-    deletions: dbPR.deletions || 0,
-    reviewCount: 0 // Would need to count reviews
+    status: dbPR.state as 'open' | 'closed' | 'merged',
+    createdAt: new Date(dbPR.created_at).toISOString(),
+    mergedAt: dbPR.merged_at ? new Date(dbPR.merged_at).toISOString() : '',
+    cycleTime: dbPR.merged_at ? 
+      calculateCycleTimeHours(new Date(dbPR.created_at).toISOString(), new Date(dbPR.merged_at).toISOString()) : 0,
+    investmentArea: categoryName || 'Feature Development',
+    linesAdded: dbPR.additions || 0,
+    files: dbPR.changed_files || 0
   }
 }
 
@@ -187,22 +175,16 @@ export function mapPullRequestWithDetailsToDomain(pr: PullRequestWithDetails): P
   const basePR = mapDbPullRequestToDomain(pr)
   return {
     ...basePR,
-    author: {
+    // Override developer with more complete data
+    developer: {
       id: pr.author_id || 'unknown',
-      login: pr.author_login || 'unknown',
-      name: pr.author_login || null,
-      avatarUrl: pr.author_avatar || ''
+      name: pr.author_login || 'unknown'
     },
     repository: {
       id: pr.repository_id.toString(),
-      name: pr.repository_name || 'unknown',
-      fullName: pr.repository_name || 'unknown'
+      name: pr.repository_name || 'unknown'
     },
-    category: pr.category_id ? {
-      id: pr.category_id.toString(),
-      name: pr.category_name || 'Uncategorized'
-    } : undefined,
-    htmlUrl: pr.repository_name ? `https://github.com/${pr.repository_name}/pull/${pr.number}` : `https://github.com/unknown/pull/${pr.number}`
+    investmentArea: pr.category_name || 'Feature Development'
   }
 }
 

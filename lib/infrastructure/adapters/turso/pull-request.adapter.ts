@@ -379,13 +379,13 @@ export class TursoPullRequestRepository implements IPullRequestRepository {
 
   async search(
     organizationId: string,
-    query: string,
+    searchQuery: string,
     pagination?: Pagination
   ): Promise<PaginatedResult<PullRequestSummary>> {
     const page = pagination || Pagination.create(1, 10)
     const offset = page.offset
     const limit = page.limit
-    const searchTerm = `%${query}%`
+    const searchTerm = `%${searchQuery}%`
 
     const prs = await query<PullRequestWithDetails>(`
       SELECT 

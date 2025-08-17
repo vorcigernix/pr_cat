@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServiceLocator } from '@/lib/core';
+import { ServiceLocator, withAuth, ApplicationContext } from '@/lib/core';
 
 export const runtime = 'nodejs';
 // Cache for 24 hours, revalidate in background
@@ -7,24 +7,17 @@ export const revalidate = 86400; // 24 hours in seconds
 // Force dynamic rendering since we use headers()
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+// Pure business logic handler with caching
+const metricsSummaryHandler = async (
+  context: ApplicationContext,
+  request: NextRequest
+): Promise<NextResponse> => {
   try {
-    // Get auth service via dependency injection for demo mode compatibility
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get the metrics service via dependency injection
     const metricsService = await ServiceLocator.getMetricsService();
     
-    // Use the primary organization ID from the session
-    const organizationId = session.organizations?.[0]?.id || 'demo-org-1';
-    
-    // Get metrics summary - no conditional logic needed!
-    const data = await metricsService.getSummary(organizationId);
+    // Use organization ID from authenticated context
+    const data = await metricsService.getSummary(context.organizationId);
     
     // Set appropriate headers
     const headers = new Headers();
@@ -50,4 +43,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+};
+
+// Authentication handled by middleware
+export const GET = withAuth(metricsSummaryHandler);

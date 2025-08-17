@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServiceLocator } from '@/lib/core';
+import { ServiceLocator, withAuth, ApplicationContext } from '@/lib/core';
 
-export async function GET(request: NextRequest) {
+// Pure business logic handler
+const organizationsHandler = async (
+  context: ApplicationContext,
+  request: NextRequest
+): Promise<NextResponse> => {
   try {
-    // Get session via dependency injection
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session || !session.user) {
-      console.log('API /organizations: No authenticated session');
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-    
-    // Get organizations for the user
-    const organizationRepository = await ServiceLocator.getOrganizationRepository();
-    const organizations = session.organizations || [];
+    // Organizations are already available in the authenticated context
+    const organizations = context.organizations;
     
     console.log('API /organizations: Found', organizations.length, 'organizations');
     return NextResponse.json(organizations);
@@ -26,4 +20,7 @@ export async function GET(request: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-}
+};
+
+// Authentication handled by middleware
+export const GET = withAuth(organizationsHandler);

@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServiceLocator } from '@/lib/core';
-import { TimeRange } from '@/lib/core';
+import { ServiceLocator, withAuth, ApplicationContext, TimeRange } from '@/lib/core';
 
 export const runtime = 'nodejs';
 
-export async function GET(request: NextRequest) {
+// Pure business logic handler
+const categoryDistributionHandler = async (
+  context: ApplicationContext,
+  request: NextRequest
+): Promise<NextResponse> => {
   try {
-    // Get session via dependency injection
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const timeRange = searchParams.get('timeRange') || '30d';
@@ -22,8 +17,8 @@ export async function GET(request: NextRequest) {
     // Get pull request repository via dependency injection
     const prRepository = await ServiceLocator.getPullRequestRepository();
     
-    // Use the primary organization ID from the session
-    const organizationId = session.organizations?.[0]?.id || 'demo-org-1';
+    // Use organization ID from authenticated context
+    const organizationId = context.organizationId;
     
     if (format === 'timeseries') {
       // Get time series data for category distribution
@@ -45,4 +40,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+};
+
+// Authentication handled by middleware
+export const GET = withAuth(categoryDistributionHandler);

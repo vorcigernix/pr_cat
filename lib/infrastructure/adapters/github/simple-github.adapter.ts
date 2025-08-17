@@ -68,19 +68,19 @@ export class SimpleGitHubAPIService implements IGitHubService {
     return this.demoFallback.syncOrganizationRepositories(orgLogin)
   }
 
-  async syncRepositoryPullRequests(owner: string, repo: string): Promise<{ synced: PullRequest[]; errors: Array<any> }> {
-    return this.demoFallback.syncRepositoryPullRequests(owner, repo)
+  async syncRepositoryPullRequests(repositoryId: string, since?: Date): Promise<{ synced: PullRequest[]; errors: { pr: number; error: string }[] }> {
+    return this.demoFallback.syncRepositoryPullRequests(repositoryId, since)
   }
 
   async getInstallationStatus(orgLogin: string): Promise<{ isInstalled: boolean; installationId: string | null; permissions: Record<string, string> }> {
     return this.demoFallback.getInstallationStatus(orgLogin)
   }
 
-  validateWebhookSignature(payload: string, signature: string): boolean {
-    return this.demoFallback.validateWebhookSignature(payload, signature)
+  validateWebhookSignature(payload: string, signature: string, secret: string): boolean {
+    return this.demoFallback.validateWebhookSignature(payload, signature, secret)
   }
 
-  async processWebhookEvent(event: any): Promise<{ processed: boolean; actions: string[]; errors?: string[] }> {
-    return this.demoFallback.processWebhookEvent(event)
+  async processWebhookEvent(event: string, payload: any): Promise<{ processed: boolean; actions: string[]; errors?: string[] }> {
+    return this.demoFallback.processWebhookEvent(event, payload)
   }
 }

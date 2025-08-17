@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServiceLocator } from '@/lib/core';
+import { ServiceLocator, withAuth, ApplicationContext } from '@/lib/core';
 import { TeamService } from '@/lib/services';
 import { unauthorized, badRequest, notFound, errorResponse } from '@/lib/api-errors';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
 
-// GET - Get a specific team with members
-export async function GET(
+// Team details handler
+const teamDetailsHandler = async (
+  context: ApplicationContext,
   request: NextRequest,
-  { params }: { params: Promise<{ orgId: string; teamId: string }> }
-) {
+  params: { orgId: string; teamId: string }
+): Promise<NextResponse> => {
   try {
-    const { orgId, teamId } = await params;
-    
-    // Get session via dependency injection
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user?.id) throw unauthorized();
+    const { orgId, teamId } = params;
 
     // Handle demo mode
     if (orgId.startsWith('demo-')) {
@@ -84,13 +79,25 @@ export async function GET(
     const teamIdInt = parseInt(teamId, 10);
     if (isNaN(orgIdInt) || isNaN(teamIdInt)) throw badRequest('Invalid organization or team ID');
 
-    const team = await TeamService.getTeamWithMembers(session.user.id, teamIdInt, orgIdInt);
+    const team = await TeamService.getTeamWithMembers(context.user.id, teamIdInt, orgIdInt);
     return NextResponse.json(team);
 
   } catch (error) {
     console.error('Error fetching team:', error);
     return errorResponse(error, 'Failed to fetch team');
   }
+};
+
+// GET - Get a specific team with members
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ orgId: string; teamId: string }> }
+) {
+  const resolvedParams = await params;
+  const authHandler = withAuth(async (context, req) => 
+    teamDetailsHandler(context, req, resolvedParams)
+  );
+  return authHandler(request);
 }
 
 // PUT - Update a team
@@ -100,18 +107,14 @@ const updateTeamSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color must be a valid hex color (e.g., #FF5733)").optional()
 });
 
-export async function PUT(
+// Team update handler
+const updateTeamHandler = async (
+  context: ApplicationContext,
   request: NextRequest,
-  { params }: { params: Promise<{ orgId: string; teamId: string }> }
-) {
+  params: { orgId: string; teamId: string }
+): Promise<NextResponse> => {
   try {
-    const { orgId, teamId } = await params;
-    
-    // Get session via dependency injection
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user?.id) throw unauthorized();
+    const { orgId, teamId } = params;
     
     // Demo mode doesn't support team updates
     if (orgId.startsWith('demo-')) {
@@ -148,7 +151,7 @@ export async function PUT(
     }
 
     const updatedTeam = await TeamService.updateTeam(
-      session.user.id,
+      context.user.id,
       teamIdInt,
       orgIdInt,
       updateData
@@ -159,21 +162,28 @@ export async function PUT(
     console.error('Error updating team:', error);
     return errorResponse(error, 'Failed to update team');
   }
-}
+};
 
-// DELETE - Delete a team
-export async function DELETE(
+export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ orgId: string; teamId: string }> }
 ) {
+  const resolvedParams = await params;
+  const authHandler = withAuth(async (context, req) => 
+    updateTeamHandler(context, req, resolvedParams)
+  );
+  return authHandler(request);
+}
+
+// DELETE - Delete a team
+// Team deletion handler
+const deleteTeamHandler = async (
+  context: ApplicationContext,
+  request: NextRequest,
+  params: { orgId: string; teamId: string }
+): Promise<NextResponse> => {
   try {
-    const { orgId, teamId } = await params;
-    
-    // Get session via dependency injection
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user?.id) throw unauthorized();
+    const { orgId, teamId } = params;
     
     // Demo mode doesn't support team deletion
     if (orgId.startsWith('demo-')) {
@@ -187,7 +197,7 @@ export async function DELETE(
     // Reuse update permission checks inside service by attempting a noop update or extend service with delete
     const success = await (async () => {
       // Implement delete via repository for now, reusing service authorization by fetching with service
-      await TeamService.getTeamWithMembers(session.user.id, teamIdInt, orgIdInt);
+      await TeamService.getTeamWithMembers(context.user.id, teamIdInt, orgIdInt);
       const { deleteTeam } = await import('@/lib/repositories/team-repository');
       return deleteTeam(teamIdInt);
     })();
@@ -199,4 +209,15 @@ export async function DELETE(
     console.error('Error deleting team:', error);
     return errorResponse(error, 'Failed to delete team');
   }
+};
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ orgId: string; teamId: string }> }
+) {
+  const resolvedParams = await params;
+  const authHandler = withAuth(async (context, req) => 
+    deleteTeamHandler(context, req, resolvedParams)
+  );
+  return authHandler(request);
 }

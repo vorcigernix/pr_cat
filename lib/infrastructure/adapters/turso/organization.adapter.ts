@@ -194,7 +194,7 @@ export class TursoOrganizationRepository implements IOrganizationRepository {
       const settingsMap = new Map(settings.map(s => [s.key, s.value]))
       
       // Get categories for this organization
-      const categories = await CategoryRepository.findCategoriesByOrganizationId(orgId)
+      const categories = await CategoryRepository.getCategoriesByOrganization(orgId)
 
       return {
         organizationId,
@@ -248,7 +248,7 @@ export class TursoOrganizationRepository implements IOrganizationRepository {
   async getCategories(organizationId: string): Promise<Category[]> {
     try {
       const orgId = parseInt(organizationId)
-      const dbCategories = await CategoryRepository.findCategoriesByOrganizationId(orgId)
+      const dbCategories = await CategoryRepository.getCategoriesByOrganization(orgId)
       return dbCategories.map(mapDbCategoryToDomain)
     } catch (error) {
       console.error('Error getting categories:', error)
@@ -270,8 +270,7 @@ export class TursoOrganizationRepository implements IOrganizationRepository {
         organization_id: orgId,
         name: category.name,
         description: category.description || null,
-        color: category.color,
-        is_default: false
+        color: category.color
       })
 
       return mapDbCategoryToDomain(dbCategory)
@@ -413,10 +412,8 @@ export class TursoOrganizationRepository implements IOrganizationRepository {
       }
 
       // In a full implementation, this would sync data from GitHub API
-      // For now, just update the timestamp
-      const updatedOrg = await OrganizationRepository.updateOrganization(parseInt(organizationId), {
-        updated_at: new Date().toISOString()
-      })
+      // For now, just return the organization as is
+      const updatedOrg = dbOrg
 
       return updatedOrg ? mapDbOrganizationToDomain(updatedOrg) : mapDbOrganizationToDomain(dbOrg)
     } catch (error) {

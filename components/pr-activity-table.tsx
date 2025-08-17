@@ -215,8 +215,8 @@ export function PRActivityTable() {
                     </div>
                   </TableCell>
                   <TableCell>{pr.repository?.name || 'Unknown'}</TableCell>
-                  <TableCell>{pr.author?.login || pr.developer?.name || 'Unknown'}</TableCell>
-                  <TableCell>{getStatusBadge(pr.state)}</TableCell>
+                  <TableCell>{pr.developer?.name || 'Unknown'}</TableCell>
+                  <TableCell>{getStatusBadge(pr.status)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <span>{pr.cycleTime.toFixed(1)} hrs</span>

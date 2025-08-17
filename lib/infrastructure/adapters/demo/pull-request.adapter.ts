@@ -75,42 +75,25 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
 
     // Convert summary to full PR (mock additional data)
     const fullPR: PullRequest = {
-      ...summary,
-      author: {
+      id: summary.id,
+      number: summary.number,
+      title: summary.title,
+      developer: {
         id: `demo-user-${summary.author.login}`,
-        login: summary.author.login,
-        name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        avatarUrl: summary.author.avatarUrl
+        name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
       },
       repository: {
         id: `demo-repo-${summary.repository.name}`,
-        name: summary.repository.name,
-        fullName: `example-corp/${summary.repository.name}`
+        name: summary.repository.name
       },
-      category: summary.category ? {
-        id: summary.category.name.toLowerCase().replace(/\s+/g, '-'),
-        name: summary.category.name
-      } : undefined,
-      description: `Detailed description for PR #${summary.number}`,
-      isDraft: false,
-      changedFiles: Math.floor(summary.additions / 20) + Math.floor(summary.deletions / 20),
-      reviewers: [
-        {
-          id: 'demo-reviewer-1',
-          login: 'reviewer1',
-          name: 'Code Reviewer'
-        }
-      ],
-      labels: [
-        {
-          id: 'enhancement',
-          name: 'enhancement',
-          color: '#a2eeef'
-        }
-      ],
-      htmlUrl: `https://github.com/example-corp/${summary.repository.name}/pull/${summary.number}`,
-      updatedAt: summary.mergedAt || summary.createdAt,
-      closedAt: summary.state === 'closed' ? summary.mergedAt : null
+      status: summary.state,
+      createdAt: summary.createdAt.toISOString(),
+      mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
+      cycleTime: summary.mergedAt ?
+        Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
+      investmentArea: summary.category?.name || 'Feature Development',
+      linesAdded: summary.additions,
+      files: Math.floor((summary.additions + summary.deletions) / 50) + 1
     }
 
     return fullPR
@@ -170,12 +153,12 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     const prs = await this.getByCategory(organizationId, undefined, timeRange)
     
     const totalCount = prs.length
-    const openCount = prs.filter(pr => pr.state === 'open').length
-    const mergedCount = prs.filter(pr => pr.state === 'merged').length
-    const closedCount = prs.filter(pr => pr.state === 'closed').length
+    const openCount = prs.filter(pr => pr.status === 'open').length
+    const mergedCount = prs.filter(pr => pr.status === 'merged').length
+    const closedCount = prs.filter(pr => pr.status === 'closed').length
 
     // Calculate average cycle time for merged PRs
-    const mergedPRs = prs.filter(pr => pr.state === 'merged' && pr.mergedAt)
+    const mergedPRs = prs.filter(pr => pr.status === 'merged' && pr.mergedAt)
     const averageCycleTime = mergedPRs.length > 0 
       ? mergedPRs.reduce((sum, pr) => {
           const cycleTimeHours = (new Date(pr.mergedAt!).getTime() - new Date(pr.createdAt).getTime()) / (1000 * 60 * 60)
@@ -184,7 +167,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
       : 0
 
     const averageSize = prs.length > 0
-      ? prs.reduce((sum, pr) => sum + pr.additions + pr.deletions, 0) / prs.length
+      ? prs.reduce((sum, pr) => sum + (pr.linesAdded || 0), 0) / prs.length
       : 0
 
     return {
@@ -213,7 +196,27 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     const total = authorPRs.length
 
     return {
-      data: paginatedData,
+      data: paginatedData.map(summary => ({
+        id: summary.id,
+        number: summary.number,
+        title: summary.title,
+        developer: {
+          id: summary.author.login,
+          name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+        },
+        repository: {
+          id: summary.repository.name.replace(/[^a-zA-Z0-9]/g, ''),
+          name: summary.repository.name
+        },
+        status: summary.state,
+        createdAt: summary.createdAt.toISOString(),
+        mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
+        cycleTime: summary.mergedAt ? 
+          Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
+        investmentArea: summary.category?.name || 'Feature Development',
+        linesAdded: summary.additions,
+        files: Math.floor((summary.additions + summary.deletions) / 50) + 1
+      })),
       pagination: {
         page: page.page,
         limit: page.limit,
@@ -240,7 +243,27 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     const total = repoPRs.length
 
     return {
-      data: paginatedData,
+      data: paginatedData.map(summary => ({
+        id: summary.id,
+        number: summary.number,
+        title: summary.title,
+        developer: {
+          id: summary.author.login,
+          name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+        },
+        repository: {
+          id: summary.repository.name.replace(/[^a-zA-Z0-9]/g, ''),
+          name: summary.repository.name
+        },
+        status: summary.state,
+        createdAt: summary.createdAt.toISOString(),
+        mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
+        cycleTime: summary.mergedAt ? 
+          Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
+        investmentArea: summary.category?.name || 'Feature Development',
+        linesAdded: summary.additions,
+        files: Math.floor((summary.additions + summary.deletions) / 50) + 1
+      })),
       pagination: {
         page: page.page,
         limit: page.limit,
@@ -271,7 +294,27 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     const total = matchingPRs.length
 
     return {
-      data: paginatedData,
+      data: paginatedData.map(summary => ({
+        id: summary.id,
+        number: summary.number,
+        title: summary.title,
+        developer: {
+          id: summary.author.login,
+          name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+        },
+        repository: {
+          id: summary.repository.name.replace(/[^a-zA-Z0-9]/g, ''),
+          name: summary.repository.name
+        },
+        status: summary.state,
+        createdAt: summary.createdAt.toISOString(),
+        mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
+        cycleTime: summary.mergedAt ? 
+          Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
+        investmentArea: summary.category?.name || 'Feature Development',
+        linesAdded: summary.additions,
+        files: Math.floor((summary.additions + summary.deletions) / 50) + 1
+      })),
       pagination: {
         page: page.page,
         limit: page.limit,

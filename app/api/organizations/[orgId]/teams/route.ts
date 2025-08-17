@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServiceLocator } from '@/lib/core';
+import { ServiceLocator, withAuth, ApplicationContext } from '@/lib/core';
 import { TeamService } from '@/lib/services';
 import { unauthorized, badRequest, forbidden, errorResponse } from '@/lib/api-errors';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
 
-// GET - List all teams for an organization
-export async function GET(
+// Pure business logic handler
+const organizationTeamsHandler = async (
+  context: ApplicationContext,
   request: NextRequest,
-  { params }: { params: Promise<{ orgId: string }> }
-) {
+  params: { orgId: string }
+): Promise<NextResponse> => {
   try {
-    const { orgId } = await params;
-    
-    // Get session via dependency injection
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user?.id) throw unauthorized();
+    const { orgId } = params;
 
     // Handle both string and numeric organization IDs for demo compatibility
     let orgIdInt: number;
@@ -52,13 +47,25 @@ export async function GET(
       if (isNaN(orgIdInt)) throw badRequest('Invalid organization ID');
     }
 
-    const teams = await TeamService.getOrganizationTeams(session.user.id, orgIdInt);
+    const teams = await TeamService.getOrganizationTeams(context.user.id, orgIdInt);
     return NextResponse.json(teams);
 
   } catch (error) {
     console.error('Error fetching organization teams:', error);
     return errorResponse(error, 'Failed to fetch teams');
   }
+};
+
+// GET - List all teams for an organization
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ orgId: string }> }
+) {
+  const resolvedParams = await params;
+  const authHandler = withAuth(async (context, req) => 
+    organizationTeamsHandler(context, req, resolvedParams)
+  );
+  return authHandler(request);
 }
 
 // POST - Create a new team
@@ -68,18 +75,14 @@ const createTeamSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color must be a valid hex color (e.g., #FF5733)").optional()
 });
 
-export async function POST(
+// Team creation handler
+const createTeamHandler = async (
+  context: ApplicationContext,
   request: NextRequest,
-  { params }: { params: Promise<{ orgId: string }> }
-) {
+  params: { orgId: string }
+): Promise<NextResponse> => {
   try {
-    const { orgId } = await params;
-    
-    // Get session via dependency injection
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user?.id) throw unauthorized();
+    const { orgId } = params;
 
     // Handle both string and numeric organization IDs for demo compatibility  
     let orgIdInt: number;
@@ -106,7 +109,7 @@ export async function POST(
       color: color?.trim() || null,
     };
 
-    const createdTeam = await TeamService.createTeam(session.user.id, {
+    const createdTeam = await TeamService.createTeam(context.user.id, {
       organizationId: orgIdInt,
       name: name.trim(),
       description: description?.trim(),
@@ -118,4 +121,15 @@ export async function POST(
     console.error('Error creating team:', error);
     return errorResponse(error, 'Failed to create team');
   }
+};
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ orgId: string }> }
+) {
+  const resolvedParams = await params;
+  const authHandler = withAuth(async (context, req) => 
+    createTeamHandler(context, req, resolvedParams)
+  );
+  return authHandler(request);
 }

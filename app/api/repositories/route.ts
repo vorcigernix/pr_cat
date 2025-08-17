@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServiceLocator } from '@/lib/core';
+import { ServiceLocator, withAuth, ApplicationContext } from '@/lib/core';
 
 export const runtime = 'nodejs';
 
-export async function GET(request: NextRequest) {
+// Pure business logic handler
+const repositoriesHandler = async (
+  context: ApplicationContext,
+  request: NextRequest
+): Promise<NextResponse> => {
   try {
-    // Get session via dependency injection
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get organization repository via dependency injection
     const organizationRepository = await ServiceLocator.getOrganizationRepository();
     
-    // Get repositories from the user's primary organization
-    const organizationId = session.organizations?.[0]?.id || 'demo-org-1';
-    const repositories = await organizationRepository.getRepositories(organizationId);
+    // Get repositories from the authenticated context's organization
+    const repositories = await organizationRepository.getRepositories(context.organizationId);
     
     if (!repositories || repositories.length === 0) {
       return NextResponse.json({ 
@@ -34,8 +29,8 @@ export async function GET(request: NextRequest) {
       name: repo.name,
       full_name: repo.fullName,
       organization: {
-        id: organizationId,
-        name: session.organizations[0]?.name || 'Demo Organization'
+        id: context.organizationId,
+        name: context.primaryOrganization?.name || 'Demo Organization'
       },
       is_tracked: repo.isTracked,
       private: repo.isPrivate,
@@ -44,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       repositories: formattedRepositories,
-      organizationCount: session.organizations.length
+      organizationCount: context.organizations.length
     });
   } catch (error) {
     console.error('Error fetching repositories:', error);
@@ -53,4 +48,7 @@ export async function GET(request: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-} 
+};
+
+// Authentication handled by middleware
+export const GET = withAuth(repositoriesHandler); 

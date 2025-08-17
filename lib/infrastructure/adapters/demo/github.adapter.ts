@@ -123,6 +123,15 @@ export class DemoGitHubService implements IGitHubService {
     // Convert summaries to full PRs
     const fullPRs: PullRequest[] = prs.map(summary => ({
       ...summary,
+      createdAt: summary.createdAt.toISOString(),
+      mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
+      developer: {
+        id: `demo-user-${summary.author.login}`,
+        name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+      },
+      status: summary.state,
+      cycleTime: summary.mergedAt ? 
+        Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
       author: {
         id: `demo-user-${summary.author.login}`,
         login: summary.author.login,
@@ -169,7 +178,7 @@ export class DemoGitHubService implements IGitHubService {
             comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             break
           case 'updated':
-            comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+            comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             break
           default:
             comparison = 0
