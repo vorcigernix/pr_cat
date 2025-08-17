@@ -152,6 +152,16 @@ export const config = {
     authorized({ request, auth }) {
       const { pathname } = request.nextUrl;
       if (pathname.startsWith("/dashboard")) {
+        // Check if we're in demo mode
+        const isDemoMode = !process.env.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID === 'demo-client-id';
+        
+        if (isDemoMode) {
+          // Demo mode: allow dashboard access without authentication
+          console.log('🎯 Demo mode: Allowing dashboard access without authentication');
+          return true;
+        }
+        
+        // Real mode: require authentication
         return !!auth;
       }
       return true;

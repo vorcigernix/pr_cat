@@ -1,5 +1,6 @@
 import { auth } from '@/auth';
 import { findUserWithOrganizations } from '@/lib/repositories/user-repository';
+import { getDemoModeInfo, DEMO_USER, DEMO_ORG } from '@/lib/demo-mode';
 
 // Request-level cache to avoid repeated user queries
 const requestCache = new WeakMap<Request, {
@@ -109,6 +110,17 @@ export async function getUserOrganizations(request?: Request) {
  * @throws Error if user is not authenticated, not found, or has no organizations
  */
 export async function getUserWithOrganizations(request?: Request) {
+  const demoInfo = getDemoModeInfo();
+  
+  // Handle demo mode
+  if (demoInfo.isDemoMode) {
+    return {
+      user: DEMO_USER,
+      organizations: [DEMO_ORG],
+      primaryOrganization: DEMO_ORG
+    };
+  }
+  
   const session = await auth();
   
   if (!session || !session.user) {

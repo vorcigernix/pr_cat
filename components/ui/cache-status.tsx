@@ -91,11 +91,11 @@ export function CacheStatus({
 
   if (error) {
     return (
-      <div className="flex items-center space-x-2 text-sm text-red-600">
-        <IconAlertCircle className="w-4 h-4" />
-        <span>Data unavailable</span>
-        <Badge variant="destructive" className="text-xs">
-          Error
+      <div className="flex items-center space-x-2 text-sm">
+        <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+        <span className="text-gray-400">Data unavailable</span>
+        <Badge variant="outline" className="text-xs border-amber-400/30 text-amber-400">
+          Loading issue
         </Badge>
       </div>
     );

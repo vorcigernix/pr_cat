@@ -1,10 +1,7 @@
 "use client";
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 interface Props {
   children: ReactNode;
@@ -85,77 +82,83 @@ function ErrorFallback({
   const [showDetails, setShowDetails] = React.useState(false);
   
   return (
-    <div className="flex items-center justify-center min-h-[400px] p-4">
-      <Card className="max-w-lg w-full">
-        <CardHeader>
+    <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
+      <div className="max-w-2xl w-full space-y-6">
+        {/* Main error pill */}
+        <div className="hover:bg-[#0f0f10] hover:border-t-[#262626] bg-[#111111] group mx-auto flex w-fit items-center gap-4 rounded-full border border-[#262626]/60 p-1 pl-4 shadow-md shadow-black/30 transition-colors duration-300">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            <CardTitle>Something went wrong</CardTitle>
+            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+            <span className="text-[#f5f5f5] text-sm">Something went wrong</span>
           </div>
-          <CardDescription>
-            An unexpected error occurred. The issue has been logged and we'll look into it.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Button onClick={resetError} variant="default">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
-            <Button 
-              onClick={() => window.location.href = '/dashboard'} 
-              variant="outline"
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Go to Dashboard
-            </Button>
-          </div>
-          
-          {process.env.NODE_ENV === 'development' && error && (
-            <div className="space-y-2">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setShowDetails(!showDetails)}
-              >
-                {showDetails ? 'Hide' : 'Show'} Error Details
-              </Button>
+          <span className="border-[#0b0b0b] block h-4 w-0.5 border-l bg-[#3f3f46]"></span>
+          <button
+            onClick={resetError}
+            className="text-sm text-amber-400 hover:text-amber-300 transition-colors duration-200 px-2"
+          >
+            <RefreshCw className="h-3 w-3 inline mr-1" />
+            Try Again
+          </button>
+          <button
+            onClick={() => window.location.href = '/dashboard'}
+            className="text-sm text-blue-400 hover:text-blue-300 transition-colors duration-200 px-2 mr-2"
+          >
+            <Home className="h-3 w-3 inline mr-1" />
+            Dashboard
+          </button>
+        </div>
+
+        {/* Subtle message */}
+        <p className="text-center text-sm text-gray-400">
+          Don't worry, we've logged this issue and will look into it
+        </p>
+
+        {/* Development details */}
+        {process.env.NODE_ENV === 'development' && error && (
+          <div className="mx-auto max-w-lg">
+            <details className="group">
+              <summary className="flex items-center justify-center gap-2 text-xs text-gray-500 hover:text-gray-400 cursor-pointer transition-colors">
+                <AlertTriangle className="w-3 h-3" />
+                <span>{showDetails ? 'Hide' : 'Show'} Debug Info</span>
+              </summary>
               
-              {showDetails && (
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm font-mono text-destructive">
-                      {error.message}
-                    </p>
-                  </div>
-                  
-                  {errorInfo && (
-                    <details className="text-xs">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        Component Stack
-                      </summary>
-                      <pre className="mt-2 p-2 bg-muted rounded-md overflow-auto max-h-48">
+              <div className="mt-4 space-y-3">
+                <div className="p-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg">
+                  <div className="text-xs text-gray-400 mb-2">Error Message:</div>
+                  <code className="text-xs text-red-400 break-all">
+                    {error.message}
+                  </code>
+                </div>
+                
+                {errorInfo && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-gray-500 hover:text-gray-400 mb-2">
+                      Component Stack
+                    </summary>
+                    <div className="p-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg">
+                      <pre className="text-xs text-gray-400 overflow-auto max-h-32 whitespace-pre-wrap">
                         {errorInfo.componentStack}
                       </pre>
-                    </details>
-                  )}
-                  
-                  {error.stack && (
-                    <details className="text-xs">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        Error Stack
-                      </summary>
-                      <pre className="mt-2 p-2 bg-muted rounded-md overflow-auto max-h-48">
+                    </div>
+                  </details>
+                )}
+                
+                {error.stack && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-gray-500 hover:text-gray-400 mb-2">
+                      Error Stack
+                    </summary>
+                    <div className="p-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg">
+                      <pre className="text-xs text-gray-400 overflow-auto max-h-32 whitespace-pre-wrap">
                         {error.stack}
                       </pre>
-                    </details>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </div>
+                  </details>
+                )}
+              </div>
+            </details>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

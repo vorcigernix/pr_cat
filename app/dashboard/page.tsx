@@ -92,16 +92,42 @@ function RecommendationsSkeleton() {
 export default async function DashboardPage() {
   const session = await auth()
   
-  if (!session?.user) {
-    redirect('/sign-in')
-  }
-  
-  // Ensure user exists in database - this handles all user creation/update logic
-  await ensureUserExists(session.user)
-  
-  // Get demo mode info for banner
+  // Get demo mode info first
   const demoInfo = getDemoModeInfo()
-  const setupIncomplete = session.hasGithubApp === false
+  
+  // In demo mode, create a mock session; otherwise require real authentication
+  let effectiveSession = session;
+  let setupIncomplete = false;
+  
+  if (demoInfo.isDemoMode) {
+    // Demo mode: create mock session for components that need it
+    if (!session?.user) {
+      effectiveSession = {
+        user: {
+          id: 'demo-user-123',
+          name: 'Demo User',
+          email: 'demo@example.com',
+          image: '/api/placeholder/avatar/demo',
+          login: 'demo-user',
+          html_url: 'https://github.com/demo-user',
+          avatar_url: '/api/placeholder/avatar/demo',
+        },
+        organizations: [],
+        newUser: false,
+        hasGithubApp: false
+      };
+    }
+    setupIncomplete = false; // Demo mode doesn't need setup
+  } else {
+    // Real mode: require authentication
+    if (!session?.user) {
+      redirect('/sign-in')
+    }
+    
+    // Ensure user exists in database - this handles all user creation/update logic
+    await ensureUserExists(session.user)
+    setupIncomplete = session.hasGithubApp === false;
+  }
 
   return (
     <SidebarProvider style={SIDEBAR_STYLES}>
@@ -110,8 +136,8 @@ export default async function DashboardPage() {
         <SiteHeader pageTitle="Dashboard Overview" />
         
         {demoInfo.isDemoMode && (
-          <div className="px-4 pt-4 lg:px-6">
-            <DemoModeBanner missingServices={demoInfo.missingServices} />
+          <div className="pt-4 pb-2">
+            <DemoModeBanner />
           </div>
         )}
         
