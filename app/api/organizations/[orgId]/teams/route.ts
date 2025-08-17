@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { ServiceLocator } from '@/lib/core';
 import { TeamService } from '@/lib/services';
 import { unauthorized, badRequest, forbidden, errorResponse } from '@/lib/api-errors';
 import { z } from 'zod';
@@ -13,11 +13,44 @@ export async function GET(
 ) {
   try {
     const { orgId } = await params;
-    const session = await auth();
+    
+    // Get session via dependency injection
+    const authService = await ServiceLocator.getAuthService();
+    const session = await authService.getSession();
+    
     if (!session?.user?.id) throw unauthorized();
 
-    const orgIdInt = parseInt(orgId, 10);
-    if (isNaN(orgIdInt)) throw badRequest('Invalid organization ID');
+    // Handle both string and numeric organization IDs for demo compatibility
+    let orgIdInt: number;
+    if (orgId.startsWith('demo-')) {
+      // For demo mode, return demo teams data
+      const demoTeams = [
+        {
+          id: 1,
+          name: 'Frontend Team',
+          description: 'Responsible for UI/UX and frontend development',
+          color: '#3B82F6',
+          organization_id: orgId,
+          member_count: 4,
+          created_at: new Date('2023-01-15'),
+          updated_at: new Date('2024-01-15')
+        },
+        {
+          id: 2,
+          name: 'Backend Team', 
+          description: 'API development and infrastructure',
+          color: '#10B981',
+          organization_id: orgId,
+          member_count: 3,
+          created_at: new Date('2023-02-01'),
+          updated_at: new Date('2024-01-15')
+        }
+      ];
+      return NextResponse.json(demoTeams);
+    } else {
+      orgIdInt = parseInt(orgId, 10);
+      if (isNaN(orgIdInt)) throw badRequest('Invalid organization ID');
+    }
 
     const teams = await TeamService.getOrganizationTeams(session.user.id, orgIdInt);
     return NextResponse.json(teams);
@@ -41,11 +74,22 @@ export async function POST(
 ) {
   try {
     const { orgId } = await params;
-    const session = await auth();
+    
+    // Get session via dependency injection
+    const authService = await ServiceLocator.getAuthService();
+    const session = await authService.getSession();
+    
     if (!session?.user?.id) throw unauthorized();
 
-    const orgIdInt = parseInt(orgId, 10);
-    if (isNaN(orgIdInt)) throw badRequest('Invalid organization ID');
+    // Handle both string and numeric organization IDs for demo compatibility  
+    let orgIdInt: number;
+    if (orgId.startsWith('demo-')) {
+      // Demo mode doesn't support team creation yet
+      throw badRequest('Team creation not supported in demo mode');
+    } else {
+      orgIdInt = parseInt(orgId, 10);
+      if (isNaN(orgIdInt)) throw badRequest('Invalid organization ID');
+    }
 
     const body = await request.json();
     

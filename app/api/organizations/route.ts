@@ -1,38 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { findUserWithOrganizations } from '@/lib/repositories/user-repository';
+import { ServiceLocator } from '@/lib/core';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the authenticated session
-    const session = await auth();
+    // Get session via dependency injection
+    const authService = await ServiceLocator.getAuthService();
+    const session = await authService.getSession();
     
     if (!session || !session.user) {
       console.log('API /organizations: No authenticated session');
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
     
-    const userId = session.user.id;
-    console.log('API /organizations: Fetching organizations for user:', userId);
+    // Get organizations for the user
+    const organizationRepository = await ServiceLocator.getOrganizationRepository();
+    const organizations = session.organizations || [];
     
-    // Directly fetch user with organizations from database
-    const result = await findUserWithOrganizations(userId);
-    
-    if (!result) {
-      console.log('API /organizations: User not found in database');
-      return NextResponse.json({ 
-        error: 'User not found in database',
-        userId 
-      }, { status: 404 });
-    }
-    
-    if (!result.organizations || result.organizations.length === 0) {
-      console.log('API /organizations: No organizations found for user');
-      return NextResponse.json([]);
-    }
-    
-    console.log('API /organizations: Found', result.organizations.length, 'organizations');
-    return NextResponse.json(result.organizations);
+    console.log('API /organizations: Found', organizations.length, 'organizations');
+    return NextResponse.json(organizations);
   } catch (error) {
     console.error('API /organizations: Error fetching user organizations:', error);
     

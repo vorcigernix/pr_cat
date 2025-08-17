@@ -59,7 +59,9 @@ export function PRActivityTable() {
           throw new Error(`Failed to fetch pull requests: ${response.status} ${response.statusText}`);
         }
         
-        const data = await response.json();
+        const response_data = await response.json();
+        // Handle both paginated response {data: [...]} and direct array
+        const data = Array.isArray(response_data) ? response_data : response_data.data || [];
         setPullRequests(data);
       } catch (error) {
         console.error("Failed to load pull request data:", error);
@@ -212,9 +214,9 @@ export function PRActivityTable() {
                       #{pr.number} {pr.title}
                     </div>
                   </TableCell>
-                  <TableCell>{pr.repository.name}</TableCell>
-                  <TableCell>{pr.developer.name}</TableCell>
-                  <TableCell>{getStatusBadge(pr.status)}</TableCell>
+                  <TableCell>{pr.repository?.name || 'Unknown'}</TableCell>
+                  <TableCell>{pr.author?.login || pr.developer?.name || 'Unknown'}</TableCell>
+                  <TableCell>{getStatusBadge(pr.state)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <span>{pr.cycleTime.toFixed(1)} hrs</span>

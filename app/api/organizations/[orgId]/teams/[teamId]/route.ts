@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { ServiceLocator } from '@/lib/core';
 import { TeamService } from '@/lib/services';
 import { unauthorized, badRequest, notFound, errorResponse } from '@/lib/api-errors';
 import { z } from 'zod';
@@ -13,8 +13,72 @@ export async function GET(
 ) {
   try {
     const { orgId, teamId } = await params;
-    const session = await auth();
+    
+    // Get session via dependency injection
+    const authService = await ServiceLocator.getAuthService();
+    const session = await authService.getSession();
+    
     if (!session?.user?.id) throw unauthorized();
+
+    // Handle demo mode
+    if (orgId.startsWith('demo-')) {
+      const demoTeamDetails = {
+        id: parseInt(teamId, 10),
+        name: teamId === '1' ? 'Frontend Team' : 'Backend Team',
+        description: teamId === '1' ? 'Responsible for UI/UX and frontend development' : 'API development and infrastructure',
+        color: teamId === '1' ? '#3B82F6' : '#10B981',
+        organization_id: orgId,
+        member_count: teamId === '1' ? 4 : 3,
+        created_at: new Date(teamId === '1' ? '2023-01-15' : '2023-02-01'),
+        updated_at: new Date('2024-01-15'),
+        members: teamId === '1' ? [
+          {
+            id: 1,
+            user_id: 'demo-user-1',
+            team_id: 1,
+            role: 'lead',
+            joined_at: new Date('2023-01-15'),
+            user: {
+              id: 'demo-user-1',
+              login: 'alice-smith',
+              name: 'Alice Smith',
+              email: 'alice@example-corp.com',
+              avatarUrl: 'https://github.com/alice.png'
+            }
+          },
+          {
+            id: 2,
+            user_id: 'demo-user-2', 
+            team_id: 1,
+            role: 'member',
+            joined_at: new Date('2023-02-01'),
+            user: {
+              id: 'demo-user-2',
+              login: 'bob-johnson',
+              name: 'Bob Johnson',
+              email: 'bob@example-corp.com',
+              avatarUrl: 'https://github.com/bob.png'
+            }
+          }
+        ] : [
+          {
+            id: 3,
+            user_id: 'demo-user-3',
+            team_id: 2,
+            role: 'lead',
+            joined_at: new Date('2023-02-01'),
+            user: {
+              id: 'demo-user-3',
+              login: 'charlie-brown',
+              name: 'Charlie Brown',
+              email: 'charlie@example-corp.com',
+              avatarUrl: 'https://github.com/charlie.png'
+            }
+          }
+        ]
+      };
+      return NextResponse.json(demoTeamDetails);
+    }
 
     const orgIdInt = parseInt(orgId, 10);
     const teamIdInt = parseInt(teamId, 10);
@@ -42,8 +106,17 @@ export async function PUT(
 ) {
   try {
     const { orgId, teamId } = await params;
-    const session = await auth();
+    
+    // Get session via dependency injection
+    const authService = await ServiceLocator.getAuthService();
+    const session = await authService.getSession();
+    
     if (!session?.user?.id) throw unauthorized();
+    
+    // Demo mode doesn't support team updates
+    if (orgId.startsWith('demo-')) {
+      throw badRequest('Team updates not supported in demo mode');
+    }
 
     const orgIdInt = parseInt(orgId, 10);
     const teamIdInt = parseInt(teamId, 10);
@@ -95,8 +168,17 @@ export async function DELETE(
 ) {
   try {
     const { orgId, teamId } = await params;
-    const session = await auth();
+    
+    // Get session via dependency injection
+    const authService = await ServiceLocator.getAuthService();
+    const session = await authService.getSession();
+    
     if (!session?.user?.id) throw unauthorized();
+    
+    // Demo mode doesn't support team deletion
+    if (orgId.startsWith('demo-')) {
+      throw badRequest('Team deletion not supported in demo mode');
+    }
 
     const orgIdInt = parseInt(orgId, 10);
     const teamIdInt = parseInt(teamId, 10);

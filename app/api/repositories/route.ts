@@ -1,50 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RepositoryService } from '@/lib/services/repository-service';
-import { getAuthenticatedUser } from '@/lib/auth-context';
+import { ServiceLocator } from '@/lib/core';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    // Use cached user context to avoid repeated queries
-    const user = await getAuthenticatedUser(request);
-
-    // Get all organizations with their repositories for this user
-    const organizationsWithRepositories = await RepositoryService.getRepositoriesForUserOrganizations(user.id);
+    // Get session via dependency injection
+    const authService = await ServiceLocator.getAuthService();
+    const session = await authService.getSession();
     
-    if (!organizationsWithRepositories || organizationsWithRepositories.length === 0) {
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get organization repository via dependency injection
+    const organizationRepository = await ServiceLocator.getOrganizationRepository();
+    
+    // Get repositories from the user's primary organization
+    const organizationId = session.organizations?.[0]?.id || 'demo-org-1';
+    const repositories = await organizationRepository.getRepositories(organizationId);
+    
+    if (!repositories || repositories.length === 0) {
       return NextResponse.json({ 
         repositories: [], 
         organizationCount: 0,
-        message: 'No organizations found. Please install the GitHub App to an organization first.' 
+        message: 'No repositories found. Please install the GitHub App to an organization first.' 
       }, { status: 200 });
     }
 
-    // Flatten all repositories from all organizations into a single array
-    let allRepositories: any[] = [];
-    
-    organizationsWithRepositories.forEach((orgWithRepos) => {
-      // Add organization info to each repository for display purposes
-      const enrichedRepos = orgWithRepos.repositories.map(repo => ({
-        ...repo,
-        organization: {
-          id: orgWithRepos.organization.id,
-          name: orgWithRepos.organization.name
-        }
-      }));
-      allRepositories = [...allRepositories, ...enrichedRepos];
-    });
-
-    // Sort by organization name, then repository name
-    allRepositories.sort((a, b) => {
-      const orgCompare = a.organization.name.localeCompare(b.organization.name);
-      if (orgCompare !== 0) return orgCompare;
-      return a.name.localeCompare(b.name);
-    });
+    // Format repositories for the component
+    const formattedRepositories = repositories.map(repo => ({
+      id: repo.id,
+      name: repo.name,
+      full_name: repo.fullName,
+      organization: {
+        id: organizationId,
+        name: session.organizations[0]?.name || 'Demo Organization'
+      },
+      is_tracked: repo.isTracked,
+      private: repo.isPrivate,
+      description: repo.description
+    }));
 
     return NextResponse.json({ 
-      repositories: allRepositories,
-      organizationCount: organizationsWithRepositories.length
+      repositories: formattedRepositories,
+      organizationCount: session.organizations.length
     });
   } catch (error) {
     console.error('Error fetching repositories:', error);

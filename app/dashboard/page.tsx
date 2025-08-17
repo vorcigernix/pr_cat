@@ -112,6 +112,7 @@ export default async function DashboardPage() {
           html_url: 'https://github.com/demo-user',
           avatar_url: '/api/placeholder/avatar/demo',
         },
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
         organizations: [],
         newUser: false,
         hasGithubApp: false

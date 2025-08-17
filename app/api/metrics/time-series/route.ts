@@ -1,174 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as PRRepository from '@/lib/repositories/pr-repository';
-import { query } from '@/lib/db';
-import { getUserWithOrganizations } from '@/lib/auth-context';
+import { ServiceLocator } from '@/lib/core';
 
 export const runtime = 'nodejs';
-// Cache for 30 minutes - time series data changes gradually
-export const revalidate = 1800;
-// Force dynamic rendering since we use headers()
-export const dynamic = 'force-dynamic';
-
-type TimeSeriesDataPoint = {
-  date: string;
-  prThroughput: number;
-  cycleTime: number;
-  reviewTime: number;
-  codingHours: number;
-};
 
 export async function GET(request: NextRequest) {
   try {
-    // Add cache headers for optimal caching
-    const headers = new Headers();
+    // Get session via dependency injection
+    const authService = await ServiceLocator.getAuthService();
+    const session = await authService.getSession();
     
-    // Parse query parameters early for ETag generation
-    const { searchParams } = new URL(request.url);
-    const repositoryId = searchParams.get('repositoryId');
-    const startDateParam = searchParams.get('startDate');
-    const endDateParam = searchParams.get('endDate');
-    
-    // Generate ETag based on parameters and current hour (for hourly cache invalidation)
-    const currentHour = new Date().getHours();
-    const etag = `"time-series-${repositoryId || 'all'}-${startDateParam || 'default'}-${endDateParam || 'default'}-${currentHour}"`;
-    headers.set('ETag', etag);
-    
-    // Cache for 1 hour, allow stale content for 24 hours while revalidating
-    headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
-    
-    // Check if client has fresh data
-    const clientETag = request.headers.get('if-none-match');
-    if (clientETag === etag) {
-      return new NextResponse(null, { status: 304, headers });
-    }
-    
-    // Use cached user context to avoid repeated queries
-    const { user, primaryOrganization } = await getUserWithOrganizations(request);
-    const orgId = primaryOrganization.id;
-
-    // Set date range - default to last 14 days if not provided
-    let startDate: Date, endDate: Date;
-    
-    if (startDateParam && endDateParam) {
-      startDate = new Date(startDateParam);
-      endDate = new Date(endDateParam);
-    } else {
-      endDate = new Date();
-      startDate = new Date(endDate);
-      startDate.setDate(startDate.getDate() - 13); // 14 days total (including today)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Ensure we don't exceed a reasonable range (max 90 days)
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff > 90) {
-      return NextResponse.json({ error: 'Date range cannot exceed 90 days' }, { status: 400 });
-    }
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const days = parseInt(searchParams.get('days') || '14');
+    const repositoryId = searchParams.get('repositoryId') || undefined;
 
-    const timeSeriesData: TimeSeriesDataPoint[] = [];
-
-    // Build repository filter condition
-    let repositoryFilter = '';
-    let queryParams: any[] = [orgId];
+    // Get the metrics service via dependency injection
+    const metricsService = await ServiceLocator.getMetricsService();
     
-    if (repositoryId && repositoryId !== 'all') {
-      repositoryFilter = 'AND r.id = ?';
-      queryParams.push(parseInt(repositoryId));
-    }
-
-    // For each day in the range
-    for (let i = 0; i <= daysDiff; i++) {
-      const currentDate = new Date(startDate);
-      currentDate.setDate(currentDate.getDate() + i);
-      
-      const dateStr = currentDate.toISOString().split('T')[0];
-      const nextDate = new Date(currentDate);
-      nextDate.setDate(nextDate.getDate() + 1);
-      
-      // Use optimized SQL queries for each day with optional repository filter
-      
-      // 1. Get PRs merged on this specific day with cycle time calculation
-      const prsForDay = await query<{
-        id: number;
-        cycle_time_hours: number;
-        additions: number;
-        deletions: number;
-      }>(`
-        SELECT 
-          pr.id,
-          CAST((julianday(pr.merged_at) - julianday(pr.created_at)) * 24 AS REAL) as cycle_time_hours,
-          pr.additions,
-          pr.deletions
-        FROM pull_requests pr
-        JOIN repositories r ON pr.repository_id = r.id
-        WHERE r.organization_id = ?
-        ${repositoryFilter}
-        AND pr.state = 'merged'
-        AND pr.merged_at >= ?
-        AND pr.merged_at < ?
-        AND pr.created_at IS NOT NULL
-        AND pr.merged_at IS NOT NULL
-      `, [...queryParams, currentDate.toISOString(), nextDate.toISOString()]);
-      
-      // 2. Calculate review time for PRs merged this day
-      const reviewTimes = await query<{
-        review_time_hours: number;
-      }>(`
-        SELECT 
-          CAST((julianday(rev.submitted_at) - julianday(pr.created_at)) * 24 AS REAL) as review_time_hours
-        FROM pull_requests pr
-        JOIN repositories r ON pr.repository_id = r.id
-        JOIN pr_reviews rev ON pr.id = rev.pull_request_id
-        WHERE r.organization_id = ?
-        ${repositoryFilter}
-        AND pr.state = 'merged'
-        AND pr.merged_at >= ?
-        AND pr.merged_at < ?
-        AND pr.created_at IS NOT NULL
-        AND rev.submitted_at IS NOT NULL
-        AND rev.submitted_at = (
-          SELECT MIN(rev2.submitted_at) 
-          FROM pr_reviews rev2 
-          WHERE rev2.pull_request_id = pr.id
-        )
-      `, [...queryParams, currentDate.toISOString(), nextDate.toISOString()]);
-      
-      // Calculate metrics
-      const prThroughput = prsForDay.length;
-      
-      // Calculate average cycle time
-      const avgCycleTime = prsForDay.length > 0 
-        ? prsForDay.reduce((sum, pr) => sum + (pr.cycle_time_hours || 0), 0) / prsForDay.length
-        : (i > 0 ? timeSeriesData[i-1]?.cycleTime || 0 : 0);
-      
-      // Calculate average review time  
-      const avgReviewTime = reviewTimes.length > 0
-        ? reviewTimes.reduce((sum, review) => sum + (review.review_time_hours || 0), 0) / reviewTimes.length
-        : (i > 0 ? timeSeriesData[i-1]?.reviewTime || 0 : 0);
-      
-      // Calculate coding hours based on lines changed
-      const totalLinesChanged = prsForDay.reduce((sum, pr) => 
-        sum + (pr.additions || 0) + (pr.deletions || 0), 0
-      );
-      
-      // Estimate: 1 hour of coding for every 50 lines changed (more realistic than 100)
-      const codingHours = totalLinesChanged / 50;
-      
-      timeSeriesData.push({
-        date: dateStr,
-        prThroughput,
-        cycleTime: Math.round(avgCycleTime * 10) / 10, // Round to 1 decimal
-        reviewTime: Math.round(avgReviewTime * 10) / 10, // Round to 1 decimal  
-        codingHours: Math.round(codingHours * 10) / 10 // Round to 1 decimal
-      });
-    }
-
-    headers.set('Content-Type', 'application/json');
-    headers.set('X-Cache-Strategy', 'hourly-time-series');
-    headers.set('X-Data-Date', new Date().toISOString());
+    // Use the primary organization ID from the session
+    const organizationId = session.organizations?.[0]?.id || 'demo-org-1';
     
-    return NextResponse.json(timeSeriesData, { headers });
+    // Get time series data - no conditional logic needed!
+    const data = await metricsService.getTimeSeries(organizationId, days, repositoryId);
+    
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error calculating engineering metrics:', error);
-    return NextResponse.json({ error: 'Failed to calculate metrics' }, { status: 500 });
+    console.error('Error getting time series data:', error);
+    return NextResponse.json(
+      { error: 'Failed to get time series data' }, 
+      { status: 500 }
+    );
   }
-} 
+}

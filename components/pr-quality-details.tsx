@@ -85,7 +85,9 @@ export function PRQualityDetails() {
           throw new Error(`Failed to fetch pull requests: ${response.status} ${response.statusText}`);
         }
         
-        const data = await response.json();
+        const response_data = await response.json();
+        // Handle both paginated response {data: [...]} and direct array
+        const data = Array.isArray(response_data) ? response_data : response_data.data || [];
         setPullRequests(data);
       } catch (error) {
         console.error("Failed to load pull request data:", error);
