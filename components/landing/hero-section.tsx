@@ -54,28 +54,28 @@ export function HeroSection() {
                                     <TextLoop 
                                         className="inline-block" 
                                         interval={4}
-                                        transition={{ duration: 0.5 }}
+                                        transition={{ duration: 1 }}
                                         variants={{
-                                            initial: { opacity: 0, y: 20 },
-                                            animate: { opacity: 1, y: 0 },
-                                            exit: { opacity: 0, y: -20 }
+                                            initial: { opacity: 0, x: 300 },
+                                            animate: { opacity: 1, x: 0 },
+                                            exit: { opacity: 0, x: -300 }
                                         }}
                                     >
-                                        <span>Team alignment &gt; Performance</span>
+                                        <span>Team alignment &gt; Superstars</span>
                                         <span>Progress &gt; Push</span>
                                         <span>Transparency &gt; Politics</span>
                                     </TextLoop>
                                 </div>
                                 {/* Desktop version */}
                                 <div className="hidden sm:block max-w-2xl mx-auto">
-                                    <TextLoop 
+                                <TextLoop 
                                         className="inline-block" 
                                         interval={4}
-                                        transition={{ duration: 0.5 }}
+                                        transition={{ duration: 1 }}
                                         variants={{
-                                            initial: { opacity: 0, y: 20 },
-                                            animate: { opacity: 1, y: 0 },
-                                            exit: { opacity: 0, y: -20 }
+                                            initial: { opacity: 0, x: 300 },
+                                            animate: { opacity: 1, x: 0 },
+                                            exit: { opacity: 0, x: -300 }
                                         }}
                                     >
                                         <span>Team alignment &gt; Individual performance</span>
