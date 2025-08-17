@@ -9,6 +9,7 @@ export * from './domain/value-objects'
 
 // Application layer exports  
 export * from './ports'
+export * from './application'
 
 // Container layer exports
 export * from './container'

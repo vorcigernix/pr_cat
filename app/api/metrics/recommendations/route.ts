@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServiceLocator } from '@/lib/core';
+import { ServiceLocator, withAuth, ApplicationContext } from '@/lib/core';
 
 export const runtime = 'nodejs';
 // Cache for 2 hours - workflow recommendations change less frequently
@@ -7,25 +7,17 @@ export const revalidate = 7200;
 // Force dynamic rendering since we use headers()
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+// Pure business logic handler - no authentication concerns
+const recommendationsHandler = async (
+  context: ApplicationContext,
+  request: NextRequest
+): Promise<NextResponse> => {
   try {
-    // Get auth service via dependency injection for demo mode compatibility
-    const authService = await ServiceLocator.getAuthService();
-    const session = await authService.getSession();
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get the metrics service via dependency injection
-    // The container will automatically provide the right implementation (demo or production)
     const metricsService = await ServiceLocator.getMetricsService();
     
-    // Use the primary organization ID from the session
-    const organizationId = session.organizations?.[0]?.id || 'demo-org-1';
-    
-    // Get recommendations - no conditional logic needed!
-    const recommendations = await metricsService.getRecommendations(organizationId);
+    // Use organization ID from authenticated context
+    const recommendations = await metricsService.getRecommendations(context.organizationId);
     
     return NextResponse.json(recommendations);
   } catch (error) {
@@ -35,4 +27,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+};
+
+// Authentication handled by middleware at application boundary
+export const GET = withAuth(recommendationsHandler);
