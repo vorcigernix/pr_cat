@@ -12,8 +12,8 @@ export function CTASection() {
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
           Join development teams that trust open source. Deploy PR Cat on your infrastructure and start gaining insights into your team's workflow.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="relative inline-block w-fit">
             <GlowEffect
               colors={['#8B5CF6', '#C959DD', '#A78BFA', '#D946EF']}
               mode='static'

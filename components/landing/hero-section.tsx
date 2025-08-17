@@ -36,33 +36,60 @@ export function HeroSection() {
                                 </div>
                             </Link>
 
-                            <h1 className="mt-8 text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem] font-bold tracking-tight text-white">
-                                <TextRoll duration={0.6}>
-                                    Data &gt; Feelings
-                                </TextRoll>
+                            <h1 className="mt-8 text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem] font-bold tracking-tight text-white text-center">
+                                <div className="sm:hidden">
+                                    <TextRoll duration={0.6}>Data</TextRoll>
+                                    <div className="my-2">
+                                        <TextRoll duration={0.6}>&gt;</TextRoll>
+                                    </div>
+                                    <TextRoll duration={0.6}>Feelings</TextRoll>
+                                </div>
+                                <div className="hidden sm:block">
+                                    <TextRoll duration={0.6}>Data &gt; Feelings</TextRoll>
+                                </div>
                             </h1>
-                            <div className="mx-auto mt-6 max-w-2xl text-balance text-xl md:text-2xl text-[#e4e4e7]">
-                                <TextLoop 
-                                    className="inline-block" 
-                                    interval={4}
-                                    transition={{ duration: 0.5 }}
-                                    variants={{
-                                        initial: { opacity: 0, y: 20 },
-                                        animate: { opacity: 1, y: 0 },
-                                        exit: { opacity: 0, y: -20 }
-                                    }}
-                                >
-                                    <span>Team alignment &gt; Individual performance</span>
-                                    <span>Continuous improvement &gt; Managerial push</span>
-                                    <span>Transparency &gt; Politics</span>
-                                </TextLoop>
+                            <div className="mx-auto mt-6 text-balance text-lg sm:text-xl md:text-2xl text-[#e4e4e7] text-center px-4">
+                                {/* Mobile version with shorter text */}
+                                <div className="sm:hidden max-w-xs mx-auto">
+                                    <TextLoop 
+                                        className="inline-block" 
+                                        interval={4}
+                                        transition={{ duration: 0.5 }}
+                                        variants={{
+                                            initial: { opacity: 0, y: 20 },
+                                            animate: { opacity: 1, y: 0 },
+                                            exit: { opacity: 0, y: -20 }
+                                        }}
+                                    >
+                                        <span>Team alignment &gt; Performance</span>
+                                        <span>Progress &gt; Push</span>
+                                        <span>Transparency &gt; Politics</span>
+                                    </TextLoop>
+                                </div>
+                                {/* Desktop version */}
+                                <div className="hidden sm:block max-w-2xl mx-auto">
+                                    <TextLoop 
+                                        className="inline-block" 
+                                        interval={4}
+                                        transition={{ duration: 0.5 }}
+                                        variants={{
+                                            initial: { opacity: 0, y: 20 },
+                                            animate: { opacity: 1, y: 0 },
+                                            exit: { opacity: 0, y: -20 }
+                                        }}
+                                    >
+                                        <span>Team alignment &gt; Individual performance</span>
+                                        <span>Continuous improvement &gt; Managerial push</span>
+                                        <span>Transparency &gt; Politics</span>
+                                    </TextLoop>
+                                </div>
                             </div>
                             <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-[#a1a1aa]">
                                 Self-hosted GitHub analytics that puts evidence-based decisions first, fostering team growth through transparency and continuous improvement.
                             </p>
 
                             <div className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
-                                <div className="relative">
+                                <div className="relative inline-block w-fit">
                                     <GlowEffect
                                         colors={['#8B5CF6', '#C959DD', '#A78BFA', '#D946EF']}
                                         mode='static'
