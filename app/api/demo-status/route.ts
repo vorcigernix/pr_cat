@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDemoModeInfo } from '@/lib/demo-mode';
+import { EnvironmentConfig } from '@/lib/core';
 
 /**
  * Demo Status API
@@ -8,24 +8,35 @@ import { getDemoModeInfo } from '@/lib/demo-mode';
  */
 export async function GET() {
   try {
-    const demoInfo = getDemoModeInfo();
+    const environmentConfig = EnvironmentConfig.getInstance();
+    const isDemoMode = environmentConfig.isDemoMode();
+    
+    // Determine missing services
+    const missingServices = [];
+    const hasDatabase = environmentConfig.hasFeature('database');
+    const hasGitHub = environmentConfig.hasFeature('github');
+    const hasGitHubAuth = Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET);
+    
+    if (!hasDatabase) missingServices.push('Database (Turso)');
+    if (!hasGitHub) missingServices.push('GitHub App');
+    if (!hasGitHubAuth) missingServices.push('GitHub OAuth');
     
     return NextResponse.json({
       success: true,
       data: {
-        isDemoMode: demoInfo.isDemoMode,
-        missingServices: demoInfo.missingServices,
-        canUpgrade: demoInfo.canUpgrade,
+        isDemoMode,
+        missingServices,
+        canUpgrade: missingServices.length > 0,
         availableFeatures: {
           dashboard: true, // Always available with demo data
-          githubAuth: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
-          githubApp: Boolean(process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY),
-          database: Boolean(process.env.TURSO_URL && process.env.TURSO_TOKEN),
+          githubAuth: hasGitHubAuth,
+          githubApp: hasGitHub,
+          database: hasDatabase,
           webhooks: Boolean(process.env.GITHUB_WEBHOOK_SECRET),
         },
         setupGuide: {
-          nextStep: demoInfo.missingServices[0] || null,
-          estimatedTime: getSetupTime(demoInfo.missingServices),
+          nextStep: missingServices[0] || null,
+          estimatedTime: getSetupTime(missingServices),
           helpUrl: 'https://github.com/vorcigernix/pr_cat#environment-setup'
         }
       }

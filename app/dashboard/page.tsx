@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar"
 import { SetupStatusAlert } from "@/components/ui/setup-status-alert"
 import { DemoModeBanner } from "@/components/ui/demo-mode-banner"
-import { getDemoModeInfo } from "@/lib/demo-mode"
+import { EnvironmentConfig } from "@/lib/core"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { auth } from "@/auth"
 import { ensureUserExists } from "@/lib/user-utils"
@@ -90,45 +90,26 @@ function RecommendationsSkeleton() {
 }
 
 export default async function DashboardPage() {
+  // Clean authentication - no conditional logic needed
   const session = await auth()
+  const environmentConfig = EnvironmentConfig.getInstance()
   
-  // Get demo mode info first
-  const demoInfo = getDemoModeInfo()
+  // Check if we're in demo mode for banner display only
+  const isDemoMode = environmentConfig.isDemoMode()
   
-  // In demo mode, create a mock session; otherwise require real authentication
-  let effectiveSession = session;
-  let setupIncomplete = false;
-  
-  if (demoInfo.isDemoMode) {
-    // Demo mode: create mock session for components that need it
-    if (!session?.user) {
-      effectiveSession = {
-        user: {
-          id: 'demo-user-123',
-          name: 'Demo User',
-          email: 'demo@example.com',
-          image: '/api/placeholder/avatar/demo',
-          login: 'demo-user',
-          html_url: 'https://github.com/demo-user',
-          avatar_url: '/api/placeholder/avatar/demo',
-        },
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
-        organizations: [],
-        newUser: false,
-        hasGithubApp: false
-      };
-    }
-    setupIncomplete = false; // Demo mode doesn't need setup
-  } else {
-    // Real mode: require authentication
-    if (!session?.user) {
-      redirect('/sign-in')
-    }
-    
-    // Ensure user exists in database - this handles all user creation/update logic
-    await ensureUserExists(session.user)
-    setupIncomplete = session.hasGithubApp === false;
+  // In demo mode, the auth service provides mock sessions automatically
+  // In production mode, require real authentication
+  if (!isDemoMode && !session?.user) {
+    redirect('/sign-in')
   }
+  
+  // In production mode, ensure user exists in database
+  if (!isDemoMode && session?.user) {
+    await ensureUserExists(session.user)
+  }
+  
+  // Setup incomplete only applies to production mode
+  const setupIncomplete = !isDemoMode && session?.hasGithubApp === false;
 
   return (
     <SidebarProvider style={SIDEBAR_STYLES}>
@@ -136,13 +117,13 @@ export default async function DashboardPage() {
       <SidebarInset>
         <SiteHeader pageTitle="Dashboard Overview" />
         
-        {demoInfo.isDemoMode && (
+        {isDemoMode && (
           <div className="pt-4 pb-2">
             <DemoModeBanner />
           </div>
         )}
         
-        {setupIncomplete && !demoInfo.isDemoMode && (
+        {setupIncomplete && (
           <div className="px-4 pt-4 lg:px-6">
             <SetupStatusAlert />
           </div>

@@ -151,17 +151,20 @@ export const config = {
   callbacks: {
     authorized({ request, auth }) {
       const { pathname } = request.nextUrl;
+      
+      // Allow dashboard access in demo mode (when no real GitHub credentials configured)
       if (pathname.startsWith("/dashboard")) {
-        // Check if we're in demo mode
-        const isDemoMode = !process.env.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID === 'demo-client-id';
+        const hasGitHubCredentials = process.env.GITHUB_CLIENT_ID && 
+                                     process.env.GITHUB_CLIENT_SECRET && 
+                                     process.env.GITHUB_CLIENT_ID !== 'demo-client-id';
         
-        if (isDemoMode) {
+        if (!hasGitHubCredentials) {
           // Demo mode: allow dashboard access without authentication
           console.log('🎯 Demo mode: Allowing dashboard access without authentication');
           return true;
         }
         
-        // Real mode: require authentication
+        // Production mode: require authentication
         return !!auth;
       }
       return true;
@@ -234,17 +237,19 @@ export const config = {
       return token;
     },
     async signIn({ user, account, profile }) {
-      // Check if we're in demo mode
-      const isDemoMode = !process.env.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID === 'demo-client-id';
+      // Skip database operations if GitHub credentials not properly configured (demo mode)
+      const hasGitHubCredentials = process.env.GITHUB_CLIENT_ID && 
+                                   process.env.GITHUB_CLIENT_SECRET && 
+                                   process.env.GITHUB_CLIENT_ID !== 'demo-client-id';
       
-      if (isDemoMode) {
-        // Demo mode: allow sign-in without database operations
+      if (!hasGitHubCredentials) {
+        // Demo mode: allow sign-in without database operations  
         console.log('🎯 Demo mode: Allowing sign-in without database operations');
         user.id = 'demo-user-123';
         return true;
       }
 
-      // Real mode: full sign-in process
+      // Production mode: full sign-in process with database operations
       if (!profile || typeof profile.id === 'undefined' || profile.id === null) {
         console.error("SignIn: Missing required profile.id");
         return false;
