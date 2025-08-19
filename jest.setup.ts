@@ -18,8 +18,8 @@ jest.mock('@/auth', () => ({
 // Mock environment variables for tests
 process.env.TURSO_URL = 'libsql://test.turso.io';
 process.env.TURSO_TOKEN = 'test-token';
-process.env.GITHUB_CLIENT_ID = 'test-github-client-id';
-process.env.GITHUB_CLIENT_SECRET = 'test-github-client-secret';
+process.env.GITHUB_OAUTH_CLIENT_ID = 'test-github-client-id';
+process.env.GITHUB_OAUTH_CLIENT_SECRET = 'test-github-client-secret';
 process.env.GITHUB_APP_ID = '123456';
 process.env.GITHUB_APP_PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----
 test-private-key

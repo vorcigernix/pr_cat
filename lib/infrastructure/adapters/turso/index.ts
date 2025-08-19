@@ -1,11 +1,11 @@
 /**
  * Turso Adapters Index
- * Exports all Turso database adapter implementations
+ * Exports all Turso database adapter implementations with real database queries
  */
 
-// Export simplified production adapters
-export { SimpleTursoPullRequestRepository as TursoPullRequestRepository } from './simple-pr.adapter'
-export { SimpleTursoMetricsService as TursoMetricsService } from './simple-metrics.adapter'
-export { SimpleTursoAuthService as TursoAuthService } from './simple-auth.adapter'
-export { SimpleTursoOrganizationRepository as TursoOrganizationRepository } from './simple-org.adapter'
-export { SimpleTursoRepository as TursoRepository } from './simple-repo.adapter'
+// Export real production adapters that query the database
+export { TursoPullRequestRepository } from './pull-request.adapter'
+export { TursoMetricsService } from './metrics.adapter' 
+export { TursoAuthService } from './auth.adapter'
+export { TursoOrganizationRepository } from './organization.adapter'
+export { TursoRepository } from './repository.adapter'

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { GitHubClient } from '@/lib/github';
-import { generateAppJwt } from '@/lib/github-app';
-import { Octokit } from '@octokit/rest';
+import { getService } from '@/lib/core/container/di-container';
+import { IGitHubAppService } from '@/lib/core/ports';
 
 export const runtime = 'nodejs';
 
@@ -26,15 +25,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ installations: [] });
     }
     
-    // For GitHub App installation status, we need to use the GitHub App JWT
-    // because the user OAuth token doesn't have permission to list installations
-    console.log('Organizations installation-status: Generating GitHub App JWT');
-    const appJwt = await generateAppJwt();
-    const appOctokit = new Octokit({ auth: appJwt });
+    // Get GitHub App service
+    const githubAppService = await getService<IGitHubAppService>('GitHubAppService');
+    
+    // Validate GitHub App configuration
+    const config = await githubAppService.validateConfiguration();
+    if (!config.isValid) {
+      console.log('Organizations installation-status: GitHub App not properly configured');
+      return NextResponse.json({ 
+        installations: [],
+        configured: false,
+        errors: config.errors
+      });
+    }
     
     // Get all app installations
     console.log('Organizations installation-status: Fetching app installations');
-    const { data: installationsData } = await appOctokit.apps.listInstallations();
+    const installationsData = await githubAppService.listInstallations();
     console.log(`Organizations installation-status: Found ${installationsData.length} app installations`);
     
     // Map organizations to include installation status

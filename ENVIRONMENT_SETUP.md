@@ -33,8 +33,8 @@ Navigate to: **GitHub → Settings → Developer settings → OAuth Apps → New
 - **Authorization callback URL**: `https://prcat.vercel.app/api/auth/callback/github`
 
 After creation, you'll get:
-- `Client ID` → Use as `GITHUB_CLIENT_ID`
-- Generate a `Client Secret` → Use as `GITHUB_CLIENT_SECRET`
+- `Client ID` → Use as `GITHUB_OAUTH_CLIENT_ID`
+- Generate a `Client Secret` → Use as `GITHUB_OAUTH_CLIENT_SECRET`
 
 ### 2. Create a GitHub App
 
@@ -81,8 +81,8 @@ NEXTAUTH_SECRET=            # Random 32+ character string (generate with: openss
 NEXTAUTH_URL=               # http://localhost:3000 (local) or https://prcat.vercel.app (production)
 
 # GitHub OAuth App (for user authentication)
-GITHUB_CLIENT_ID=           # From OAuth App
-GITHUB_CLIENT_SECRET=       # From OAuth App
+GITHUB_OAUTH_CLIENT_ID=           # From OAuth App
+GITHUB_OAUTH_CLIENT_SECRET=       # From OAuth App
 
 # GitHub App (for repository access)
 GITHUB_APP_ID=              # Numeric ID from GitHub App
@@ -121,8 +121,8 @@ NEXTAUTH_URL=http://localhost:3000
 APP_URL=http://localhost:3000
 
 # From your local GitHub OAuth App
-GITHUB_CLIENT_ID=your-oauth-client-id
-GITHUB_CLIENT_SECRET=your-oauth-client-secret
+GITHUB_OAUTH_CLIENT_ID=your-oauth-client-id
+GITHUB_OAUTH_CLIENT_SECRET=your-oauth-client-secret
 
 # From your GitHub App
 GITHUB_APP_ID=123456
@@ -210,7 +210,7 @@ curl -X POST https://prcat.vercel.app/api/migrate \
 **Cause**: Mismatched OAuth callback URL
 **Solution**: 
 - Verify the callback URL in your GitHub OAuth App matches exactly: `${NEXTAUTH_URL}/api/auth/callback/github`
-- Check that you're using the correct `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` pair
+- Check that you're using the correct `GITHUB_OAUTH_CLIENT_ID` and `GITHUB_OAUTH_CLIENT_SECRET` pair
 
 #### 2. Organizations Not Appearing
 **Cause**: Organizations not synced to database

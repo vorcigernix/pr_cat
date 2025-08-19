@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { GitHubService } from '@/lib/services';
+import { getService } from '@/lib/core/container/di-container';
+import { IGitHubService } from '@/lib/core/ports';
 
 export async function GET() {
   const session = await auth();
@@ -14,8 +15,8 @@ export async function GET() {
   }
   
   try {
-    const githubService = new GitHubService(session.accessToken);
-    const organizations = await githubService.syncUserOrganizations(session.user.id);
+    const githubService = await getService<IGitHubService>('GitHubService');
+    const organizations = await githubService.getUserOrganizations(session.accessToken);
     
     return NextResponse.json({ organizations });
   } catch (error) {

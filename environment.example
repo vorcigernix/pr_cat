@@ -19,8 +19,8 @@ APP_URL=http://localhost:3000
 # Create at: https://github.com/settings/developers
 # Callback URL: ${NEXTAUTH_URL}/api/auth/callback/github
 
-GITHUB_CLIENT_ID=your_github_oauth_client_id
-GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+GITHUB_OAUTH_CLIENT_ID=your_github_oauth_client_id
+GITHUB_OAUTH_CLIENT_SECRET=your_github_oauth_client_secret
 
 # ===========================================
 # GITHUB APP (Required for repository access)

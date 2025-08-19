@@ -15,7 +15,7 @@ export async function GET() {
     const missingServices = [];
     const hasDatabase = environmentConfig.hasFeature('database');
     const hasGitHub = environmentConfig.hasFeature('github');
-    const hasGitHubAuth = Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET);
+    const hasGitHubAuth = Boolean(process.env.GITHUB_OAUTH_CLIENT_ID && process.env.GITHUB_OAUTH_CLIENT_SECRET);
     
     if (!hasDatabase) missingServices.push('Database (Turso)');
     if (!hasGitHub) missingServices.push('GitHub App');

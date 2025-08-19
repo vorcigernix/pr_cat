@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { GitHubService } from '@/lib/services';
+import { getService } from '@/lib/core/container/di-container';
+import { IGitHubService } from '@/lib/core/ports';
 
 // Use the context object directly with proper typing for Next.js route handler
 export async function GET(
@@ -20,10 +21,13 @@ export async function GET(
   }
   
   try {
-    const githubService = new GitHubService(session.accessToken);
-    const repositories = await githubService.syncOrganizationRepositories(orgName);
+    const githubService = await getService<IGitHubService>('GitHubService');
+    const result = await githubService.syncOrganizationRepositories(orgName);
     
-    return NextResponse.json({ repositories });
+    return NextResponse.json({ 
+      repositories: result.synced,
+      errors: result.errors 
+    });
   } catch (error) {
     console.error('GitHub API error:', error);
     return NextResponse.json(

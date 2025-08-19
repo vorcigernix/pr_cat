@@ -8,13 +8,13 @@ const envSchema = z.object({
   TURSO_POOL_SIZE: z.string().regex(/^\d+$/).optional(),
   
   // GitHub OAuth (optional for demo mode)
-  GITHUB_CLIENT_ID: z.string().optional(),
-  GITHUB_CLIENT_SECRET: z.string().optional(),
+  GITHUB_OAUTH_CLIENT_ID: z.string().optional(),
+  GITHUB_OAUTH_CLIENT_SECRET: z.string().optional(),
   
   // GitHub App (optional for demo mode)
   GITHUB_APP_ID: z.string().optional(),
   GITHUB_APP_PRIVATE_KEY: z.string().optional(),
-  // If you don't use a separate webhook secret, we will fallback to GITHUB_CLIENT_SECRET at runtime
+  // If you don't use a separate webhook secret, we will fallback to GITHUB_OAUTH_CLIENT_SECRET at runtime
   GITHUB_WEBHOOK_SECRET: z.string().optional(),
   NEXT_PUBLIC_GITHUB_APP_SLUG: z.string().optional(),
   

@@ -13,8 +13,8 @@ Based on analysis of your PR Cat project implementation as a Vercel template, he
 **Problem**: The Vercel deploy button requires **12 environment variables** upfront.
 **Impact**: This is overwhelming and creates a high barrier to entry.
 **Current Requirements**:
-- GITHUB_CLIENT_ID
-- GITHUB_CLIENT_SECRET
+- GITHUB_OAUTH_CLIENT_ID
+- GITHUB_OAUTH_CLIENT_SECRET
 - GITHUB_WEBHOOK_SECRET
 - GITHUB_APP_ID
 - GITHUB_APP_PRIVATE_KEY
@@ -75,7 +75,7 @@ const requiresGitHubApp = () => {
 
 #### Minimal Deploy Button (3-4 variables only):
 ```markdown
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,NEXTAUTH_SECRET&envDescription=Minimal%20setup%20for%20PR%20Cat&project-name=pr-cat&demo=1)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_OAUTH_CLIENT_ID,GITHUB_OAUTH_CLIENT_SECRET,NEXTAUTH_SECRET&envDescription=Minimal%20setup%20for%20PR%20Cat&project-name=pr-cat&demo=1)
 ```
 
 #### Progressive Enhancement Strategy:
@@ -159,8 +159,8 @@ if (!hasDatabase()) {
   "env": {
     "required": ["NEXTAUTH_SECRET"],
     "optional": [
-      "GITHUB_CLIENT_ID",
-      "GITHUB_CLIENT_SECRET",
+      "GITHUB_OAUTH_CLIENT_ID",
+      "GITHUB_OAUTH_CLIENT_SECRET",
       "TURSO_URL",
       "TURSO_TOKEN"
     ]

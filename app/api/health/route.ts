@@ -15,7 +15,7 @@ export async function GET() {
       // Don't expose actual env vars, just check if they exist
       envVarsConfigured: {
         turso: !!process.env.TURSO_URL && !!process.env.TURSO_TOKEN,
-        github: !!process.env.GITHUB_CLIENT_ID && !!process.env.GITHUB_CLIENT_SECRET,
+        github: !!process.env.GITHUB_OAUTH_CLIENT_ID && !!process.env.GITHUB_OAUTH_CLIENT_SECRET,
         nextauth: !!process.env.NEXTAUTH_SECRET,
       }
     };

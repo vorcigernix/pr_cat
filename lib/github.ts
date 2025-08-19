@@ -38,6 +38,13 @@ export class GitHubClient {
   }
 
   /**
+   * Get direct access to the Octokit client for advanced operations
+   */
+  get octokitClient(): Octokit {
+    return this.octokit;
+  }
+
+  /**
    * Execute a GitHub API request with automatic token expiration handling
    * @param apiCall Function that executes the actual API call
    * @returns Result of the API call
@@ -273,7 +280,7 @@ export class GitHubClient {
         config: {
           url: webhookUrl,
           content_type: 'json',
-          secret: process.env.GITHUB_WEBHOOK_SECRET ?? process.env.GITHUB_CLIENT_SECRET,
+          secret: process.env.GITHUB_WEBHOOK_SECRET ?? process.env.GITHUB_OAUTH_CLIENT_SECRET,
         },
         events: ['pull_request', 'pull_request_review']
       });

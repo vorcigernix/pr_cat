@@ -132,8 +132,8 @@ async function upsertUser(githubId: string, userData: any) {
 export const config = {
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID || 'demo-client-id',
-      clientSecret: process.env.GITHUB_CLIENT_SECRET || 'demo-client-secret',
+      clientId: process.env.GITHUB_OAUTH_CLIENT_ID || 'demo-client-id',
+      clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET || 'demo-client-secret',
       authorization: {
         params: {
           scope: 'read:user user:email repo read:org',
@@ -154,9 +154,9 @@ export const config = {
       
       // Allow dashboard access in demo mode (when no real GitHub credentials configured)
       if (pathname.startsWith("/dashboard")) {
-        const hasGitHubCredentials = process.env.GITHUB_CLIENT_ID && 
-                                     process.env.GITHUB_CLIENT_SECRET && 
-                                     process.env.GITHUB_CLIENT_ID !== 'demo-client-id';
+        const hasGitHubCredentials = process.env.GITHUB_OAUTH_CLIENT_ID && 
+                                     process.env.GITHUB_OAUTH_CLIENT_SECRET && 
+                                     process.env.GITHUB_OAUTH_CLIENT_ID !== 'demo-client-id';
         
         if (!hasGitHubCredentials) {
           // Demo mode: allow dashboard access without authentication
@@ -176,7 +176,7 @@ export const config = {
       }
 
       // Check if we're in demo mode (no real GitHub config)
-      const isDemoMode = !process.env.GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID === 'demo-client-id';
+      const isDemoMode = !process.env.GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_OAUTH_CLIENT_ID === 'demo-client-id';
       
       if (isDemoMode) {
         // Demo mode: use simple session without database calls
@@ -238,9 +238,9 @@ export const config = {
     },
     async signIn({ user, account, profile }) {
       // Skip database operations if GitHub credentials not properly configured (demo mode)
-      const hasGitHubCredentials = process.env.GITHUB_CLIENT_ID && 
-                                   process.env.GITHUB_CLIENT_SECRET && 
-                                   process.env.GITHUB_CLIENT_ID !== 'demo-client-id';
+      const hasGitHubCredentials = process.env.GITHUB_OAUTH_CLIENT_ID && 
+                                   process.env.GITHUB_OAUTH_CLIENT_SECRET && 
+                                   process.env.GITHUB_OAUTH_CLIENT_ID !== 'demo-client-id';
       
       if (!hasGitHubCredentials) {
         // Demo mode: allow sign-in without database operations  

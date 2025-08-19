@@ -52,7 +52,7 @@ export class EnvironmentConfig {
     
     const hasGitHubApp = Boolean(
       process.env.GITHUB_APP_ID && 
-      process.env.GITHUB_PRIVATE_KEY
+      process.env.GITHUB_APP_PRIVATE_KEY
     )
     
     // Force demo mode if explicitly set
@@ -80,10 +80,10 @@ export class EnvironmentConfig {
     if (hasGitHubApp) {
       config.github = {
         appId: process.env.GITHUB_APP_ID!,
-        privateKey: process.env.GITHUB_PRIVATE_KEY!,
+        privateKey: process.env.GITHUB_APP_PRIVATE_KEY!,
         webhookSecret: process.env.GITHUB_WEBHOOK_SECRET,
-        clientId: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET
+        clientId: process.env.GITHUB_OAUTH_CLIENT_ID,
+        clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET
       }
     }
 

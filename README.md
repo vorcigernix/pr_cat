@@ -17,7 +17,7 @@ PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps en
 **Required:** **Nothing!** All secrets auto-generated securely 🎉
 
 ### Option 2: Basic Mode (5 minutes setup)
-[![Deploy Basic](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,NEXTAUTH_SECRET&envDescription=Basic%20GitHub%20integration&envLink=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat%23environment-setup&project-name=pr-cat-basic&repository-name=pr-cat)
+[![Deploy Basic](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_OAUTH_CLIENT_ID,GITHUB_OAUTH_CLIENT_SECRET,NEXTAUTH_SECRET&envDescription=Basic%20GitHub%20integration&envLink=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat%23environment-setup&project-name=pr-cat-basic&repository-name=pr-cat)
 
 **What you get:**
 - ✅ GitHub OAuth authentication
@@ -28,7 +28,7 @@ PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps en
 **Required:** 3 environment variables (GitHub OAuth + NextAuth secret)
 
 ### Option 3: Full Installation (15 minutes setup)
-[![Deploy Full](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,GITHUB_WEBHOOK_SECRET,GITHUB_APP_ID,GITHUB_APP_PRIVATE_KEY,NEXT_PUBLIC_GITHUB_APP_SLUG,TURSO_URL,TURSO_TOKEN,NEXTAUTH_SECRET&envDescription=Complete%20setup%20with%20all%20features&envLink=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat%23environment-setup&project-name=pr-cat&repository-name=pr-cat)
+[![Deploy Full](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat&env=GITHUB_OAUTH_CLIENT_ID,GITHUB_OAUTH_CLIENT_SECRET,GITHUB_WEBHOOK_SECRET,GITHUB_APP_ID,GITHUB_APP_PRIVATE_KEY,NEXT_PUBLIC_GITHUB_APP_SLUG,TURSO_URL,TURSO_TOKEN,NEXTAUTH_SECRET&envDescription=Complete%20setup%20with%20all%20features&envLink=https%3A%2F%2Fgithub.com%2Fvorcigernix%2Fpr_cat%23environment-setup&project-name=pr-cat&repository-name=pr-cat)
 
 **What you get:**
 - ✅ All features enabled
@@ -66,8 +66,8 @@ PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps en
 
 ```bash
 # GitHub OAuth Configuration (Required)
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
+GITHUB_OAUTH_CLIENT_ID=your_github_client_id
+GITHUB_OAUTH_CLIENT_SECRET=your_github_client_secret
 GITHUB_WEBHOOK_SECRET=your_github_webhook_secret
 
 # GitHub App Configuration (Required for advanced features)

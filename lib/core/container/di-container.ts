@@ -12,7 +12,8 @@ import {
   IAuthService,
   IOrganizationRepository,
   IRepository,
-  IGitHubService
+  IGitHubService,
+  IGitHubAppService
 } from '../ports'
 
 // Service registry types
@@ -23,6 +24,7 @@ export type ServiceName =
   | 'OrganizationRepository'
   | 'Repository'
   | 'GitHubService'
+  | 'GitHubAppService'
 
 export type ServiceInstance = 
   | IPullRequestRepository
@@ -31,6 +33,7 @@ export type ServiceInstance =
   | IOrganizationRepository
   | IRepository
   | IGitHubService
+  | IGitHubAppService
 
 export interface ServiceFactory<T = ServiceInstance> {
   (): T | Promise<T>
@@ -123,6 +126,11 @@ export class DIContainer {
       const { DemoGitHubService } = await import('../../infrastructure/adapters/demo')
       return new DemoGitHubService()
     }, true)
+
+    this.register('GitHubAppService', async () => {
+      const { GitHubAppService } = await import('../../infrastructure/adapters/github')
+      return new GitHubAppService()
+    }, true)
   }
 
   /**
@@ -171,6 +179,12 @@ export class DIContainer {
           return new DemoGitHubService()
         }, true)
       }
+
+      // Always register GitHub App service - it handles its own configuration validation
+      this.register('GitHubAppService', async () => {
+        const { GitHubAppService } = await import('../../infrastructure/adapters/github')
+        return new GitHubAppService()
+      }, true)
 
       console.log('[DI Container] Production services registered successfully')
     } catch (error) {

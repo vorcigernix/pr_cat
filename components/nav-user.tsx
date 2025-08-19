@@ -2,6 +2,7 @@
 
 import { signIn, signOut, useSession } from "next-auth/react"
 import { useTheme } from "next-themes"
+import { useState } from "react"
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -21,12 +22,24 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal
 } from "@/components/ui/dropdown-menu"
-import { IconBrandGithub, IconMoon, IconSun, IconDeviceDesktop } from "@tabler/icons-react"
+import { IconBrandGithub, IconMoon, IconSun, IconDeviceDesktop, IconLoader2 } from "@tabler/icons-react"
 
 export function NavUser() {
   const { } = useSidebar()
   const { data: session } = useSession()
   const { setTheme, theme } = useTheme()
+  const [isSigningIn, setIsSigningIn] = useState(false)
+
+  const handleSignIn = async () => {
+    setIsSigningIn(true)
+    try {
+      await signIn("github", { callbackUrl: "/dashboard" })
+    } catch (error) {
+      console.error("Sign in error:", error)
+      setIsSigningIn(false)
+    }
+    // Note: We don't set loading to false here because the page will redirect
+  }
 
   // If not authenticated, show GitHub login button
   if (!session) {
@@ -36,15 +49,22 @@ export function NavUser() {
           <SidebarMenuButton 
             size="lg" 
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+            onClick={handleSignIn}
+            disabled={isSigningIn}
           >
             <div className="flex items-center justify-center h-8 w-8">
-              <IconBrandGithub className="h-5 w-5" />
+              {isSigningIn ? (
+                <IconLoader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <IconBrandGithub className="h-5 w-5" />
+              )}
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">Sign in</span>
+              <span className="truncate font-medium">
+                {isSigningIn ? "Signing in..." : "Sign in"}
+              </span>
               <span className="text-muted-foreground truncate text-xs">
-                with GitHub
+                {isSigningIn ? "Please wait..." : "with GitHub"}
               </span>
             </div>
           </SidebarMenuButton>
