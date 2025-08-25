@@ -51,7 +51,7 @@ export function OpenSourceSection() {
         <div className="w-full border-t border-dashed border-border/50 mb-12"></div>
         
         <div className="text-center mb-6">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 border border-green-200 dark:border-green-800">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/60 dark:bg-card/20 border border-green-200 dark:border-green-800">
             <span className="text-sm font-medium text-green-700 dark:text-green-300">
               With support from our friends at:
             </span>

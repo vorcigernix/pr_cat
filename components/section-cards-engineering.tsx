@@ -191,7 +191,7 @@ export function SectionCardsEngineering() {
   if (error && !data) return <ErrorCard error={error} refresh={refresh} />;
 
   return (
-    <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-gray-50/30 *:data-[slot=card]:to-white dark:*:data-[slot=card]:from-card/10 dark:*:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs">
       {METRICS_CONFIG.map((config) => (
         <MetricCard
           key={config.key}

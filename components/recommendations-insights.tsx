@@ -92,7 +92,7 @@ export function RecommendationsInsights() {
       case "quality":
         return <Badge variant="outline" className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-400">Quality</Badge>;
       case "collaboration":
-        return <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Collaboration</Badge>;
+        return <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Collaboration</Badge>;
       case "process":
         return <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400">Process</Badge>;
       default:
@@ -147,7 +147,7 @@ export function RecommendationsInsights() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-linear-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
               <IconCheck className="h-6 w-6 text-white" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Great Work!</h3>

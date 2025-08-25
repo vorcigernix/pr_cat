@@ -89,13 +89,39 @@ export function ActionableRecommendations() {
   const getImpactGradient = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'from-purple-50 via-purple-100/30 to-purple-25/20 dark:from-purple-950/30 dark:via-purple-900/5 dark:to-purple-950/10';
+        return 'from-primary/25 via-primary/10 to-transparent dark:from-primary/25 dark:via-primary/10 dark:to-transparent';
       case 'medium':
-        return 'from-purple-50 via-purple-100/30 to-purple-25/20 dark:from-purple-950/30 dark:via-purple-900/5 dark:to-purple-950/10';
+        return 'from-primary/15 to-transparent dark:from-primary/15 dark:to-transparent';
       case 'low':
-        return 'from-emerald-50 via-emerald-100/30 to-emerald-25/20 dark:from-emerald-950/30 dark:via-emerald-900/5 dark:to-emerald-950/10';
+        return 'from-primary/10 to-transparent dark:from-primary/10 dark:to-transparent';
       default:
-        return 'from-gray-100 to-gray-50/30 dark:from-gray-950/60 dark:to-gray-900/10';
+        return 'from-primary/12 to-transparent dark:from-primary/12 dark:to-transparent';
+    }
+  };
+
+  const getBorderColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'border-primary/30 dark:border-primary/25';
+      case 'medium':
+        return 'border-primary/20 dark:border-primary/15';
+      case 'low':
+        return 'border-primary/10 dark:border-primary/10';
+      default:
+        return 'border-primary/15 dark:border-primary/10';
+    }
+  };
+
+  const getIconColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'text-primary';
+      case 'medium':
+        return 'text-primary/90';
+      case 'low':
+        return 'text-primary/80';
+      default:
+        return 'text-primary/80';
     }
   };
 
@@ -156,7 +182,7 @@ export function ActionableRecommendations() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-linear-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+            <div className="mb-4 mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
               <IconCheck className="h-6 w-6 text-white" />
             </div>
             <h3 className="text-lg font-semibold mb-2">All Systems Running Well</h3>
@@ -225,11 +251,11 @@ export function ActionableRecommendations() {
               {groupedRecs.high.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-linear-to-tl ${getImpactGradient(rec.priority)} border-purple-200/40 dark:border-purple-800/20`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} ${getBorderColor(rec.priority)}`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-purple-500 dark:text-purple-300">
+                      <div className={`mt-0.5 ${getIconColor(rec.priority)}`}>
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">
@@ -239,7 +265,7 @@ export function ActionableRecommendations() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 space-y-3">
-                    <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3">
+                    <div className="bg-white/60 dark:bg-card/20 rounded-lg p-3">
                       <p className="text-sm font-medium mb-1">Expected Impact</p>
                       <p className="text-sm text-muted-foreground">{rec.impact}</p>
                       <div className="mt-2 flex items-center justify-between text-xs">
@@ -274,11 +300,11 @@ export function ActionableRecommendations() {
               {groupedRecs.medium.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-linear-to-tl ${getImpactGradient(rec.priority)} border-purple-200/40 dark:border-purple-800/20`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} ${getBorderColor(rec.priority)}`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-purple-500 dark:text-purple-300">
+                      <div className={`mt-0.5 ${getIconColor(rec.priority)}`}>
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">
@@ -288,7 +314,7 @@ export function ActionableRecommendations() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 space-y-3">
-                    <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3">
+                    <div className="bg-white/60 dark:bg-card/20 rounded-lg p-3">
                       <p className="text-sm font-medium mb-1">Expected Impact</p>
                       <p className="text-sm text-muted-foreground">{rec.impact}</p>
                       <div className="mt-2 flex items-center justify-between text-xs">
@@ -323,11 +349,11 @@ export function ActionableRecommendations() {
               {groupedRecs.low.map((rec) => (
                 <Card 
                   key={rec.id} 
-                  className={`bg-linear-to-tl ${getImpactGradient(rec.priority)} border-emerald-200/40 dark:border-emerald-800/20`}
+                  className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} ${getBorderColor(rec.priority)}`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start space-x-3">
-                      <div className="mt-0.5 text-emerald-500 dark:text-emerald-300">
+                      <div className={`mt-0.5 ${getIconColor(rec.priority)}`}>
                         {getTypeIcon(rec.type)}
                       </div>
                       <div className="flex-1">
@@ -337,7 +363,7 @@ export function ActionableRecommendations() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 space-y-3">
-                    <div className="bg-white/60 dark:bg-black/20 rounded-lg p-3">
+                    <div className="bg-white/60 dark:bg-card/20 rounded-lg p-3">
                       <p className="text-sm font-medium mb-1">Expected Impact</p>
                       <p className="text-sm text-muted-foreground">{rec.impact}</p>
                       <div className="mt-2 flex items-center justify-between text-xs">
