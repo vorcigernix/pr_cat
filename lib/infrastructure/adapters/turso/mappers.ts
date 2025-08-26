@@ -34,7 +34,7 @@ export function mapDbPullRequestToDomain(dbPR: DbTypes.PullRequest): PullRequest
     mergedAt: dbPR.merged_at ? new Date(dbPR.merged_at).toISOString() : '',
     cycleTime: dbPR.merged_at ? 
       calculateCycleTimeHours(new Date(dbPR.created_at).toISOString(), new Date(dbPR.merged_at).toISOString()) : 0,
-    investmentArea: 'Feature Development', // Would need category lookup
+    investmentArea: 'Uncertain', // Would need category lookup
     linesAdded: dbPR.additions || 0,
     files: dbPR.changed_files || 0
   }
@@ -67,7 +67,7 @@ export function mapDbPullRequestToSummary(
     mergedAt: dbPR.merged_at ? new Date(dbPR.merged_at).toISOString() : '',
     cycleTime: dbPR.merged_at ? 
       calculateCycleTimeHours(new Date(dbPR.created_at).toISOString(), new Date(dbPR.merged_at).toISOString()) : 0,
-    investmentArea: categoryName || 'Feature Development',
+    investmentArea: categoryName || 'Uncertain',
     linesAdded: dbPR.additions || 0,
     files: dbPR.changed_files || 0
   }
@@ -184,7 +184,7 @@ export function mapPullRequestWithDetailsToDomain(pr: PullRequestWithDetails): P
       id: pr.repository_id.toString(),
       name: pr.repository_name || 'unknown'
     },
-    investmentArea: pr.category_name || 'Feature Development'
+    investmentArea: pr.category_name || 'Uncertain'
   }
 }
 

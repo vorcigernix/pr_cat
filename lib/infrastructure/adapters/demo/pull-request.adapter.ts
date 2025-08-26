@@ -54,7 +54,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
         mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
         cycleTime: summary.mergedAt ? 
           Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-        investmentArea: summary.category?.name || 'Feature Development',
+        investmentArea: summary.category?.name || 'Uncertain',
         linesAdded: summary.additions,
         files: Math.floor((summary.additions + summary.deletions) / 50) + 1
       })),
@@ -213,7 +213,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
         mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
         cycleTime: summary.mergedAt ? 
           Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-        investmentArea: summary.category?.name || 'Feature Development',
+        investmentArea: summary.category?.name || 'Uncertain',
         linesAdded: summary.additions,
         files: Math.floor((summary.additions + summary.deletions) / 50) + 1
       })),
@@ -260,7 +260,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
         mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
         cycleTime: summary.mergedAt ? 
           Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-        investmentArea: summary.category?.name || 'Feature Development',
+        investmentArea: summary.category?.name || 'Uncertain',
         linesAdded: summary.additions,
         files: Math.floor((summary.additions + summary.deletions) / 50) + 1
       })),
@@ -311,7 +311,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
         mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
         cycleTime: summary.mergedAt ? 
           Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-        investmentArea: summary.category?.name || 'Feature Development',
+        investmentArea: summary.category?.name || 'Uncertain',
         linesAdded: summary.additions,
         files: Math.floor((summary.additions + summary.deletions) / 50) + 1
       })),

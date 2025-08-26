@@ -174,11 +174,11 @@ export class TursoPullRequestRepository implements IPullRequestRepository {
     const startDate = new Date(endDate)
     startDate.setDate(startDate.getDate() - days)
 
-    // Get categories
+    // Get categories (include both organization-specific and default categories)
     const categories = await query<{ id: number; name: string; color: string }>(`
       SELECT id, name, COALESCE(color, '#6b7280') as color
       FROM categories
-      WHERE organization_id = ?
+      WHERE organization_id = ? OR is_default = 1
       ORDER BY name
     `, [parseInt(organizationId)])
 
