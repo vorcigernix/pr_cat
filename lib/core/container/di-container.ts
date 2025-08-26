@@ -140,15 +140,15 @@ export class DIContainer {
     console.log('[DI Container] Registering production services...')
 
     try {
-      // Register Turso database adapters
+      // Register Optimized Turso database adapters for better performance
       this.register('PullRequestRepository', async () => {
-        const { TursoPullRequestRepository } = await import('../../infrastructure/adapters/turso')
-        return new TursoPullRequestRepository()
+        const { OptimizedTursoPullRequestRepository } = await import('../../infrastructure/adapters/turso/optimized-pull-request.adapter')
+        return new OptimizedTursoPullRequestRepository()
       }, true)
 
       this.register('MetricsService', async () => {
-        const { TursoMetricsService } = await import('../../infrastructure/adapters/turso')
-        return new TursoMetricsService()
+        const { OptimizedTursoMetricsService } = await import('../../infrastructure/adapters/turso/optimized-metrics.adapter')
+        return new OptimizedTursoMetricsService()
       }, true)
 
       this.register('AuthService', async () => {
