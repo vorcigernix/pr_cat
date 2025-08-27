@@ -2,15 +2,9 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getService } from '@/lib/core/container/di-container';
 import { IGitHubService } from '@/lib/core/ports';
-import { verifyBotId } from '@/lib/botid-verification';
+
 
 export async function GET() {
-  // Check for bot before proceeding
-  const botVerification = await verifyBotId();
-  if (botVerification) {
-    return botVerification;
-  }
-
   const session = await auth();
   
   if (!session || !session.user) {

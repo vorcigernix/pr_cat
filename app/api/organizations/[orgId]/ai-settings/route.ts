@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import { AiSettingsService } from '@/lib/services/ai-settings-service';
 import { z } from 'zod';
 import { unauthorized, badRequest, errorResponse } from '@/lib/api-errors';
-import { verifyBotId } from '@/lib/botid-verification';
+
 
 const updateAiSettingsSchema = z.object({
   provider: z.enum(['openai', 'google', 'anthropic']).nullable().optional(),
@@ -20,11 +20,6 @@ export async function GET(
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
-    // Check for bot before proceeding
-    const botVerification = await verifyBotId();
-    if (botVerification) {
-      return botVerification;
-    }
 
     const { orgId } = await params;
     const session = await auth();
@@ -46,11 +41,6 @@ export async function PUT(
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
-    // Check for bot before proceeding
-    const botVerification = await verifyBotId();
-    if (botVerification) {
-      return botVerification;
-    }
 
     const { orgId } = await params;
     const session = await auth();

@@ -2,19 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getService } from '@/lib/core/container/di-container';
 import { IGitHubService } from '@/lib/core/ports';
-import { verifyBotId } from '@/lib/botid-verification';
+
 
 // Use the context object directly with proper typing for Next.js route handler
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ orgName: string }> }
 ) {
-  // Check for bot before proceeding
-  const botVerification = await verifyBotId();
-  if (botVerification) {
-    return botVerification;
-  }
-
   const { orgName } = await params;
   
   const session = await auth();

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { getService } from '@/lib/core/container/di-container'
 import { IGitHubAppService } from '@/lib/core/ports'
-import { verifyBotId } from '@/lib/botid-verification'
+
 
 export const runtime = 'nodejs'
 
@@ -20,11 +20,7 @@ export async function GET(
   { params }: { params: Promise<{ installationId: string }> }
 ) {
   try {
-    // Check for bot before proceeding
-    const botVerification = await verifyBotId();
-    if (botVerification) {
-      return botVerification;
-    }
+
 
     const { installationId } = await params
     const session = await auth()
@@ -91,11 +87,7 @@ export async function POST(
   { params }: { params: Promise<{ installationId: string }> }
 ) {
   try {
-    // Check for bot before proceeding
-    const botVerification = await verifyBotId();
-    if (botVerification) {
-      return botVerification;
-    }
+
 
     const { installationId } = await params
     const session = await auth()
@@ -163,11 +155,7 @@ export async function DELETE(
   { params }: { params: Promise<{ installationId: string }> }
 ) {
   try {
-    // Check for bot before proceeding
-    const botVerification = await verifyBotId();
-    if (botVerification) {
-      return botVerification;
-    }
+
 
     const { installationId } = await params
     const session = await auth()

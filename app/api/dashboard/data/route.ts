@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserWithOrganizations } from '@/lib/auth-context';
-import { verifyBotId } from '@/lib/botid-verification';
+
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    // Check for bot before proceeding
-    const botVerification = await verifyBotId();
-    if (botVerification) {
-      return botVerification;
-    }
-
+    
     const { searchParams } = new URL(request.url);
     const include = searchParams.get('include')?.split(',') || [];
     

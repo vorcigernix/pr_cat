@@ -13,7 +13,7 @@ import {
   createAnonymousContext,
   UserPermissions
 } from './context'
-import { verifyBotId } from '../../botid-verification'
+
 
 export type AuthenticatedHandler<TRequest = NextRequest, TResponse = NextResponse> = 
   (context: ApplicationContext, request: TRequest) => Promise<TResponse>
@@ -29,12 +29,6 @@ export function withAuth<TRequest = NextRequest, TResponse = NextResponse>(
 ): (request: TRequest) => Promise<TResponse | NextResponse> {
   return async (request: TRequest) => {
     try {
-      // Check for bot before proceeding
-      const botVerification = await verifyBotId();
-      if (botVerification) {
-        return botVerification;
-      }
-
       const context = await createAuthenticatedContext(request)
       
       if (!context) {
@@ -57,12 +51,6 @@ export function withOptionalAuth<TRequest = NextRequest, TResponse = NextRespons
 ): (request: TRequest) => Promise<TResponse> {
   return async (request: TRequest) => {
     try {
-      // Check for bot before proceeding
-      const botVerification = await verifyBotId();
-      if (botVerification) {
-        return botVerification as TResponse;
-      }
-
       const context = await createRequestContext(request)
       return await handler(context, request)
     } catch (error) {
