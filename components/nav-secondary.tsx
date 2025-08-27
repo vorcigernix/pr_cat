@@ -30,7 +30,7 @@ export function NavSecondary({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton 
-                className={item.isActive ? "bg-accent text-accent-foreground" : ""}
+                className={item.isActive ? "bg-background text-foreground shadow-sm" : ""}
                 asChild
               >
                 <Link href={item.url}>
