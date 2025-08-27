@@ -5,6 +5,7 @@ import { IconTrendingUp, IconTrendingDown } from "@tabler/icons-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMetricsSummary } from "@/hooks/use-metrics";
+import { useTeamFilterParams } from "@/hooks/use-team-filter";
 
 // Types
 type MetricsSummary = {
@@ -183,7 +184,8 @@ function ErrorCard({ error, refresh }: { error: Error; refresh: () => void }) {
 }
 
 export function SectionCardsEngineering() {
-  const { data, isLoading, error, refresh } = useMetricsSummary();
+  const teamFilterParams = useTeamFilterParams();
+  const { data, isLoading, error, refresh } = useMetricsSummary(teamFilterParams);
   
   const metrics = data ? transformApiDataToMetrics(data as CachedSummaryData) : DEFAULT_METRICS;
 

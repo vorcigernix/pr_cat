@@ -22,7 +22,9 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
   
   async getRecent(
     organizationId: string, 
-    pagination?: Pagination
+    pagination?: Pagination,
+    teamId?: number,
+    timeRange?: string
   ): Promise<PaginatedResult<PullRequestSummary>> {
     const page = pagination || Pagination.create(1, 10)
     const startIndex = page.offset

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTeamFilterParams, useTeamFilter } from "@/hooks/use-team-filter";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import {
   Card,
@@ -10,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   ChartConfig, 
@@ -48,7 +49,8 @@ export function EnhancedInvestmentAreaDistribution({
   className
 }: EnhancedInvestmentAreaDistributionProps) {
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = useState("30d");
+  const teamFilterParams = useTeamFilterParams();
+  const { timeRange, setTimeRange } = useTeamFilter(); // Use global time range instead of local state
   const [data, setData] = useState<TimeSeriesDataPoint[]>(initialData?.data || []);
   const [categories, setCategories] = useState<CategoryInfo[]>(initialData?.categories || []);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -69,7 +71,10 @@ export function EnhancedInvestmentAreaDistribution({
     // Delay background refresh by 3 seconds to not interfere with initial render
     const refreshTimer = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/pull-requests/category-distribution?timeRange=${timeRange}&format=timeseries`);
+        const params = new URLSearchParams(teamFilterParams);
+        params.set('timeRange', timeRange);
+        params.set('format', 'timeseries');
+        const response = await fetch(`/api/pull-requests/category-distribution?${params.toString()}`);
         if (response.ok) {
           const timeSeriesData: TimeSeriesResponse = await response.json();
           setData(timeSeriesData.data);
@@ -92,7 +97,10 @@ export function EnhancedInvestmentAreaDistribution({
         setLoading(true);
         setError(null);
         
-        const response = await fetch(`/api/pull-requests/category-distribution?timeRange=${timeRange}&format=timeseries`);
+        const params = new URLSearchParams(teamFilterParams);
+        params.set('timeRange', timeRange);
+        params.set('format', 'timeseries');
+        const response = await fetch(`/api/pull-requests/category-distribution?${params.toString()}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch category distribution: ${response.status} ${response.statusText}`);
@@ -115,7 +123,7 @@ export function EnhancedInvestmentAreaDistribution({
     };
 
     fetchData();
-  }, [timeRange, isMobile, initialData]);
+  }, [timeRange, isMobile, teamFilterParams]);
 
   const filteredData = data.filter(item => {
     const date = new Date(item.date);
@@ -274,40 +282,7 @@ export function EnhancedInvestmentAreaDistribution({
             </button>
           ))}
         </div>
-        
-        <div className="flex items-center gap-2">
-          <ToggleGroup
-            type="single"
-            value={timeRange}
-            onValueChange={setTimeRange}
-            variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
-          >
-            <ToggleGroupItem value="7d">7 days</ToggleGroupItem>
-            <ToggleGroupItem value="30d">30 days</ToggleGroupItem>
-            <ToggleGroupItem value="90d">90 days</ToggleGroupItem>
-          </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="flex w-28 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-              size="sm"
-              aria-label="Select time range"
-            >
-              <SelectValue placeholder="Last 30 days" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
-              </SelectItem>
-              <SelectItem value="90d" className="rounded-lg">
-                Last 90 days
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+
       </div>
       
       <CardContent>

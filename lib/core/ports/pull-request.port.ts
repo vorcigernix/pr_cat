@@ -21,7 +21,9 @@ export interface IPullRequestRepository {
    */
   getRecent(
     organizationId: string, 
-    pagination?: Pagination
+    pagination?: Pagination,
+    teamId?: number,
+    timeRange?: string
   ): Promise<PaginatedResult<PullRequestSummary>>
 
   /**
@@ -43,7 +45,8 @@ export interface IPullRequestRepository {
    */
   getCategoryDistribution(
     organizationId: string,
-    timeRange?: TimeRange
+    timeRange?: TimeRange,
+    teamId?: number
   ): Promise<CategoryDistribution[]>
 
   /**
@@ -51,7 +54,8 @@ export interface IPullRequestRepository {
    */
   getCategoryTimeSeries(
     organizationId: string,
-    days: number
+    days: number,
+    teamId?: number
   ): Promise<CategoryTimeSeriesData>
 
   /**

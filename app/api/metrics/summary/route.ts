@@ -13,11 +13,20 @@ const metricsSummaryHandler = async (
   request: NextRequest
 ): Promise<NextResponse> => {
   try {
+    // Parse team filtering parameters
+    const searchParams = request.nextUrl.searchParams;
+    const teamId = searchParams.get('teamId');
+    const timeRange = searchParams.get('timeRange') || '14d';
+
     // Get the metrics service via dependency injection
     const metricsService = await ServiceLocator.getMetricsService();
     
-    // Use organization ID from authenticated context
-    const data = await metricsService.getSummary(context.organizationId);
+    // Use organization ID from authenticated context with team filtering
+    const data = await metricsService.getSummary(
+      context.organizationId, 
+      teamId ? parseInt(teamId) : undefined,
+      timeRange
+    );
     
     // Set appropriate headers
     const headers = new Headers();

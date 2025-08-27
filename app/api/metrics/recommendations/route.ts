@@ -13,11 +13,22 @@ const recommendationsHandler = async (
   request: NextRequest
 ): Promise<NextResponse> => {
   try {
+    // Parse team filtering parameters
+    const searchParams = request.nextUrl.searchParams;
+    const teamId = searchParams.get('teamId');
+    const timeRange = searchParams.get('timeRange');
+    
+    console.log(`[Recommendations] Request params: orgId=${context.organizationId}, teamId=${teamId}, timeRange=${timeRange}`);
+    
     // Get the metrics service via dependency injection
     const metricsService = await ServiceLocator.getMetricsService();
     
-    // Use organization ID from authenticated context
-    const recommendations = await metricsService.getRecommendations(context.organizationId);
+    // Use organization ID from authenticated context with team filtering
+    const recommendations = await metricsService.getRecommendations(
+      context.organizationId,
+      teamId ? parseInt(teamId) : undefined,
+      timeRange || undefined
+    );
     
     return NextResponse.json(recommendations);
   } catch (error) {

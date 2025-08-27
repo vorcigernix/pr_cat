@@ -152,8 +152,9 @@ function useMetricsBase<T extends CachedData>(
 }
 
 // Specific hooks with optimized configurations
-export function useMetricsSummary() {
-  return useMetricsBase('/api/metrics/summary', {
+export function useMetricsSummary(teamParams?: string) {
+  const endpoint = teamParams ? `/api/metrics/summary?${teamParams}` : '/api/metrics/summary';
+  return useMetricsBase(endpoint, {
     // Even longer cache for summary data since it's daily
     dedupingInterval: 600000, // 10 minutes
   });

@@ -55,12 +55,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: IconFolder,
       isActive: pathname === "/dashboard/projects"
     },
-    {
-      title: "Teams",
-      url: "/dashboard/teams",
-      icon: IconUsers,
-      isActive: pathname === "/dashboard/teams"
-    },
   ]
 
   const navSecondary = [

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTeamFilterParams } from "@/hooks/use-team-filter"
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts"
 import { IconArrowUpRight, IconArrowDownRight } from "@tabler/icons-react"
 
@@ -23,6 +24,7 @@ export function CompactEngineeringMetrics() {
   const [chartData, setChartData] = React.useState<TimeSeriesDataPoint[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const teamFilterParams = useTeamFilterParams();
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -30,8 +32,9 @@ export function CompactEngineeringMetrics() {
         setLoading(true);
         setError(null);
         
-        // Fetch real metrics data from our API
-        const response = await fetch('/api/metrics/time-series');
+        // Fetch real metrics data from our API with team filtering
+        const url = `/api/metrics/time-series?${teamFilterParams}`;
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch metrics: ${response.status} ${response.statusText}`);
@@ -48,7 +51,7 @@ export function CompactEngineeringMetrics() {
     };
 
     fetchData();
-  }, []);
+  }, [teamFilterParams]);
 
   const { filteredData, metrics } = React.useMemo(() => {
     if (!chartData.length) return { 
@@ -145,7 +148,7 @@ export function CompactEngineeringMetrics() {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="@container/card bg-gradient-to-t from-gray-50/30 to-white dark:from-card/10 dark:to-card shadow-xs">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Team Flow Metrics</CardTitle>
         </CardHeader>
@@ -158,7 +161,7 @@ export function CompactEngineeringMetrics() {
   
   if (error) {
     return (
-      <Card>
+      <Card className="@container/card bg-gradient-to-t from-gray-50/30 to-white dark:from-card/10 dark:to-card shadow-xs">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Team Flow Metrics</CardTitle>
         </CardHeader>
@@ -176,7 +179,7 @@ export function CompactEngineeringMetrics() {
   }
 
   return (
-    <Card>
+    <Card className="@container/card bg-gradient-to-t from-gray-50/30 to-white dark:from-card/10 dark:to-card shadow-xs">
       <CardHeader className="pb-0">
         <CardTitle className="text-base">Team Flow Metrics</CardTitle>
       </CardHeader>

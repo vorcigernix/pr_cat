@@ -13,6 +13,7 @@ const categoryDistributionHandler = async (
     const searchParams = request.nextUrl.searchParams;
     const timeRange = searchParams.get('timeRange') || '30d';
     const format = searchParams.get('format') || 'total';
+    const teamId = searchParams.get('teamId');
 
     // Get pull request repository via dependency injection
     const prRepository = await ServiceLocator.getPullRequestRepository();
@@ -25,12 +26,20 @@ const categoryDistributionHandler = async (
       const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 };
       const days = daysMap[timeRange] || 30;
       
-      const data = await prRepository.getCategoryTimeSeries(organizationId, days);
+      const data = await prRepository.getCategoryTimeSeries(
+        organizationId, 
+        days, 
+        teamId ? parseInt(teamId) : undefined
+      );
       return NextResponse.json(data);
     } else {
       // Get total category distribution
       const timeRangeObj = TimeRange.fromPreset(timeRange as '7d' | '30d' | '90d');
-      const data = await prRepository.getCategoryDistribution(organizationId, timeRangeObj);
+      const data = await prRepository.getCategoryDistribution(
+        organizationId, 
+        timeRangeObj, 
+        teamId ? parseInt(teamId) : undefined
+      );
       return NextResponse.json(data);
     }
   } catch (error) {

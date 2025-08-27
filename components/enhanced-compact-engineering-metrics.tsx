@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTeamFilterParams } from "@/hooks/use-team-filter"
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts"
 import { IconArrowUpRight, IconArrowDownRight } from "@tabler/icons-react"
 
@@ -31,6 +32,7 @@ export function EnhancedCompactEngineeringMetrics({
   const [chartData, setChartData] = React.useState<TimeSeriesDataPoint[]>(initialData || []);
   const [loading, setLoading] = React.useState(!initialData);
   const [error, setError] = React.useState<string | null>(null);
+  const teamFilterParams = useTeamFilterParams();
 
   // Background refresh after initial load
   React.useEffect(() => {
@@ -39,7 +41,8 @@ export function EnhancedCompactEngineeringMetrics({
     // Delay background refresh by 2 seconds to not interfere with initial render
     const refreshTimer = setTimeout(async () => {
       try {
-        const response = await fetch('/api/metrics/time-series');
+        const url = `/api/metrics/time-series?${teamFilterParams}`;
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
           setChartData(data);
@@ -51,7 +54,7 @@ export function EnhancedCompactEngineeringMetrics({
     }, 2000);
     
     return () => clearTimeout(refreshTimer);
-  }, [initialData]);
+  }, [initialData, teamFilterParams]);
 
   React.useEffect(() => {
     if (initialData) return; // Skip if we have initial data
@@ -61,7 +64,8 @@ export function EnhancedCompactEngineeringMetrics({
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/metrics/time-series');
+        const url = `/api/metrics/time-series?${teamFilterParams}`;
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch metrics: ${response.status} ${response.statusText}`);
@@ -78,7 +82,7 @@ export function EnhancedCompactEngineeringMetrics({
     };
 
     fetchData();
-  }, [initialData]);
+  }, [initialData, teamFilterParams]);
 
   const { filteredData, metrics } = React.useMemo(() => {
     if (!chartData.length) return { 
@@ -174,7 +178,7 @@ export function EnhancedCompactEngineeringMetrics({
 
   if (loading) {
     return (
-      <Card className={className}>
+      <Card className={`@container/card bg-gradient-to-t from-gray-50/30 to-white dark:from-card/10 dark:to-card shadow-xs ${className}`}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Team Flow Metrics</CardTitle>
         </CardHeader>
@@ -187,7 +191,7 @@ export function EnhancedCompactEngineeringMetrics({
   
   if (error) {
     return (
-      <Card className={className}>
+      <Card className={`@container/card bg-gradient-to-t from-gray-50/30 to-white dark:from-card/10 dark:to-card shadow-xs ${className}`}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Team Flow Metrics</CardTitle>
         </CardHeader>
@@ -205,7 +209,7 @@ export function EnhancedCompactEngineeringMetrics({
   }
 
   return (
-    <Card className={className}>
+    <Card className={`@container/card bg-gradient-to-t from-gray-50/30 to-white dark:from-card/10 dark:to-card shadow-xs ${className}`}>
       <CardHeader className="pb-0">
         <CardTitle className="text-base flex items-center justify-between">
           Team Flow Metrics

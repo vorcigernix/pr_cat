@@ -24,11 +24,40 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
 
   async getRecent(
     organizationId: string, 
-    pagination?: Pagination
+    pagination?: Pagination,
+    teamId?: number,
+    timeRange?: string
   ): Promise<PaginatedResult<PullRequestSummary>> {
     const pageObj = pagination || Pagination.create(1, 10);
     const offset = typeof pageObj.offset === 'number' ? pageObj.offset : 0;
     const limit = typeof pageObj.limit === 'number' ? pageObj.limit : 10;
+    
+    // Parse time range to days for filtering
+    const days = timeRange === '7d' ? 7 : 
+                 timeRange === '14d' ? 14 : 
+                 timeRange === '30d' ? 30 : 
+                 timeRange === '90d' ? 90 : null;
+    
+    const cutoffDate = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : null;
+
+    // Build team filtering clauses
+    let joinClause = ''
+    let whereClause = 'WHERE r.organization_id = ?'
+    let params: any[] = [parseInt(organizationId)]
+
+    if (teamId) {
+      joinClause = `
+        INNER JOIN team_members tm ON pr.author_id = tm.user_id
+        INNER JOIN teams t ON tm.team_id = t.id
+      `
+      whereClause += ' AND t.id = ?'
+      params.push(teamId)
+    }
+
+    if (cutoffDate) {
+      whereClause += ' AND pr.created_at >= ?'
+      params.push(cutoffDate.toISOString())
+    }
 
     // Get recent PRs with all necessary joined data
     const prs = await query<PullRequestWithDetails>(`
@@ -43,18 +72,38 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
       LEFT JOIN repositories r ON pr.repository_id = r.id
       LEFT JOIN users u ON pr.author_id = u.id
       LEFT JOIN categories c ON pr.category_id = c.id
-      WHERE r.organization_id = ?
+      ${joinClause}
+      ${whereClause}
       ORDER BY pr.created_at DESC
       LIMIT ? OFFSET ?
-    `, [parseInt(organizationId), limit, offset])
+    `, [...params, limit, offset])
 
-    // Get total count for pagination
+    // Get total count for pagination (with same filters)
+    let countParams: any[] = [parseInt(organizationId)]
+    let countWhereClause = 'WHERE r.organization_id = ?'
+    let countJoinClause = ''
+
+    if (teamId) {
+      countJoinClause = `
+        INNER JOIN team_members tm ON pr.author_id = tm.user_id
+        INNER JOIN teams t ON tm.team_id = t.id
+      `
+      countWhereClause += ' AND t.id = ?'
+      countParams.push(teamId)
+    }
+
+    if (cutoffDate) {
+      countWhereClause += ' AND pr.created_at >= ?'
+      countParams.push(cutoffDate.toISOString())
+    }
+
     const countResult = await query<{ total: number }>(`
       SELECT COUNT(pr.id) as total
       FROM pull_requests pr
       LEFT JOIN repositories r ON pr.repository_id = r.id
-      WHERE r.organization_id = ?
-    `, [parseInt(organizationId)])
+      ${countJoinClause}
+      ${countWhereClause}
+    `, countParams)
 
     const total = countResult[0]?.total || 0
     const data = prs.map(mapPullRequestWithDetailsToSummary)
@@ -132,7 +181,8 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
 
   async getCategoryDistribution(
     organizationId: string,
-    timeRange?: TimeRange
+    timeRange?: TimeRange,
+    teamId?: number
   ): Promise<CategoryDistribution[]> {
     let whereClause = 'WHERE r.organization_id = ?'
     const params: any[] = [parseInt(organizationId)]
@@ -173,7 +223,8 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
    */
   async getCategoryTimeSeries(
     organizationId: string,
-    days: number
+    days: number,
+    teamId?: number
   ): Promise<CategoryTimeSeriesData> {
     const endDate = new Date()
     const startDate = new Date(endDate)
@@ -186,6 +237,20 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
       WHERE organization_id = ? OR is_default = 1
       ORDER BY name
     `, [parseInt(organizationId)])
+
+    // Build team filtering clauses
+    let joinClause = ''
+    let whereClause = 'WHERE r.organization_id = ? AND DATE(pr.created_at) >= DATE(?) AND DATE(pr.created_at) <= DATE(?)'
+    let params: any[] = [parseInt(organizationId), startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
+
+    if (teamId) {
+      joinClause = `
+        INNER JOIN team_members tm ON pr.author_id = tm.user_id
+        INNER JOIN teams t ON tm.team_id = t.id
+      `
+      whereClause += ' AND t.id = ?'
+      params.push(teamId)
+    }
 
     // Query 2: Single optimized query to get all category counts for all days
     const timeSeriesResults = await query<{
@@ -202,12 +267,11 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
       FROM pull_requests pr
       LEFT JOIN repositories r ON pr.repository_id = r.id
       LEFT JOIN categories c ON pr.category_id = c.id
-      WHERE r.organization_id = ?
-      AND DATE(pr.created_at) >= DATE(?)
-      AND DATE(pr.created_at) <= DATE(?)
+      ${joinClause}
+      ${whereClause}
       GROUP BY DATE(pr.created_at), pr.category_id, c.name
       ORDER BY DATE(pr.created_at), c.name
-    `, [parseInt(organizationId), startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]])
+    `, params)
 
     // Create a map for efficient lookups: date + category_id -> count
     const dataMap = new Map<string, number>()

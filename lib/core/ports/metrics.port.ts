@@ -16,7 +16,11 @@ export interface IMetricsService {
   /**
    * Get metrics summary for an organization
    */
-  getSummary(organizationId: string): Promise<MetricsSummary>
+  getSummary(
+    organizationId: string, 
+    teamId?: number,
+    timeRange?: string
+  ): Promise<MetricsSummary>
 
   /**
    * Get time series data for engineering metrics
@@ -24,20 +28,27 @@ export interface IMetricsService {
   getTimeSeries(
     organizationId: string,
     days: number,
-    repositoryId?: string
+    repositoryId?: string,
+    teamId?: number
   ): Promise<TimeSeriesDataPoint[]>
 
   /**
    * Get workflow recommendations for an organization
    */
-  getRecommendations(organizationId: string): Promise<RecommendationsResponse>
+  getRecommendations(
+    organizationId: string, 
+    teamId?: number, 
+    timeRange?: string
+  ): Promise<RecommendationsResponse>
 
   /**
    * Get team performance metrics
    */
   getTeamPerformance(
     organizationId: string,
-    repositoryIds?: string[]
+    repositoryIds?: string[],
+    teamId?: number,
+    timeRange?: string
   ): Promise<TeamPerformanceMetrics>
 
   /**

@@ -9,16 +9,23 @@ const teamPerformanceHandler = async (
   request: NextRequest
 ): Promise<NextResponse> => {
   try {
-    // Parse query parameters
+    // Parse query parameters including team filtering
     const searchParams = request.nextUrl.searchParams;
     const repositoryIdsParam = searchParams.get('repositoryIds');
     const repositoryIds = repositoryIdsParam ? repositoryIdsParam.split(',') : undefined;
+    const teamId = searchParams.get('teamId');
+    const timeRange = searchParams.get('timeRange') || '14d';
 
     // Get the metrics service via dependency injection
     const metricsService = await ServiceLocator.getMetricsService();
     
-    // Use organization ID from authenticated context
-    const data = await metricsService.getTeamPerformance(context.organizationId, repositoryIds);
+    // Use organization ID from authenticated context with team filtering
+    const data = await metricsService.getTeamPerformance(
+      context.organizationId, 
+      repositoryIds,
+      teamId ? parseInt(teamId) : undefined,
+      timeRange
+    );
     
     return NextResponse.json(data);
   } catch (error) {

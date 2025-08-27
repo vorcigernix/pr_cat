@@ -21,26 +21,83 @@ import {
 
 export class DemoMetricsService implements IMetricsService {
   
-  async getSummary(organizationId: string): Promise<MetricsSummary> {
-    // Return static demo data with current timestamp
-    return {
+  async getSummary(
+    organizationId: string, 
+    teamId?: number,
+    timeRange?: string
+  ): Promise<MetricsSummary> {
+    // Return static demo data with current timestamp (team and time filtering simulated)
+    const baseMetrics = {
       ...DEMO_METRICS_SUMMARY,
       lastUpdated: new Date().toISOString(),
       dataUpToDate: new Date().toISOString().split('T')[0],
-      nextUpdateDue: new Date(Date.now() + 86400000).toISOString()
+      nextUpdateDue: new Date(Date.now() + 86400000).toISOString(),
+      cacheStrategy: "static-demo-data" as const
+    };
+
+    // Simulate time range filtering by adjusting activity levels
+    const timeMultiplier = timeRange === '7d' ? 0.5 :   // Less activity in shorter periods
+                          timeRange === '14d' ? 1.0 :   // Base activity
+                          timeRange === '30d' ? 1.8 :   // More activity in longer periods 
+                          timeRange === '90d' ? 3.2 : 1.0;
+
+    baseMetrics.prsMergedThisWeek = Math.ceil(baseMetrics.prsMergedThisWeek * timeMultiplier);
+    baseMetrics.prsMergedLastWeek = Math.ceil(baseMetrics.prsMergedLastWeek * timeMultiplier);
+    baseMetrics.openPRCount = Math.ceil(baseMetrics.openPRCount * timeMultiplier);
+
+    // Simulate team filtering by adjusting metrics if teamId is provided
+    if (teamId) {
+      // Simulate team having fewer contributors/PRs than org-wide
+      baseMetrics.prsMergedThisWeek = Math.ceil(baseMetrics.prsMergedThisWeek * 0.4); // ~40% of org
+      baseMetrics.prsMergedLastWeek = Math.ceil(baseMetrics.prsMergedLastWeek * 0.4);
+      baseMetrics.openPRCount = Math.ceil(baseMetrics.openPRCount * 0.4);
+      baseMetrics.averagePRSize = Math.ceil(baseMetrics.averagePRSize * 1.1); // Teams might have slightly larger PRs
     }
+
+    return baseMetrics;
   }
 
   async getTimeSeries(
     organizationId: string,
     days: number,
-    repositoryId?: string
+    repositoryId?: string,
+    teamId?: number
   ): Promise<TimeSeriesDataPoint[]> {
     return DemoDataGenerator.generateTimeSeries(days)
   }
 
-  async getRecommendations(organizationId: string): Promise<RecommendationsResponse> {
-    const recommendations = [...DEMO_RECOMMENDATIONS]
+  async getRecommendations(
+    organizationId: string, 
+    teamId?: number, 
+    timeRange?: string
+  ): Promise<RecommendationsResponse> {
+    let recommendations = [...DEMO_RECOMMENDATIONS]
+    
+    // Simulate team-specific recommendations
+    if (teamId) {
+      // Filter to more team-specific recommendations when a team is selected
+      recommendations = recommendations.filter(rec => 
+        rec.type === 'collaboration' || rec.type === 'performance' || rec.priority === 'high'
+      );
+      
+      // Add team-specific titles/content adjustments
+      recommendations = recommendations.map(rec => ({
+        ...rec,
+        title: `Team Focus: ${rec.title}`,
+        description: rec.description.replace('organization', 'team')
+      }));
+    }
+    
+    // Simulate time-based recommendation relevance
+    if (timeRange) {
+      const isShortPeriod = timeRange === '7d' || timeRange === '14d';
+      if (isShortPeriod) {
+        // Short periods focus on immediate actionable items
+        recommendations = recommendations.filter(rec => 
+          rec.type === 'performance' || rec.priority === 'high'
+        );
+      }
+    }
     
     // Sort by priority
     const priorityOrder = { high: 3, medium: 2, low: 1 }
@@ -64,7 +121,9 @@ export class DemoMetricsService implements IMetricsService {
 
   async getTeamPerformance(
     organizationId: string,
-    repositoryIds?: string[]
+    repositoryIds?: string[],
+    teamId?: number,
+    timeRange?: string
   ): Promise<TeamPerformanceMetrics> {
     const teamMembers = [...DEMO_TEAM_MEMBERS]
     

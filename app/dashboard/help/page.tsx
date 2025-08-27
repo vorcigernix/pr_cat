@@ -156,9 +156,9 @@ export default async function HelpPage() {
                             <div className="flex items-center gap-3">
                               <IconDashboard className="h-5 w-5 text-blue-500" />
                               <div>
-                                <h4 className="font-semibold">Dashboard</h4>
+                                <h4 className="font-semibold">Team Dashboard</h4>
                                 <p className="text-sm text-muted-foreground">
-                                  High-level metrics, recent activity, and category distribution
+                                  Team-focused retrospective metrics with weekly/bi-weekly views and team performance insights
                                 </p>
                               </div>
                             </div>
@@ -191,15 +191,7 @@ export default async function HelpPage() {
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <IconUsers className="h-5 w-5 text-red-500" />
-                              <div>
-                                <h4 className="font-semibold">Team</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  Team performance, collaboration metrics, and contributor insights
-                                </p>
-                              </div>
-                            </div>
+
                           </div>
                         </CardContent>
                       </Card>

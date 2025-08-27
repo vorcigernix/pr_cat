@@ -3,12 +3,13 @@ import { ActionableRecommendations } from "@/components/actionable-recommendatio
 import { AppSidebar } from "@/components/app-sidebar"
 import { CompactEngineeringMetrics } from "@/components/compact-engineering-metrics"
 import { EnhancedCompactEngineeringMetrics } from "@/components/enhanced-compact-engineering-metrics"
-import { DashboardControls } from "@/components/ui/dashboard-controls"
+import { DashboardHeader } from "@/components/dashboard-header"
 import { InvestmentAreaDistribution } from "@/components/investment-area-distribution"
 import { EnhancedInvestmentAreaDistribution } from "@/components/enhanced-investment-area-distribution"
 import { PRActivityTable } from "@/components/pr-activity-table"
 import { SectionCardsEngineering } from "@/components/section-cards-engineering"
-import { SiteHeader } from "@/components/site-header"
+import { TeamPerformanceSummary } from "@/components/team-performance-summary"
+
 import {
   SidebarInset,
   SidebarProvider,
@@ -104,7 +105,7 @@ export default async function DashboardPage() {
     <SidebarProvider style={SIDEBAR_STYLES}>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pageTitle="Dashboard Overview" />
+        <DashboardHeader pageTitle="Dashboard" />
         
         {isDemoMode && (
           <div className="pt-4 pb-2">
@@ -118,14 +119,19 @@ export default async function DashboardPage() {
           </div>
         )}
         
-        <div className="px-4 lg:px-6">
-          <DashboardControls />
-        </div>
+
         
         <ErrorBoundary>
           <main className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2">
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                {/* Team Performance Summary - focused on retrospectives */}
+                <div className="px-4 lg:px-6">
+                  <Suspense fallback={<TeamPerformanceSkeleton />}>
+                    <TeamPerformanceSummary />
+                  </Suspense>
+                </div>
+
                 {/* Main metrics cards - dynamic data */}
                 <Suspense fallback={<MetricsCardsSkeleton />}>
                   <SectionCardsEngineering />
@@ -224,6 +230,33 @@ function RecommendationsSkeleton() {
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-16 w-full bg-muted animate-pulse rounded" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TeamPerformanceSkeleton() {
+  return (
+    <div className="bg-card border rounded-lg p-6">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-muted/50 p-4 rounded-lg space-y-2">
+              <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+              <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-3">
+          <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-12 w-full bg-muted animate-pulse rounded" />
           ))}
         </div>
       </div>

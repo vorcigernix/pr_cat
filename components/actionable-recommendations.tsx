@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTeamFilterParams } from "@/hooks/use-team-filter"
 import { IconExternalLink, IconAlertTriangle, IconClock, IconUsers, IconTrendingUp, IconCheck, IconArrowUpRight } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
@@ -45,6 +46,7 @@ export function ActionableRecommendations() {
   const [recommendations, setRecommendations] = React.useState<RecommendationsResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const teamFilterParams = useTeamFilterParams();
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +54,8 @@ export function ActionableRecommendations() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/metrics/recommendations');
+        const url = `/api/metrics/recommendations?${teamFilterParams}`;
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch recommendations: ${response.status} ${response.statusText}`);
@@ -69,7 +72,7 @@ export function ActionableRecommendations() {
     };
 
     fetchData();
-  }, []);
+  }, [teamFilterParams]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTeamFilterParams } from "@/hooks/use-team-filter";
 import {
   Table,
   TableBody,
@@ -45,6 +46,7 @@ export function PRActivityTable() {
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const teamFilterParams = useTeamFilterParams();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,8 +54,9 @@ export function PRActivityTable() {
         setLoading(true);
         setError(null);
         
-        // Fetch real PR data from our API
-        const response = await fetch('/api/pull-requests/recent');
+        // Fetch real PR data from our API with team filtering
+        const url = `/api/pull-requests/recent?${teamFilterParams}`;
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch pull requests: ${response.status} ${response.statusText}`);
@@ -72,7 +75,7 @@ export function PRActivityTable() {
     };
 
     fetchData();
-  }, []);
+  }, [teamFilterParams]);
 
   function formatDate(dateString: string) {
     if (!dateString) return '';
