@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { GitHubService } from '@/lib/services';
 import { findUserById, findUserByEmail } from '@/lib/repositories';
+import { verifyBotId } from '@/lib/botid-verification';
 
 export const runtime = 'nodejs';
 
 export async function POST() {
+  // Check for bot before proceeding
+  const botVerification = await verifyBotId();
+  if (botVerification) {
+    return botVerification;
+  }
+
   const session = await auth();
   
   if (!session || !session.user) {

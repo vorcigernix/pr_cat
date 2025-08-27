@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getOrganizationMembers, searchUsers } from '@/lib/repositories/team-repository';
 import { getOrganizationRole } from '@/lib/repositories/user-repository';
+import { verifyBotId } from '@/lib/botid-verification';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +12,12 @@ export async function GET(
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
+    // Check for bot before proceeding
+    const botVerification = await verifyBotId();
+    if (botVerification) {
+      return botVerification;
+    }
+
     const { orgId } = await params;
     const session = await auth();
     if (!session?.user?.id) {

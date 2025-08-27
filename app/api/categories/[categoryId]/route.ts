@@ -9,6 +9,7 @@ import {
 import { getOrganizationRole } from '@/lib/repositories/user-repository';
 import { Category } from '@/lib/types';
 import { z } from 'zod';
+import { verifyBotId } from '@/lib/botid-verification';
 
 export const runtime = 'nodejs';
 
@@ -23,6 +24,12 @@ export async function PUT(
   { params }: { params: Promise<{ categoryId: string }> }
 ) {
   try {
+    // Check for bot before proceeding
+    const botVerification = await verifyBotId();
+    if (botVerification) {
+      return botVerification;
+    }
+
     const { categoryId } = await params;
     const session = await auth();
     if (!session?.user?.id) {
@@ -123,6 +130,12 @@ export async function DELETE(
   { params }: { params: Promise<{ categoryId: string }> }
 ) {
   try {
+    // Check for bot before proceeding
+    const botVerification = await verifyBotId();
+    if (botVerification) {
+      return botVerification;
+    }
+
     const { categoryId } = await params;
     const session = await auth();
     if (!session?.user?.id) {

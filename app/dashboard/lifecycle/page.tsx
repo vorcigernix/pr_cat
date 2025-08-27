@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DateRange } from "react-day-picker";
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaEngineering } from "@/components/chart-area-engineering"
-import { DateRangePickerWithPresets } from "@/components/date-range-picker"
+import { SimpleTimeRangePicker, type TimeRangeValue } from "@/components/simple-time-range-picker"
 import { PRQualityDetails } from "@/components/pr-quality-details"
 import { RepositoryFilter } from "@/components/repository-filter"
 import { SiteHeader } from "@/components/site-header"
@@ -16,7 +15,7 @@ import { TimeSeriesDataPoint } from "@/app/api/services/metrics-data"
 
 export default function LifecyclePage() {
   const [selectedRepository, setSelectedRepository] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [timeRange, setTimeRange] = useState<TimeRangeValue>("30d");
   const [chartData, setChartData] = useState<TimeSeriesDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,13 +34,8 @@ export default function LifecyclePage() {
           params.append("repositoryId", selectedRepository);
         }
         
-        if (dateRange?.from) {
-          params.append("startDate", dateRange.from.toISOString());
-        }
-        
-        if (dateRange?.to) {
-          params.append("endDate", dateRange.to.toISOString());
-        }
+        // Use timeRange instead of specific dates
+        params.append("timeRange", timeRange);
         
         const url = `/api/metrics/time-series${params.toString() ? `?${params.toString()}` : ''}`;
         const response = await fetch(url);
@@ -61,14 +55,14 @@ export default function LifecyclePage() {
     };
 
     fetchChartData();
-  }, [selectedRepository, dateRange]);
+  }, [selectedRepository, timeRange]);
 
   const handleRepositoryChange = (repositoryId: string) => {
     setSelectedRepository(repositoryId);
   };
 
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    setDateRange(range);
+  const handleTimeRangeChange = (range: TimeRangeValue) => {
+    setTimeRange(range);
   };
 
   return (
@@ -92,9 +86,9 @@ export default function LifecyclePage() {
                     onRepositoryChange={handleRepositoryChange}
                     selectedRepository={selectedRepository}
                   />
-                  <DateRangePickerWithPresets 
-                    onDateRangeChange={handleDateRangeChange}
-                    selectedRange={dateRange}
+                  <SimpleTimeRangePicker 
+                    value={timeRange}
+                    onValueChange={handleTimeRangeChange}
                   />
                 </div>
               </div>
