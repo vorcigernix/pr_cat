@@ -1,5 +1,7 @@
 # PR Cat - AI-powered PR Categorization Tool
 
+TESTING PR functionality
+
 PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps engineering teams understand how they're investing their time across different areas of their codebase.
 
 ## 🚀 Quick Deploy Options
