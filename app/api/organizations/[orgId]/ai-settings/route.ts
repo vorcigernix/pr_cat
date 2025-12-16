@@ -51,7 +51,7 @@ export async function PUT(
 
     const body = await request.json();
     const validationResult = updateAiSettingsSchema.safeParse(body);
-    if (!validationResult.success) throw badRequest('Validation failed', validationResult.error.flatten());
+    if (!validationResult.success) throw badRequest('Validation failed', z.treeifyError(validationResult.error));
 
     await AiSettingsService.update(session.user.id, numericOrgId, validationResult.data);
     return NextResponse.json({ message: 'AI settings updated successfully' });

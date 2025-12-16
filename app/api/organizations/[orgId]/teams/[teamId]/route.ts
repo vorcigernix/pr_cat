@@ -130,7 +130,7 @@ const updateTeamHandler = async (
     // Validate request body with zod
     const validationResult = updateTeamSchema.safeParse(body);
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      const errors = validationResult.error.issues.map(err => `${err.path.join('.')}: ${err.message}`);
       return NextResponse.json({ 
         error: 'Validation failed', 
         details: errors 

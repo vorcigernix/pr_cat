@@ -40,7 +40,7 @@ export async function GET(
 // POST - Add a team member
 const addMemberSchema = z.object({
   user_id: z.string().min(1, "User ID is required"),
-  role: z.enum(['member', 'lead', 'admin']).optional().default('member')
+  role: z.enum(['member', 'lead', 'admin']).optional().prefault('member')
 });
 
 export async function POST(
@@ -63,7 +63,7 @@ export async function POST(
     
     // Validate request body with zod
     const validationResult = addMemberSchema.safeParse(body);
-    if (!validationResult.success) throw badRequest('Validation failed', validationResult.error.flatten());
+    if (!validationResult.success) throw badRequest('Validation failed', z.treeifyError(validationResult.error));
     
     const { user_id, role } = validationResult.data;
 
@@ -106,7 +106,7 @@ export async function PUT(
     // Validate request body with zod
     const validationResult = updateMemberSchema.safeParse(body);
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      const errors = validationResult.error.issues.map(err => `${err.path.join('.')}: ${err.message}`);
       return NextResponse.json({ 
         error: 'Validation failed', 
         details: errors 

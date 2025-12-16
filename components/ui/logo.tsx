@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 
 interface LogoProps {
   className?: string;
@@ -22,7 +22,7 @@ export function Logo({ className, animate = true, dark = false }: LogoProps) {
         opacity: { duration: 0.3 }
       }
     }
-  };
+  } as const satisfies Variants;
 
   return (
     <div className={cn("relative inline-block", className)}>

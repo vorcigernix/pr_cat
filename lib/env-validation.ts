@@ -3,7 +3,7 @@ import { z } from 'zod';
 // Define the environment schema
 const envSchema = z.object({
   // Database (optional for demo mode)
-  TURSO_URL: z.string().url().optional(),
+  TURSO_URL: z.url().optional(),
   TURSO_TOKEN: z.string().optional(),
   TURSO_POOL_SIZE: z.string().regex(/^\d+$/).optional(),
   
@@ -19,13 +19,13 @@ const envSchema = z.object({
   NEXT_PUBLIC_GITHUB_APP_SLUG: z.string().optional(),
   
   // NextAuth
-  NEXTAUTH_URL: z.string().url().optional(),
+  NEXTAUTH_URL: z.url().optional(),
   NEXTAUTH_SECRET: z.string().min(32, "NEXTAUTH_SECRET must be at least 32 characters").optional(),
   
   // App Configuration
-  APP_URL: z.string().url().optional(),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.string().regex(/^\d+$/).transform(Number).default('3000'),
+  APP_URL: z.url().optional(),
+  NODE_ENV: z.enum(['development', 'test', 'production']).prefault('development'),
+  PORT: z.string().regex(/^\d+$/).transform(Number).prefault('3000'),
   
   // AI Configuration (optional)
   AI_PROVIDER: z.enum(['openai', 'anthropic', 'google', 'none']).optional(),
@@ -79,10 +79,10 @@ export function validateEnv(): EnvSchema {
     return envSchema.parse(processedEnv);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const missingVars = error.errors.map(err => err.path.join('.')).join(', ');
+      const missingVars = error.issues.map(err => err.path.join('.')).join(', ');
       console.error('❌ Environment validation failed:');
       console.error(`Missing or invalid variables: ${missingVars}`);
-      error.errors.forEach(err => {
+      error.issues.forEach(err => {
         console.error(`  - ${err.path.join('.')}: ${err.message}`);
       });
       

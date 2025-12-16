@@ -51,7 +51,7 @@ export async function POST(
     
     // Validate request body with zod
     const validationResult = createCategorySchema.safeParse(body);
-    if (!validationResult.success) throw badRequest('Validation failed', validationResult.error.flatten());
+    if (!validationResult.success) throw badRequest('Validation failed', z.treeifyError(validationResult.error));
     
     const { name, description, color } = validationResult.data;
     

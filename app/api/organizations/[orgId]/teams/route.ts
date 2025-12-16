@@ -98,7 +98,7 @@ const createTeamHandler = async (
     
     // Validate request body with zod
     const validationResult = createTeamSchema.safeParse(body);
-    if (!validationResult.success) throw badRequest('Validation failed', validationResult.error.flatten());
+    if (!validationResult.success) throw badRequest('Validation failed', z.treeifyError(validationResult.error));
     
     const { name, description, color } = validationResult.data;
     
