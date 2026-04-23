@@ -48,7 +48,7 @@
     "@tabler/icons-react": "^3.36.0",
     "@tanstack/react-table": "^8.21.3",
     "@types/jsonwebtoken": "^9.0.10",
-    "ai": "^5.0.113",
+    "ai": "^6.0.168",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
