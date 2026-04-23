@@ -69,7 +69,7 @@ function generateDefaults(env: NodeJS.ProcessEnv) {
   
   if (!defaults.APP_URL) {
     defaults.APP_URL = defaults.NEXTAUTH_URL;
-    console.log(`🌐 Auto-generated APP_URL: ${defaults.APP_URL}`);
+    console.log('🌐 Auto-generated APP_URL');
   }
   
   return defaults;
