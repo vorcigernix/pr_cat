@@ -75,5 +75,9 @@ AI_PROVIDER=none
 # Port for local development (default: 3000)
 PORT=3000
 
+# Secret for the POST /api/migrate endpoint (required in production).
+# Generate with: openssl rand -base64 32
+# MIGRATION_SECRET=your-migration-secret-here
+
 # Environment (development | test | production)
 NODE_ENV=development

@@ -27,6 +27,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).prefault('development'),
   PORT: z.string().regex(/^\d+$/).transform(Number).prefault('3000'),
   
+  // Migration endpoint auth (required in production)
+  MIGRATION_SECRET: z.string().min(16, "MIGRATION_SECRET must be at least 16 characters").optional(),
+
   // AI Configuration (optional)
   AI_PROVIDER: z.enum(['openai', 'anthropic', 'google', 'none']).optional(),
   OPENAI_API_KEY: z.string().optional(),
