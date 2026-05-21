@@ -1,5 +1,4 @@
-import { signOut } from "@/auth";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // Validate callback URL to prevent open redirect attacks
 function isValidCallbackUrl(url: string): boolean {
@@ -38,6 +37,21 @@ export async function GET(request: NextRequest) {
     console.warn(`SignOut: Invalid callback URL blocked: ${callbackUrl}`);
   }
   
-  // Call the NextAuth signOut function to destroy the session
-  return signOut({ redirectTo: safeCallbackUrl });
+  const response = NextResponse.redirect(new URL(safeCallbackUrl, request.nextUrl.origin));
+  const cookieNames = [
+    'next-auth.session-token',
+    '__Secure-next-auth.session-token',
+    'next-auth.csrf-token',
+    '__Host-next-auth.csrf-token',
+    'next-auth.callback-url',
+    '__Secure-next-auth.callback-url',
+    'next-auth.pkce.code_verifier',
+    '__Secure-next-auth.pkce.code_verifier',
+  ];
+
+  for (const cookieName of cookieNames) {
+    response.cookies.set(cookieName, '', { maxAge: 0, path: '/' });
+  }
+
+  return response;
 } 

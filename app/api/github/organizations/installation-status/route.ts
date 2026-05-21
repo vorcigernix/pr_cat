@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import type { Session } from 'next-auth';
 import { auth } from '@/auth';
 import { getService } from '@/lib/core/container/di-container';
-import { IGitHubAppService } from '@/lib/core/ports';
+import type { IGitHubAppService } from '@/lib/core/ports';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +18,7 @@ export async function GET() {
   
   try {
     // Fetch organizations from session
-    const organizations = session.organizations || [];
+    const organizations: NonNullable<Session['organizations']> = session.organizations || [];
     console.log(`Organizations installation-status: Found ${organizations.length} organizations in session`);
     
     if (organizations.length === 0) {

@@ -1,6 +1,7 @@
 import NextAuth from "next-auth"
+import type { NextAuthOptions } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import GitHub from "next-auth/providers/github"
-import { NextAuthConfig } from "next-auth"
 import { getUserOrganizations, findUserById } from "@/lib/repositories/user-repository"
 import { createGitHubClient } from "@/lib/github"
 import { execute } from "@/lib/db"
@@ -150,26 +151,6 @@ export const config = {
     error: "/error",
   },
   callbacks: {
-    authorized({ request, auth }) {
-      const { pathname } = request.nextUrl;
-      
-      // Allow dashboard access in demo mode (when no real GitHub credentials configured)
-      if (pathname.startsWith("/dashboard")) {
-        const hasGitHubCredentials = process.env.GITHUB_OAUTH_CLIENT_ID && 
-                                     process.env.GITHUB_OAUTH_CLIENT_SECRET && 
-                                     process.env.GITHUB_OAUTH_CLIENT_ID !== 'demo-client-id';
-        
-        if (!hasGitHubCredentials) {
-          // Demo mode: allow dashboard access without authentication
-          console.log('🎯 Demo mode: Allowing dashboard access without authentication');
-          return true;
-        }
-        
-        // Production mode: require authentication
-        return !!auth;
-      }
-      return true;
-    },
     async session({ session, token }) {
       if (!token.sub) {
         console.warn("Session callback: token.sub is missing");
@@ -226,9 +207,9 @@ export const config = {
       return session;
     },
     async jwt({ token, account, profile }) {
-      if (profile && typeof profile.id !== 'undefined' && profile.id !== null) {
-        token.sub = profile.id.toString();
-        const gh = profile as Record<string, unknown>;
+      const gh = profile as Record<string, unknown> | undefined;
+      if (gh && typeof gh.id !== 'undefined' && gh.id !== null) {
+        token.sub = gh.id.toString();
         token.login = asOptionalString(gh.login);
         token.html_url = asOptionalString(gh.html_url);
         token.avatar_url = asOptionalString(gh.avatar_url);
@@ -252,13 +233,13 @@ export const config = {
       }
 
       // Production mode: full sign-in process with database operations
-      if (!profile || typeof profile.id === 'undefined' || profile.id === null) {
+      const profileData = profile as Record<string, unknown> | undefined;
+      if (!profileData || typeof profileData.id === 'undefined' || profileData.id === null) {
         console.error("SignIn: Missing required profile.id");
         return false;
       }
 
-      const githubId = profile.id.toString();
-      const profileData = profile as Record<string, unknown>;
+      const githubId = profileData.id.toString();
       const profileLogin = asOptionalString(profileData.login);
       const profileAvatarUrl = asOptionalString(profileData.avatar_url);
 
@@ -295,7 +276,6 @@ export const config = {
   },
   // Add additional security configuration
   secret: NEXTAUTH_SECRET,
-  trustHost: true,
   // Add cookie configuration to help with PKCE
   cookies: {
     pkceCodeVerifier: {
@@ -308,9 +288,18 @@ export const config = {
       }
     }
   },
-} satisfies NextAuthConfig;
+} satisfies NextAuthOptions;
 
-export const { handlers, auth, signIn, signOut } = NextAuth(config);
+const handler = NextAuth(config);
+
+export const handlers = {
+  GET: handler,
+  POST: handler,
+};
+
+export function auth() {
+  return getServerSession(config);
+}
 
 // Ensure this file doesn't execute in Edge Runtime
 export const runtime = 'nodejs';

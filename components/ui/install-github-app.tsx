@@ -3,7 +3,8 @@
 import React from 'react';
 import { Button } from './button';
 import { toast } from 'sonner';
-import { GithubIcon, CheckCircle2, ExternalLink } from 'lucide-react';
+import { CheckCircle2, ExternalLink } from 'lucide-react';
+import { IconBrandGithub } from '@tabler/icons-react';
 import { cn } from "@/lib/utils";
 
 type InstallButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
@@ -75,7 +76,7 @@ export function InstallGitHubAppButton({
       size={size}
       className={className}
     >
-      <GithubIcon className="mr-2 h-4 w-4" />
+      <IconBrandGithub className="mr-2 h-4 w-4" />
       {organizationName ? `Install for ${organizationName}` : 'Install GitHub App'}
       <ExternalLink className="ml-2 h-3 w-3 opacity-70" />
     </Button>

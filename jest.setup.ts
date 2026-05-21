@@ -1,8 +1,11 @@
 // jest.setup.ts
 import '@testing-library/jest-dom';
 
-// Polyfill for Request/Response in Node environment
-import 'whatwg-fetch';
+// Polyfill for older test runtimes only. NextRequest expects the native
+// Request implementation available in current Node versions.
+if (typeof globalThis.Request === 'undefined') {
+  require('whatwg-fetch');
+}
 
 // Mock next-auth module
 jest.mock('next-auth', () => ({

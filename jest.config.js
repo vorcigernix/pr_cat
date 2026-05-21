@@ -12,6 +12,7 @@ const config = {
   // Add more setup options before each test is run
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
+    '^@octokit/rest$': '<rootDir>/__tests__/mocks/octokit-rest.ts',
     '^@/(.*)$': '<rootDir>/$1',
   },
   testMatch: [
@@ -42,10 +43,6 @@ const config = {
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['@swc/jest'],
   },
-  // Handle ESM modules
-  transformIgnorePatterns: [
-    'node_modules/(?!(next-auth|@auth)/)',
-  ],
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

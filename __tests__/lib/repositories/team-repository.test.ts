@@ -264,13 +264,19 @@ describe('Team Repository', () => {
     it('should return team members with user data', async () => {
       const membersWithUsers = [
         {
-          ...mockTeamMember,
-          user_id: 'user-123',
-          user_name: 'Test User',
-          user_email: 'test@example.com',
-          user_image: 'https://example.com/avatar.jpg',
-          user_created_at: '2024-01-01T00:00:00Z',
-          user_updated_at: '2024-01-01T00:00:00Z',
+          tm_id: mockTeamMember.id,
+          tm_team_id: mockTeamMember.team_id,
+          tm_user_id: mockTeamMember.user_id,
+          tm_role: mockTeamMember.role,
+          tm_joined_at: mockTeamMember.joined_at,
+          tm_created_at: mockTeamMember.created_at,
+          tm_updated_at: mockTeamMember.updated_at,
+          u_id: mockUser.id,
+          u_name: mockUser.name,
+          u_email: mockUser.email,
+          u_image: mockUser.image,
+          u_created_at: mockUser.created_at,
+          u_updated_at: mockUser.updated_at,
         },
       ];
       
@@ -281,7 +287,7 @@ describe('Team Repository', () => {
       expect(result).toHaveLength(1);
       // The function transforms the raw data to include a user object
       expect(result[0]).toHaveProperty('user_id');
-      expect(result[0]).toHaveProperty('user_name');
+      expect(result[0]).toHaveProperty('user.name', 'Test User');
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('FROM team_members tm'),
         [1]

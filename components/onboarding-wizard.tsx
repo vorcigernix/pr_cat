@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { InstallGitHubAppButton } from '@/components/ui/install-github-app';
-import { CheckCircle2, ChevronRight, Github } from 'lucide-react';
+import { CheckCircle2, ChevronRight } from 'lucide-react';
+import { IconBrandGithub } from '@tabler/icons-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { allModels } from '@/lib/ai-models';
@@ -389,7 +390,7 @@ export function OnboardingWizard() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center space-y-4 p-4 bg-muted/50 rounded-md">
-                  <Github className="h-10 w-10" />
+                  <IconBrandGithub className="h-10 w-10" />
                   <p className="text-sm text-center">
                     Click the button below to install the PR Cat GitHub App.
                     You&apos;ll be redirected to GitHub to complete the installation.
