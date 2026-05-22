@@ -2,7 +2,7 @@ import type { UpdateAiSettingsPayload, AiSettings as FetchedAiSettings } from ".
 
 // Shared interface for AI Model Definitions
 export interface ModelDefinition {
-  id: string; // e.g., "gpt-4o", "gemini-2.0-flash"
+  id: string; // e.g., "gpt-4o", "gemini-3.5-flash"
   name: string; // User-friendly name, e.g., "GPT-4o (Latest)"
   provider: "openai" | "google" | "anthropic"; // Provider key
   providerName: string; // User-friendly provider name, e.g., "OpenAI"
@@ -48,8 +48,8 @@ export const allModels: ModelDefinition[] = [
     isKeySetSelector: (s) => !!s?.isGoogleKeySet
   },
   {
-    id: "gemini-2.0-flash",
-    name: "Gemini 2.0 Flash (Recommended Default)",
+    id: "gemini-3.5-flash",
+    name: "Gemini 3.5 Flash (Recommended Default)",
     provider: "google",
     providerName: "Google",
     apiKeyPayloadKey: "googleApiKey",
