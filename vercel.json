@@ -1,18 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "pnpm build",
-  "devCommand": "pnpm dev",
-  "installCommand": "pnpm install",
-  "regions": ["iad1"],
+  "buildCommand": "bun run build",
+  "devCommand": "bun run dev",
+  "installCommand": "bun install --frozen-lockfile",
+  "regions": [
+    "iad1"
+  ],
   "functions": {
     "app/api/webhook/github/route.ts": {
       "maxDuration": 30
     },
-    "app/api/organizations/*/sync/route.ts": {
+    "app/api/github/repositories/*/sync/route.ts": {
       "maxDuration": 60
     },
-    "app/api/github/repositories/*/sync/route.ts": {
+    "app/api/github/organizations/*/sync/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/github/organizations/sync/route.ts": {
       "maxDuration": 60
     }
   },
@@ -37,12 +42,6 @@
           "value": "strict-origin-when-cross-origin"
         }
       ]
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/sync-organizations",
-      "schedule": "0 2 * * *"
     }
   ]
 }

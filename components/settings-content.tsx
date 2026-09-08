@@ -33,10 +33,6 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
   const [orgsState, setOrgsState] = useState<OrganizationWithInstallation[]>(organizations || []);
   const [organizationMembers, setOrganizationMembers] = useState<User[]>([]);
 
-  const handleOrganizationSelected = (org: OrganizationWithInstallation | null) => {
-    setSelectedOrganization(org);
-  };
-
   const handleOrganizationsUpdated = (nextOrganizations: OrganizationWithInstallation[]) => {
     setOrgsState(nextOrganizations);
     setSelectedOrganization((current) => {
@@ -107,7 +103,7 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
             <GitHubOrganizationManager
               organizations={orgsState}
               selectedOrganization={selectedOrganization}
-              onOrganizationSelected={handleOrganizationSelected}
+              onOrganizationSelected={setSelectedOrganization}
               onOrganizationsUpdated={handleOrganizationsUpdated}
             />
 
@@ -170,9 +166,10 @@ export function SettingsContent({ organizationsPromise }: SettingsContentProps) 
       </TabsContent>
       
       <TabsContent value="ai">
-        <AiSettingsTab 
+        <AiSettingsTab
           organizations={orgsState}
           selectedOrganization={selectedOrganization}
+          onOrganizationSelected={setSelectedOrganization}
         />
       </TabsContent>
       

@@ -33,7 +33,8 @@ const repositoriesHandler = async (
       },
       is_tracked: repo.isTracked,
       private: repo.isPrivate,
-      description: repo.description
+      description: repo.description,
+      last_synced_at: repo.lastSyncedAt?.toISOString() ?? null
     }));
 
     return NextResponse.json({ 

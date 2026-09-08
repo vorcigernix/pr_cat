@@ -1,4 +1,6 @@
-"use client";
+"use client"
+
+import { useDashboardQuery } from "@/hooks/use-metrics";
 
 import * as React from "react";
 import { IconTrendingUp, IconTrendingDown, IconMinus, IconAlertTriangle, IconCheck, IconGitBranch } from "@tabler/icons-react";
@@ -50,34 +52,8 @@ type RepositoryInsightsResponse = {
 };
 
 export function RepositoryInsights() {
-  const [insights, setInsights] = React.useState<RepositoryInsightsResponse | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await fetch('/api/metrics/repository-insights');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch repository insights: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setInsights(data);
-      } catch (error) {
-        console.error("Failed to load repository insights:", error);
-        setError(error instanceof Error ? error.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const { data: insights, isLoading: loading, error: requestError, refresh } = useDashboardQuery<RepositoryInsightsResponse>('/api/metrics/repository-insights');
+  const error = requestError?.message;
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
@@ -119,7 +95,7 @@ export function RepositoryInsights() {
       </Card>
     );
   }
-  
+
   if (error) {
     return (
       <Card>
@@ -129,8 +105,8 @@ export function RepositoryInsights() {
         </CardHeader>
         <CardContent>
           <p className="text-red-500">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => void refresh()}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Retry
@@ -266,8 +242,8 @@ export function RepositoryInsights() {
         <CardContent>
           <div className="space-y-4">
             {insights.repositories.map((repo) => (
-              <div 
-                key={repo.repositoryId} 
+              <div
+                key={repo.repositoryId}
                 className={`p-4 border rounded-lg space-y-3 ${!repo.hasData ? 'opacity-50' : ''}`}
               >
                 {/* Repository Header */}
@@ -376,4 +352,4 @@ export function RepositoryInsights() {
       </Card>
     </div>
   );
-} 
+}

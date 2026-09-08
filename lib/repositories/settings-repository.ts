@@ -1,4 +1,4 @@
-import { query, execute } from '@/lib/db';
+import { query, batch } from '@/lib/db';
 import { Setting } from '@/lib/types';
 
 // Keys for AI settings
@@ -40,44 +40,22 @@ async function getOrganizationSetting(organizationId: number, key: string): Prom
   return settings.length > 0 ? settings[0].value : null;
 }
 
-async function updateOrganizationSetting(organizationId: number, key: string, value: string | null): Promise<void> {
-  // For organization settings, user_id is always NULL
-  // SQLite treats NULL values as distinct, so we need to handle the upsert differently
-  
-  // First check if a setting already exists
-  const existingSetting = await query<Setting>(
-    'SELECT id FROM settings WHERE user_id IS NULL AND organization_id = ? AND key = ?',
-    [organizationId, key]
-  );
-  
-  if (existingSetting.length > 0) {
-    // Update existing setting
-    await execute(
-      'UPDATE settings SET value = ?, updated_at = datetime(\'now\') WHERE user_id IS NULL AND organization_id = ? AND key = ?',
-      [value, organizationId, key]
-    );
-    console.log(`Updated existing setting ${key} for org ${organizationId} to: ${value}`);
-  } else {
-    // Insert new setting
-    await execute(
-      'INSERT INTO settings (user_id, organization_id, key, value, created_at, updated_at) VALUES (NULL, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
-      [organizationId, key, value]
-    );
-    console.log(`Inserted new setting ${key} for org ${organizationId} with value: ${value}`);
-  }
-}
-
 export async function getOrganizationAiSettings(organizationId: number): Promise<AiSettings> {
-  const provider = await getOrganizationSetting(organizationId, AI_PROVIDER_KEY) as AIProvider;
-  const selectedModelId = await getOrganizationSetting(organizationId, AI_SELECTED_MODEL_ID_KEY);
-  const openAiKey = await getOrganizationSetting(organizationId, AI_OPENAI_API_KEY_KEY);
-  const googleKey = await getOrganizationSetting(organizationId, AI_GOOGLE_API_KEY_KEY);
-  const anthropicKey = await getOrganizationSetting(organizationId, AI_ANTHROPIC_API_KEY_KEY);
-  const threshold = await getOrganizationSetting(organizationId, AI_CATEGORY_THRESHOLD_KEY);
+  const keys = [AI_PROVIDER_KEY, AI_SELECTED_MODEL_ID_KEY, AI_OPENAI_API_KEY_KEY, AI_GOOGLE_API_KEY_KEY, AI_ANTHROPIC_API_KEY_KEY, AI_CATEGORY_THRESHOLD_KEY];
+  const settings = await query<Pick<Setting, 'key' | 'value'>>(
+    `SELECT key, value FROM settings WHERE organization_id = ? AND user_id IS NULL AND key IN (${keys.map(() => '?').join(', ')})`,
+    [organizationId, ...keys]
+  );
+  const [provider, selectedModelId, openAiKey, googleKey, anthropicKey, threshold] = keys.map(
+    key => settings.find(setting => setting.key === key)?.value ?? null
+  );
 
   return {
-    provider: provider || null,
-    selectedModelId,
+    provider: (provider || null) as AIProvider,
+    // Resolve the retired preview without changing valid saved selections.
+    selectedModelId: provider === 'google' && selectedModelId === 'gemini-2.5-pro-preview-05-06'
+      ? 'gemini-2.5-pro'
+      : selectedModelId,
     isOpenAiKeySet: !!openAiKey,
     isGoogleKeySet: !!googleKey,
     isAnthropicKeySet: !!anthropicKey,
@@ -89,34 +67,21 @@ export async function updateOrganizationAiSettings(
   organizationId: number, 
   payload: UpdateAiSettingsPayload
 ): Promise<void> {
-  console.log(`Updating AI settings for org ${organizationId}:`, JSON.stringify(payload, null, 2));
-  
-  if (payload.provider !== undefined) {
-    console.log(`Setting provider to: ${payload.provider}`);
-    await updateOrganizationSetting(organizationId, AI_PROVIDER_KEY, payload.provider);
-  }
-  if (payload.selectedModelId !== undefined) {
-    console.log(`Setting selectedModelId to: ${payload.selectedModelId}`);
-    await updateOrganizationSetting(organizationId, AI_SELECTED_MODEL_ID_KEY, payload.selectedModelId);
-  }
-  if (payload.openaiApiKey !== undefined) {
-    console.log(`Setting OpenAI API key (length: ${payload.openaiApiKey?.length || 0})`);
-    await updateOrganizationSetting(organizationId, AI_OPENAI_API_KEY_KEY, payload.openaiApiKey);
-  }
-  if (payload.googleApiKey !== undefined) {
-    console.log(`Setting Google API key (length: ${payload.googleApiKey?.length || 0})`);
-    await updateOrganizationSetting(organizationId, AI_GOOGLE_API_KEY_KEY, payload.googleApiKey);
-  }
-  if (payload.anthropicApiKey !== undefined) {
-    console.log(`Setting Anthropic API key (length: ${payload.anthropicApiKey?.length || 0})`);
-    await updateOrganizationSetting(organizationId, AI_ANTHROPIC_API_KEY_KEY, payload.anthropicApiKey);
-  }
-  if (payload.categoryThreshold !== undefined) {
-    console.log(`Setting category threshold to: ${payload.categoryThreshold}`);
-    await updateOrganizationSetting(organizationId, AI_CATEGORY_THRESHOLD_KEY, payload.categoryThreshold?.toString());
-  }
-  
-  console.log(`Finished updating AI settings for org ${organizationId}`);
+  const values: [string, string | null | undefined][] = [
+    [AI_PROVIDER_KEY, payload.provider],
+    [AI_SELECTED_MODEL_ID_KEY, payload.selectedModelId],
+    [AI_OPENAI_API_KEY_KEY, payload.openaiApiKey],
+    [AI_GOOGLE_API_KEY_KEY, payload.googleApiKey],
+    [AI_ANTHROPIC_API_KEY_KEY, payload.anthropicApiKey],
+    [AI_CATEGORY_THRESHOLD_KEY, payload.categoryThreshold?.toString()],
+  ];
+  const statements = values.filter(([, value]) => value !== undefined).map(([key, value]) => ({
+    sql: `INSERT INTO settings (organization_id, key, value) VALUES (?, ?, ?)
+          ON CONFLICT (organization_id, key) WHERE user_id IS NULL
+          DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+    args: [organizationId, key, value ?? null],
+  }));
+  if (statements.length > 0) await batch(statements);
 }
 
 // Get a specific API key for an organization and provider
@@ -139,4 +104,4 @@ export async function getOrganizationApiKey(organizationId: number, provider: AI
       return null;
   }
   return getOrganizationSetting(organizationId, apiKeyDBKey);
-} 
+}

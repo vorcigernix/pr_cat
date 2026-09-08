@@ -3,7 +3,7 @@
  * Implements IGitHubService using mock GitHub API responses
  */
 
-import { IGitHubService } from '../../../core/ports'
+import { IGitHubService, PullRequestSyncResult, RepositorySyncResult } from '../../../core/ports'
 import { Organization, Repository, PullRequest, User } from '../../../core/domain/entities'
 import { 
   DEMO_USERS, 
@@ -243,58 +243,16 @@ export class DemoGitHubService implements IGitHubService {
     return reviews
   }
 
-  async syncOrganizationRepositories(orgLogin: string): Promise<{
-    synced: Repository[]
-    errors: Array<{ repo: string; error: string }>
-  }> {
-    try {
-      const repositories = await this.getOrganizationRepositories(orgLogin)
-      return {
-        synced: repositories,
-        errors: []
-      }
-    } catch (error) {
-      return {
-        synced: [],
-        errors: [{ repo: orgLogin, error: error instanceof Error ? error.message : 'Unknown error' }]
-      }
-    }
+  async syncOrganizationRepositories(orgLogin: string): Promise<RepositorySyncResult> {
+    const repositories = await this.getOrganizationRepositories(orgLogin);
+    return { processed: repositories.length, created: 0, updated: 0, unchanged: repositories.length, errors: [] };
   }
 
-  async syncRepositoryPullRequests(
-    repositoryId: string,
-    since?: Date
-  ): Promise<{
-    synced: PullRequest[]
-    errors: Array<{ pr: number; error: string }>
-  }> {
-    const repository = DEMO_REPOSITORIES.find(r => r.id === repositoryId)
-    if (!repository) {
-      return {
-        synced: [],
-        errors: [{ pr: 0, error: `Repository ${repositoryId} not found` }]
-      }
-    }
-
-    try {
-      const [owner, repo] = repository.fullName.split('/')
-      let pullRequests = await this.getRepositoryPullRequests(owner, repo)
-      
-      // Filter by 'since' date if provided
-      if (since) {
-        pullRequests = pullRequests.filter(pr => new Date(pr.createdAt) >= since)
-      }
-
-      return {
-        synced: pullRequests,
-        errors: []
-      }
-    } catch (error) {
-      return {
-        synced: [],
-        errors: [{ pr: 0, error: error instanceof Error ? error.message : 'Unknown error' }]
-      }
-    }
+  async syncRepositoryPullRequests(repositoryId: string, _since?: Date): Promise<PullRequestSyncResult> {
+    const repository = DEMO_REPOSITORIES.find(r => r.id === repositoryId);
+    const errors = repository ? [] : [{ pr: 0, error: `Repository ${repositoryId} not found` }];
+    const processed = repository ? (await this.getRepositoryPullRequests(...repository.fullName.split('/') as [string, string])).length : 0;
+    return { processed, created: 0, updated: 0, unchanged: processed, errors };
   }
 
   async getInstallationStatus(orgLogin: string): Promise<{

@@ -1,378 +1,128 @@
-// Unit tests for team repository functions
+/** @jest-environment node */
 
-// Mock the db module BEFORE importing anything that uses it
-jest.mock('@/lib/db', () => ({
-  query: jest.fn(),
-  execute: jest.fn(),
-  transaction: jest.fn(),
-  getDbClient: jest.fn(),
-  checkDbHealth: jest.fn(),
-  getConnectionStatus: jest.fn(() => ({ isConnected: true, hasClient: true })),
-}));
-
+import { createClient, type Client } from '@libsql/client';
+import { batch, query, execute } from '@/lib/db';
+import { runMigrations } from '@/lib/migrate';
 import {
-  findTeamById,
-  findTeamsByOrganization,
-  createTeam,
-  updateTeam,
-  deleteTeam,
-  addTeamMember,
-  removeTeamMember,
-  getTeamMembers,
-  getTeamWithMembers,
-  getTeamsByOrganizationWithMembers,
-  searchUsers,
+  findTeamById, createTeam, updateTeam, deleteTeam, addTeamMember,
+  removeTeamMember, updateTeamMember, getTeamWithMembers, searchUsers,
 } from '@/lib/repositories/team-repository';
-import { query, execute } from '@/lib/db';
-import { mockTeam, mockUser, mockTeamMember, createMockTeams } from '../../fixtures';
+import { updateCategory } from '@/lib/repositories/category-repository';
+import { updateUser } from '@/lib/repositories/user-repository';
+import { updateOrganization } from '@/lib/repositories/organization-repository';
+import { updateRepository, setRepositoryTracking } from '@/lib/repositories/repository-repository';
 
-// Get references to the mocked functions
-const mockQuery = query as jest.Mock;
-const mockExecute = execute as jest.Mock;
+jest.mock('@/lib/db', () => ({ batch: jest.fn(), query: jest.fn(), execute: jest.fn() }));
 
-describe('Team Repository', () => {
-  beforeEach(() => {
+describe('Repository write persistence', () => {
+  let client: Client;
+
+  beforeEach(async () => {
+    client = createClient({ url: 'file::memory:' });
+    jest.mocked(batch).mockImplementation(statements => client.batch(statements, 'write'));
+    jest.mocked(query).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    jest.mocked(execute).mockImplementation(async (sql, args) => {
+      const result = await client.execute({ sql, args });
+      return { rowsAffected: result.rowsAffected, lastInsertId: Number(result.lastInsertRowid) };
+    });
+    await runMigrations();
+    await client.executeMultiple(`
+      INSERT INTO organizations (id, name) VALUES (1, 'one'), (2, 'two');
+      INSERT INTO users (id, name, email) VALUES ('alice', 'Alice', 'alice@example.com'), ('outsider', 'Other', 'other@example.com');
+      INSERT INTO user_organizations (user_id, organization_id) VALUES ('alice', 1), ('outsider', 2);
+      INSERT INTO teams (id, organization_id, name, description, color) VALUES
+        (1, 1, 'Engineering', 'Keep this', '#123456'), (2, 2, 'Other team', NULL, NULL);
+    `);
     jest.clearAllMocks();
-    // Setup default mock responses
-    mockQuery.mockResolvedValue([]);
-    mockExecute.mockResolvedValue({ lastInsertId: 1, rowsAffected: 1 });
   });
 
-  describe('findTeamById', () => {
-    it('should return a team when found', async () => {
-      mockQuery.mockResolvedValueOnce([mockTeam]);
-      
-      const result = await findTeamById(1);
-      
-      expect(result).toEqual(mockTeam);
-      expect(mockQuery).toHaveBeenCalledWith(
-        'SELECT * FROM teams WHERE id = ?',
-        [1]
-      );
-    });
+  afterEach(() => client.close());
 
-    it('should return null when team not found', async () => {
-      mockQuery.mockResolvedValueOnce([]);
-      
-      const result = await findTeamById(999);
-      
-      expect(result).toBeNull();
-      expect(mockQuery).toHaveBeenCalledWith(
-        'SELECT * FROM teams WHERE id = ?',
-        [999]
-      );
-    });
+  it.each([
+    { table: 'categories', id: 1, write: () => updateCategory(1, { name: 'Renamed category', description: null, is_default: true }), expected: { name: 'Renamed category', description: null, is_default: 1 } },
+    { table: 'users', id: 'alice', write: () => updateUser('alice', { name: 'Renamed user', email: 'new@example.com' }), expected: { name: 'Renamed user', email: 'new@example.com' } },
+    { table: 'organizations', id: 1, write: () => updateOrganization(1, { name: 'Renamed org', installation_id: 99 }), expected: { name: 'Renamed org', installation_id: 99 } },
+    { table: 'repositories', id: 1, write: () => updateRepository(1, { name: 'renamed-repo', description: null, private: true }), expected: { name: 'renamed-repo', description: null, private: 1 } },
+    { table: 'repositories', id: 1, write: () => setRepositoryTracking(1, true), expected: { is_tracked: 1 } },
+  ])('updates $table with $expected and a valid timestamp without touching other rows', async ({ table, id, write, expected }) => {
+    await client.executeMultiple(`
+      INSERT INTO categories (id, organization_id, name, description) VALUES (1, 1, 'First', 'Old description'), (2, 2, 'Other', NULL);
+      INSERT INTO repositories (id, organization_id, name, full_name, description) VALUES (1, 1, 'first', 'one/first', 'Old description'), (2, 2, 'other', 'two/other', NULL);
+      UPDATE ${table} SET updated_at = '2000-01-01 00:00:00';
+    `);
+    const before = (await client.execute({ sql: `SELECT * FROM ${table} WHERE id = ?`, args: [id] })).rows[0];
+    const untouched = (await client.execute({ sql: `SELECT * FROM ${table} WHERE id != ?`, args: [id] })).rows;
+
+    const result = await write();
+
+    expect(result).toMatchObject({ id, ...expected, created_at: before.created_at });
+    expect(Date.parse(`${result?.updated_at}Z`)).toBeGreaterThan(Date.parse('2000-01-01T00:00:00Z'));
+    expect((await client.execute({ sql: `SELECT * FROM ${table} WHERE id = ?`, args: [id] })).rows[0]).toEqual(result);
+    expect((await client.execute({ sql: `SELECT * FROM ${table} WHERE id != ?`, args: [id] })).rows).toEqual(untouched);
   });
 
-  describe('findTeamsByOrganization', () => {
-    it('should return teams for an organization', async () => {
-      const teams = createMockTeams(3);
-      mockQuery.mockResolvedValueOnce(teams);
-      
-      const result = await findTeamsByOrganization(1);
-      
-      expect(result).toEqual(teams);
-      expect(result).toHaveLength(3);
-      expect(mockQuery).toHaveBeenCalledWith(
-        'SELECT * FROM teams WHERE organization_id = ? ORDER BY name',
-        [1]
-      );
-    });
+  it('persists a new team and updates supplied fields without erasing omitted values', async () => {
+    const created = await createTeam({ organization_id: 1, name: 'Product', description: 'Keep this', color: '#123456' });
+    expect(await findTeamById(created.id)).toEqual(created);
 
-    it('should return empty array when no teams found', async () => {
-      mockQuery.mockResolvedValueOnce([]);
-      
-      const result = await findTeamsByOrganization(999);
-      
-      expect(result).toEqual([]);
-      expect(mockQuery).toHaveBeenCalledWith(
-        'SELECT * FROM teams WHERE organization_id = ? ORDER BY name',
-        [999]
-      );
+    expect(await updateTeam(created.id, { name: 'Renamed', description: undefined, color: null })).toMatchObject({
+      id: created.id, organization_id: 1, name: 'Renamed', description: 'Keep this', color: null, created_at: created.created_at,
     });
+    expect(await findTeamById(1)).toMatchObject({ name: 'Engineering', color: '#123456' });
   });
 
-  describe('createTeam', () => {
-    it('should create a new team successfully', async () => {
-      const newTeam = {
-        organization_id: 1,
-        name: 'New Team',
-        description: 'A new team',
-        color: '#10B981',
-      };
-      
-      mockExecute.mockResolvedValueOnce({ lastInsertId: 2, rowsAffected: 1 });
-      mockQuery.mockResolvedValueOnce([{ ...mockTeam, ...newTeam, id: 2 }]);
-      
-      const result = await createTeam(newTeam);
-      
-      expect(result).toMatchObject(newTeam);
-      expect(result.id).toBe(2);
-      expect(mockExecute).toHaveBeenCalledWith(
-        'INSERT INTO teams (organization_id, name, description, color) VALUES (?, ?, ?, ?)',
-        [newTeam.organization_id, newTeam.name, newTeam.description, newTeam.color]
-      );
-    });
-
-    it('should throw error when creation fails', async () => {
-      const newTeam = {
-        organization_id: 1,
-        name: 'New Team',
-        description: null,
-        color: null,
-      };
-      
-      mockExecute.mockResolvedValueOnce({ rowsAffected: 0 });
-      
-      await expect(createTeam(newTeam)).rejects.toThrow('Failed to create team');
-    });
+  it('keeps empty updates read-only and returns null for a missing team', async () => {
+    const before = await findTeamById(1);
+    expect(await updateTeam(1, {})).toEqual(before);
+    expect(execute).not.toHaveBeenCalled();
+    expect(await getTeamWithMembers(999)).toBeNull();
   });
 
-  describe('updateTeam', () => {
-    it('should update team fields successfully', async () => {
-      const updates = {
-        name: 'Updated Team Name',
-        description: 'Updated description',
-      };
-      
-      mockExecute.mockResolvedValueOnce({ rowsAffected: 1 });
-      mockQuery.mockResolvedValueOnce([{ ...mockTeam, ...updates }]);
-      
-      const result = await updateTeam(1, updates);
-      
-      expect(result).toMatchObject(updates);
-      expect(mockExecute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE teams SET'),
-        expect.arrayContaining(['Updated Team Name', 'Updated description', 1])
-      );
-    });
-
-    it('should return existing team when no updates provided', async () => {
-      mockQuery.mockResolvedValueOnce([mockTeam]);
-      
-      const result = await updateTeam(1, {});
-      
-      expect(result).toEqual(mockTeam);
-      expect(mockExecute).not.toHaveBeenCalled();
-    });
-
-    it('should handle undefined values in updates', async () => {
-      const updates = {
-        name: 'New Name',
-        description: undefined,
-        color: undefined,
-      };
-      
-      mockExecute.mockResolvedValueOnce({ rowsAffected: 1 });
-      mockQuery.mockResolvedValueOnce([{ ...mockTeam, name: 'New Name' }]);
-      
-      const result = await updateTeam(1, updates);
-      
-      expect(result?.name).toBe('New Name');
-      // Should only update name, not undefined fields
-      expect(mockExecute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE teams SET'),
-        expect.arrayContaining(['New Name', 1])
-      );
-    });
+  it('rejects duplicate names within one organization', async () => {
+    await expect(createTeam({ organization_id: 1, name: 'Engineering', description: null, color: null }))
+      .rejects.toThrow(/UNIQUE constraint/);
+    expect((await client.execute('SELECT COUNT(*) AS count FROM teams')).rows[0].count).toBe(2);
   });
 
-  describe('deleteTeam', () => {
-    it('should delete team successfully', async () => {
-      mockExecute.mockResolvedValueOnce({ rowsAffected: 1 });
-      
-      const result = await deleteTeam(1);
-      
-      expect(result).toBe(true);
-      expect(mockExecute).toHaveBeenCalledWith(
-        'DELETE FROM teams WHERE id = ?',
-        [1]
-      );
-    });
+  it('returns stored membership and user details, rejects duplicates, and removes only that membership', async () => {
+    const member = await addTeamMember({ team_id: 1, user_id: 'alice', role: 'lead', joined_at: '2024-01-01' });
+    await addTeamMember({ team_id: 2, user_id: 'outsider', role: 'member' });
+    const user = (await client.execute("SELECT * FROM users WHERE id = 'alice'")).rows[0];
 
-    it('should return false when team not found', async () => {
-      mockExecute.mockResolvedValueOnce({ rowsAffected: 0 });
-      
-      const result = await deleteTeam(999);
-      
-      expect(result).toBe(false);
+    expect(await getTeamWithMembers(1)).toMatchObject({
+      id: 1, member_count: 1, members: [{ ...member, joined_at: '2024-01-01', user }],
     });
+    expect(await updateTeamMember(1, 'alice', { role: 'admin' })).toMatchObject({
+      id: member.id, role: 'admin', joined_at: '2024-01-01', created_at: member.created_at,
+    });
+    await expect(addTeamMember({ team_id: 1, user_id: 'alice', role: 'member' }))
+      .rejects.toThrow('User is already a member of this team');
+    expect(await removeTeamMember(1, 'alice')).toBe(true);
+    expect(await removeTeamMember(1, 'alice')).toBe(false);
+    expect(await getTeamWithMembers(1)).toMatchObject({ member_count: 0, members: [] });
+    expect(await getTeamWithMembers(2)).toMatchObject({ member_count: 1 });
   });
 
-  describe('addTeamMember', () => {
-    it('should add a team member successfully', async () => {
-      const newMember = {
-        team_id: 1,
-        user_id: 'user-456',
-        role: 'member' as const,
-        joined_at: '2024-01-01T00:00:00Z',
-      };
-      
-      // First check - member doesn't exist
-      mockQuery.mockResolvedValueOnce([]);
-      // Insert member
-      mockExecute.mockResolvedValueOnce({ lastInsertId: 2, rowsAffected: 1 });
-      // Fetch created member
-      mockQuery.mockResolvedValueOnce([{ ...mockTeamMember, ...newMember, id: 2 }]);
-      
-      const result = await addTeamMember(newMember);
-      
-      expect(result).toMatchObject(newMember);
-      expect(result.id).toBe(2);
-    });
-
-    it('should throw error when member already exists', async () => {
-      const existingMember = {
-        team_id: 1,
-        user_id: 'user-123',
-        role: 'member' as const,
-        joined_at: '2024-01-01T00:00:00Z',
-      };
-      
-      // Member already exists
-      mockQuery.mockResolvedValueOnce([mockTeamMember]);
-      
-      await expect(addTeamMember(existingMember)).rejects.toThrow(
-        'User is already a member of this team'
-      );
-    });
+  it('deletes a team and cascades its memberships without affecting another team', async () => {
+    await addTeamMember({ team_id: 1, user_id: 'alice', role: 'member' });
+    expect(await deleteTeam(1)).toBe(true);
+    expect(await deleteTeam(1)).toBe(false);
+    expect((await client.execute('SELECT * FROM team_members')).rows).toEqual([]);
+    expect(await findTeamById(2)).toMatchObject({ name: 'Other team' });
   });
 
-  describe('removeTeamMember', () => {
-    it('should remove team member successfully', async () => {
-      mockExecute.mockResolvedValueOnce({ rowsAffected: 1 });
-      
-      const result = await removeTeamMember(1, 'user-123');
-      
-      expect(result).toBe(true);
-      expect(mockExecute).toHaveBeenCalledWith(
-        'DELETE FROM team_members WHERE team_id = ? AND user_id = ?',
-        [1, 'user-123']
-      );
-    });
-
-    it('should return false when member not found', async () => {
-      mockExecute.mockResolvedValueOnce({ rowsAffected: 0 });
-      
-      const result = await removeTeamMember(1, 'user-999');
-      
-      expect(result).toBe(false);
-    });
+  it('searches names and email case-insensitively within the organization', async () => {
+    expect((await searchUsers(1, 'ALICE')).map(user => user.id)).toEqual(['alice']);
+    expect((await searchUsers(1, '@EXAMPLE.COM')).map(user => user.id)).toEqual(['alice']);
+    expect(await searchUsers(1, 'Other')).toEqual([]);
   });
 
-  describe('getTeamMembers', () => {
-    it('should return team members with user data', async () => {
-      const membersWithUsers = [
-        {
-          tm_id: mockTeamMember.id,
-          tm_team_id: mockTeamMember.team_id,
-          tm_user_id: mockTeamMember.user_id,
-          tm_role: mockTeamMember.role,
-          tm_joined_at: mockTeamMember.joined_at,
-          tm_created_at: mockTeamMember.created_at,
-          tm_updated_at: mockTeamMember.updated_at,
-          u_id: mockUser.id,
-          u_name: mockUser.name,
-          u_email: mockUser.email,
-          u_image: mockUser.image,
-          u_created_at: mockUser.created_at,
-          u_updated_at: mockUser.updated_at,
-        },
-      ];
-      
-      mockQuery.mockResolvedValueOnce(membersWithUsers);
-      
-      const result = await getTeamMembers(1);
-      
-      expect(result).toHaveLength(1);
-      // The function transforms the raw data to include a user object
-      expect(result[0]).toHaveProperty('user_id');
-      expect(result[0]).toHaveProperty('user.name', 'Test User');
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('FROM team_members tm'),
-        [1]
-      );
-    });
-  });
-
-  describe('getTeamWithMembers', () => {
-    it('should return team with members and count', async () => {
-      // Find team
-      mockQuery.mockResolvedValueOnce([mockTeam]);
-      // Get members
-      mockQuery.mockResolvedValueOnce([
-        {
-          ...mockTeamMember,
-          user: mockUser,
-        },
-      ]);
-      
-      const result = await getTeamWithMembers(1);
-      
-      expect(result).toMatchObject({
-        ...mockTeam,
-        member_count: 1,
-      });
-      expect(result?.members).toHaveLength(1);
-    });
-
-    it('should return null when team not found', async () => {
-      mockQuery.mockResolvedValueOnce([]);
-      
-      const result = await getTeamWithMembers(999);
-      
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('getTeamsByOrganizationWithMembers', () => {
-    it('should return all teams with their members', async () => {
-      const teams = createMockTeams(2);
-      // Get teams
-      mockQuery.mockResolvedValueOnce(teams);
-      // Get members for team 1
-      mockQuery.mockResolvedValueOnce([{ ...mockTeamMember, user: mockUser }]);
-      // Get members for team 2
-      mockQuery.mockResolvedValueOnce([]);
-      
-      const result = await getTeamsByOrganizationWithMembers(1);
-      
-      expect(result).toHaveLength(2);
-      expect(result[0].member_count).toBe(1);
-      expect(result[1].member_count).toBe(0);
-    });
-  });
-
-  describe('searchUsers', () => {
-    it('should find users by name or email', async () => {
-      const users = [mockUser];
-      mockQuery.mockResolvedValueOnce(users);
-      
-      const result = await searchUsers(1, 'test');
-      
-      expect(result).toEqual(users);
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('LOWER(u.name) LIKE LOWER(?)'),
-        [1, '%test%', '%test%']
-      );
-    });
-
-    it('should return empty array when no users match', async () => {
-      mockQuery.mockResolvedValueOnce([]);
-      
-      const result = await searchUsers(1, 'nonexistent');
-      
-      expect(result).toEqual([]);
-    });
-
-    it('should limit results to 20', async () => {
-      mockQuery.mockResolvedValueOnce([]);
-      await searchUsers(1, 'test');
-      
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('LIMIT 20'),
-        expect.any(Array)
-      );
-    });
+  it('limits actual matching search results to 20', async () => {
+    await client.executeMultiple(`
+      WITH RECURSIVE ids(id) AS (SELECT 1 UNION ALL SELECT id + 1 FROM ids WHERE id < 25)
+      INSERT INTO users (id, name) SELECT 'search-' || id, 'Search ' || id FROM ids;
+      INSERT INTO user_organizations (user_id, organization_id) SELECT id, 1 FROM users WHERE id LIKE 'search-%';
+    `);
+    expect(await searchUsers(1, 'Search')).toHaveLength(20);
   });
 });

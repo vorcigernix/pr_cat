@@ -43,6 +43,7 @@ export interface ServiceRegistration {
   factory: ServiceFactory
   singleton: boolean
   instance?: ServiceInstance
+  pending?: Promise<ServiceInstance>
 }
 
 /**
@@ -169,8 +170,8 @@ export class DIContainer {
       // Register GitHub API service if GitHub App is configured
       if (this.config.hasFeature('github')) {
         this.register('GitHubService', async () => {
-          const { GitHubAPIService } = await import('../../infrastructure/adapters/github')
-          return new GitHubAPIService()
+          const { RealGitHubAPIService } = await import('../../infrastructure/adapters/github')
+          return new RealGitHubAPIService()
         }, true)
       } else {
         // Fall back to demo GitHub service if GitHub App not configured
@@ -224,9 +225,11 @@ export class DIContainer {
       return registration.instance as T
     }
 
+    const pending = registration.pending ?? Promise.resolve().then(() => registration.factory())
+    if (registration.singleton) registration.pending = pending
+
     try {
-      // Create new instance
-      const instance = await registration.factory()
+      const instance = await pending
       
       // Store singleton instance
       if (registration.singleton) {
@@ -237,27 +240,9 @@ export class DIContainer {
     } catch (error) {
       console.error(`[DI Container] Failed to create service '${name}':`, error)
       throw new Error(`Failed to create service '${name}': ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      if (registration.pending === pending) registration.pending = undefined
     }
-  }
-
-  /**
-   * Get a service synchronously (only works if already instantiated)
-   */
-  getSync<T extends ServiceInstance>(name: ServiceName): T | null {
-    const registration = this.services.get(name)
-    
-    if (!registration || !registration.instance) {
-      return null
-    }
-    
-    return registration.instance as T
-  }
-
-  /**
-   * Check if a service is registered
-   */
-  has(name: ServiceName): boolean {
-    return this.services.has(name)
   }
 
   /**
@@ -275,26 +260,6 @@ export class DIContainer {
     if (DIContainer._instance) {
       DIContainer._instance.clear()
       DIContainer._instance = undefined!
-    }
-  }
-
-  /**
-   * Preload all singleton services
-   */
-  async preload(): Promise<void> {
-    console.log('[DI Container] Preloading singleton services...')
-    
-    const serviceNames: ServiceName[] = Array.from(this.services.keys())
-    const preloadPromises = serviceNames
-      .filter(name => this.services.get(name)?.singleton)
-      .map(name => this.get(name))
-    
-    try {
-      await Promise.all(preloadPromises)
-      console.log(`[DI Container] Preloaded ${preloadPromises.length} services`)
-    } catch (error) {
-      console.error('[DI Container] Failed to preload services:', error)
-      throw error
     }
   }
 

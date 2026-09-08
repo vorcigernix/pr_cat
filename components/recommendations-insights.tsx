@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useDashboardQuery } from "@/hooks/use-metrics";
 import {
   Card,
   CardContent,
@@ -9,9 +9,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  IconAlertCircle, 
-  IconCheck, 
+import {
+  IconAlertCircle,
+  IconCheck,
   IconBulb
 } from "@tabler/icons-react";
 
@@ -43,34 +43,8 @@ type RecommendationsResponse = {
 };
 
 export function RecommendationsInsights() {
-  const [recommendations, setRecommendations] = useState<RecommendationsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await fetch('/api/metrics/recommendations');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch recommendations: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setRecommendations(data);
-      } catch (error) {
-        console.error("Failed to load recommendations:", error);
-        setError(error instanceof Error ? error.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const { data: recommendations, isLoading: loading, error: requestError, refresh } = useDashboardQuery<RecommendationsResponse>('/api/metrics/recommendations');
+  const error = requestError?.message;
 
   const getImpactBadge = (priority: string) => {
     switch (priority) {
@@ -127,8 +101,8 @@ export function RecommendationsInsights() {
         </CardHeader>
         <CardContent>
           <p className="text-red-500">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => void refresh()}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Retry
@@ -174,8 +148,8 @@ export function RecommendationsInsights() {
       <CardContent>
         <div className="space-y-4">
           {recommendations.recommendations.map((recommendation) => (
-            <Card 
-              key={recommendation.id} 
+            <Card
+              key={recommendation.id}
               className={`border-l-4 ${
                 recommendation.priority === 'high' ? 'border-l-rose-400' : recommendation.priority === 'medium' ? 'border-l-indigo-400' : 'border-l-emerald-400'
               }`}
@@ -208,7 +182,7 @@ export function RecommendationsInsights() {
                   <span className="text-xs text-muted-foreground">Affected Metrics: </span>
                   <span className="text-xs">{recommendation.metrics.currentValue.toFixed(2)} / {recommendation.metrics.targetValue.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="mt-2">
                   <div className="text-sm font-medium mb-1">Action Items:</div>
                   <ul className="list-disc pl-5 space-y-1 text-sm">
@@ -224,4 +198,4 @@ export function RecommendationsInsights() {
       </CardContent>
     </Card>
   );
-} 
+}

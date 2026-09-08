@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useTeamFilterParams } from "@/hooks/use-team-filter";
+import { usePullRequestsRecent } from "@/hooks/use-metrics";
 import {
   Table,
   TableBody,
@@ -18,64 +18,13 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { IconCalendar, IconCheck, IconClock } from "@tabler/icons-react";
 
-type PullRequest = {
-  id: number;
-  title: string;
-  number: number;
-  developer: {
-    id: number | string;
-    name: string;
-  };
-  repository: {
-    id: number;
-    name: string;
-  };
-  status: string;
-  createdAt: string;
-  mergedAt: string;
-  cycleTime: number;
-  investmentArea?: string;
-  linesAdded?: number;
-  linesRemoved?: number;
-  files?: number;
-};
-
 export function PRActivityTable() {
-  const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const teamFilterParams = useTeamFilterParams();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch real PR data from our API with team filtering
-        const url = `/api/pull-requests/recent?${teamFilterParams}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch pull requests: ${response.status} ${response.statusText}`);
-        }
-        
-        const response_data = await response.json();
-        // Handle both paginated response {data: [...]} and direct array
-        const data = Array.isArray(response_data) ? response_data : response_data.data || [];
-        setPullRequests(data);
-      } catch (error) {
-        console.error("Failed to load pull request data:", error);
-        setError(error instanceof Error ? error.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [teamFilterParams]);
+  const { data, isLoading: loading, error, refresh } = usePullRequestsRecent(teamFilterParams);
+  const pullRequests = Array.isArray(data) ? data : data?.data ?? [];
 
   function formatDate(dateString: string) {
     if (!dateString) return '';
@@ -129,7 +78,7 @@ export function PRActivityTable() {
       <Card className="mx-4 lg:mx-6">
         <CardHeader>
           <CardTitle>Recent Pull Requests</CardTitle>
-          <CardDescription>Loading pull request data...</CardDescription>
+          <CardDescription role="status">Loading pull request data...</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="h-[400px] w-full animate-pulse bg-muted"></div>
@@ -146,13 +95,13 @@ export function PRActivityTable() {
           <CardDescription className="text-red-500">Error loading data</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-red-500">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          <p role="alert" className="text-destructive">{error.message}</p>
+          <Button
+            onClick={() => void refresh()}
+            className="mt-4"
           >
             Retry
-          </button>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -167,7 +116,7 @@ export function PRActivityTable() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            No recent pull request activity. Pull requests will appear here once they&apos;re created in your repositories.
+            No pull requests match the selected organization, team, and period. Try a longer period or select All Teams.
           </p>
         </CardContent>
       </Card>
@@ -178,11 +127,11 @@ export function PRActivityTable() {
     <Card className="mx-4 lg:mx-6">
       <CardHeader>
         <CardTitle>Recent Pull Requests</CardTitle>
-        <CardDescription>Recent pull request activity across all repositories</CardDescription>
+        <CardDescription>Recent pull request activity for the selected filters</CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <Table>
+          <Table aria-label="Recent pull requests">
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
@@ -235,4 +184,4 @@ export function PRActivityTable() {
       </CardContent>
     </Card>
   );
-} 
+}

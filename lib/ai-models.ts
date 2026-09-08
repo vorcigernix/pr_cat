@@ -2,7 +2,7 @@ import type { UpdateAiSettingsPayload, AiSettings as FetchedAiSettings } from ".
 
 // Shared interface for AI Model Definitions
 export interface ModelDefinition {
-  id: string; // e.g., "gpt-4o", "gemini-3.5-flash"
+  id: string; // e.g., "gpt-4o", "gemini-3.8-flash"
   name: string; // User-friendly name, e.g., "GPT-4o (Latest)"
   provider: "openai" | "google" | "anthropic"; // Provider key
   providerName: string; // User-friendly provider name, e.g., "OpenAI"
@@ -40,8 +40,16 @@ export const allModels: ModelDefinition[] = [
   
   // Google Gemini Models
   {
-    id: "gemini-2.5-pro-preview-05-06",
-    name: "Gemini 2.5 Pro (Preview, Max Capability)",
+    id: "gemini-3.8-flash",
+    name: "Gemini 3.8 Flash (Recommended Default)",
+    provider: "google",
+    providerName: "Google",
+    apiKeyPayloadKey: "googleApiKey",
+    isKeySetSelector: (s) => !!s?.isGoogleKeySet
+  },
+  {
+    id: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro (Stable)",
     provider: "google",
     providerName: "Google",
     apiKeyPayloadKey: "googleApiKey",
@@ -49,7 +57,7 @@ export const allModels: ModelDefinition[] = [
   },
   {
     id: "gemini-3.5-flash",
-    name: "Gemini 3.5 Flash (Recommended Default)",
+    name: "Gemini 3.5 Flash",
     provider: "google",
     providerName: "Google",
     apiKeyPayloadKey: "googleApiKey",

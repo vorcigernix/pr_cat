@@ -1,6 +1,7 @@
 "use client"
 
-import * as React from "react"
+import Link from "next/link"
+import { RepositoryFilter } from "@/components/repository-filter"
 import { useTeamFilter, type TimeRange } from "@/hooks/use-team-filter"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -46,41 +47,19 @@ export function DashboardHeader({ pageTitle = "Dashboard" }: DashboardHeaderProp
     setSelectedOrganization,
     setSelectedTeam,
     setTimeRange,
-    refreshData,
+    refreshData, refreshing, lastRefreshed, repositories, selectedRepositoryId,
   } = useTeamFilter();
 
-  const [refreshing, setRefreshing] = React.useState(false);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await refreshData();
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const getTeamDisplayInfo = () => {
-    if (selectedTeam) {
-      return {
-        name: selectedTeam.name,
-        color: selectedTeam.color,
-        isTeamSelected: true,
-      };
-    }
-    return {
-      name: "All Teams",
-      color: null,
-      isTeamSelected: false,
-    };
-  };
+  const scopedRepositories = selectedRepositoryId === 'all' ? repositories : repositories.filter(repo => String(repo.id) === selectedRepositoryId);
+  const syncedRepositories = scopedRepositories.filter(repo => repo.last_synced_at && Number.isFinite(Date.parse(repo.last_synced_at)));
+  const lastSyncedAt = syncedRepositories.reduce<string | null>((latest, repo) =>
+    !latest || Date.parse(repo.last_synced_at!) > Date.parse(latest) ? repo.last_synced_at! : latest, null);
 
   const selectedTimeRange = timeRangeOptions.find(option => option.value === timeRange);
-  const teamInfo = getTeamDisplayInfo();
 
   return (
-    <header className="flex h-[--header-height] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-[data-collapsible=icon]/sidebar-wrapper:h-[--header-height]">
-      <div className="flex w-full items-center justify-between gap-1 px-4 lg:gap-2 lg:px-6">
+    <header className="flex min-h-(--header-height) shrink-0 items-center border-b">
+      <div className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-2 lg:px-6">
         {/* Left side - Logo and Title */}
         <div className="flex items-center">
           <SidebarTrigger className="-ml-1" />
@@ -92,19 +71,17 @@ export function DashboardHeader({ pageTitle = "Dashboard" }: DashboardHeaderProp
         </div>
 
         {/* Center - Team Filtering Controls */}
-        <div className="flex items-center gap-3">
+        <div className="order-3 flex w-full flex-wrap items-center gap-2 xl:order-none xl:w-auto">
           {loading && !organizations.length ? (
             <>
               <Skeleton className="h-9 w-40" />
               <Skeleton className="h-9 w-32" />
               <Skeleton className="h-9 w-24" />
             </>
-          ) : error ? (
-            <div className="text-sm text-destructive">Error loading teams</div>
           ) : (
             <>
               {/* Organization Selector (only show if multiple orgs) */}
-              {organizations.length > 1 && (
+              {(organizations.length > 1 || (!selectedOrganization && organizations.length > 0)) && (
                 <Select
                   value={selectedOrganization?.id.toString()}
                   onValueChange={(value) => {
@@ -112,7 +89,7 @@ export function DashboardHeader({ pageTitle = "Dashboard" }: DashboardHeaderProp
                     setSelectedOrganization(org || null);
                   }}
                 >
-                  <SelectTrigger className="w-[160px] h-9">
+                  <SelectTrigger aria-label="Organization" className="w-[160px] h-9">
                     <div className="flex items-center gap-1">
                       <IconBuilding className="h-4 w-4" />
                       <SelectValue placeholder="Organization" />
@@ -141,17 +118,17 @@ export function DashboardHeader({ pageTitle = "Dashboard" }: DashboardHeaderProp
                 }}
                 disabled={!selectedOrganization}
               >
-                <SelectTrigger className="w-[180px] h-9">
+                <SelectTrigger aria-label="Team" className="w-[180px] h-9">
                   <div className="flex items-center gap-2">
                     <IconUsers className="h-4 w-4" />
                     <div className="flex items-center gap-1">
-                      {teamInfo.color && (
+                      {selectedTeam?.color && (
                         <div
                           className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: teamInfo.color }}
+                          style={{ backgroundColor: selectedTeam.color }}
                         />
                       )}
-                      <span className="truncate">{teamInfo.name}</span>
+                      <span className="truncate">{selectedTeam?.name || 'All Teams'}</span>
                     </div>
                   </div>
                 </SelectTrigger>
@@ -176,7 +153,7 @@ export function DashboardHeader({ pageTitle = "Dashboard" }: DashboardHeaderProp
                           )}
                           <span className="truncate">{team.name}</span>
                         </div>
-                        {team.member_count && (
+                        {team.member_count != null && (
                           <Badge variant="outline" className="ml-2 text-xs">
                             {team.member_count}
                           </Badge>
@@ -187,12 +164,14 @@ export function DashboardHeader({ pageTitle = "Dashboard" }: DashboardHeaderProp
                 </SelectContent>
               </Select>
 
+              <RepositoryFilter />
+
               {/* Time Range Selector */}
               <Select
                 value={timeRange}
                 onValueChange={(value: TimeRange) => setTimeRange(value)}
               >
-                <SelectTrigger className="w-[130px] h-9">
+                <SelectTrigger aria-label="Retrospective period" className="w-[130px] h-9">
                   <div className="flex items-center gap-1">
                     <IconCalendar className="h-4 w-4" />
                     <span>{selectedTimeRange?.shortLabel || timeRange}</span>
@@ -218,12 +197,20 @@ export function DashboardHeader({ pageTitle = "Dashboard" }: DashboardHeaderProp
           )}
         </div>
 
+        <div className="order-4 w-full text-xs text-muted-foreground" aria-live="polite">
+          {error && <p role="alert" className="text-destructive">{error}</p>}
+          {!loading && organizations.length === 0 && <p><Link href="/onboarding" className="underline">Connect GitHub to load your organizations.</Link></p>}
+          <span>{lastSyncedAt
+            ? <>Latest successful repository sync: <time dateTime={lastSyncedAt}>{new Date(lastSyncedAt).toLocaleString()}</time> ({syncedRepositories.length}/{scopedRepositories.length} repositories have synced).</>
+            : 'No successful repository sync recorded.'}</span>
+          {lastRefreshed && <> · Dashboard refreshed <time dateTime={lastRefreshed}>{new Date(lastRefreshed).toLocaleTimeString()}</time></>}
+        </div>
         {/* Right side - Actions and Theme Toggle */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={handleRefresh}
+            onClick={() => void refreshData()}
             disabled={refreshing}
             aria-label={refreshing ? "Refreshing dashboard data" : "Refresh dashboard data"}
             className="h-9"

@@ -21,6 +21,7 @@ export interface PullRequest {
   cycleTime: number
   investmentArea?: string
   linesAdded?: number
+  linesRemoved?: number
   files?: number
 }
 
@@ -42,6 +43,7 @@ export interface PullRequestSummary {
   cycleTime: number
   investmentArea?: string
   linesAdded?: number
+  linesRemoved?: number
   files?: number
 }
 

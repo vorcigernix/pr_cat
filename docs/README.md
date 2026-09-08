@@ -21,7 +21,7 @@ The goal of these docs is to make that state explicit so new work follows one pa
 Run:
 
 ```bash
-pnpm architecture:check
+bun run architecture:check
 ```
 
 This validates:
@@ -29,3 +29,7 @@ This validates:
 - architecture manifest integrity (`docs/architecture/repository-manifest.json`)
 - dependency boundaries (`docs/architecture/dependency-rules.json`)
 
+## Maintenance review
+
+- [September 2026 maintenance changes and prioritized UX backlog](./maintenance-review-2026-09-07.md)
+- [Database query improvements, index measurements, and remaining bottlenecks](./database-review-2026-09-07.md)

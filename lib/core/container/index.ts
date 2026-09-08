@@ -4,7 +4,7 @@
  */
 
 export { DIContainer, getContainer, getService } from './di-container'
-export { ServiceLocator, useServices, getDashboardServices, getOrganizationServices, getGitHubServices } from './service-locator'
+export { ServiceLocator } from './service-locator'
 
 // Export types
 export type { ServiceName, ServiceInstance, ServiceFactory } from './di-container'

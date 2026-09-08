@@ -35,7 +35,8 @@ export function mapDbPullRequestToDomain(dbPR: DbTypes.PullRequest): PullRequest
     cycleTime: dbPR.merged_at ? 
       calculateCycleTimeHours(new Date(dbPR.created_at).toISOString(), new Date(dbPR.merged_at).toISOString()) : 0,
     investmentArea: 'Uncertain', // Would need category lookup
-    linesAdded: dbPR.additions || 0,
+    linesAdded: dbPR.additions ?? undefined,
+    linesRemoved: dbPR.deletions ?? undefined,
     files: dbPR.changed_files || 0
   }
 }
@@ -68,7 +69,8 @@ export function mapDbPullRequestToSummary(
     cycleTime: dbPR.merged_at ? 
       calculateCycleTimeHours(new Date(dbPR.created_at).toISOString(), new Date(dbPR.merged_at).toISOString()) : 0,
     investmentArea: categoryName || 'Uncertain',
-    linesAdded: dbPR.additions || 0,
+    linesAdded: dbPR.additions ?? undefined,
+    linesRemoved: dbPR.deletions ?? undefined,
     files: dbPR.changed_files || 0
   }
 }
@@ -122,8 +124,8 @@ export function mapDbRepositoryToDomain(dbRepo: DbTypes.Repository): Repository 
     description: dbRepo.description,
     htmlUrl: `https://github.com/${dbRepo.full_name}`,
     defaultBranch: 'main', // Default assumption
-    isPrivate: dbRepo.private,
-    isTracked: dbRepo.is_tracked,
+    isPrivate: Boolean(dbRepo.private),
+    isTracked: Boolean(dbRepo.is_tracked),
     isArchived: false, // Not in current schema
     language: null, // Not in current schema
     size: 0, // Not in current schema

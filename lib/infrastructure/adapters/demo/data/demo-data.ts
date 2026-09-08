@@ -64,6 +64,7 @@ type PullRequestSummary = {
     avatarUrl: string
   }
   repository: {
+    id: string
     name: string
   }
   category?: {
@@ -279,7 +280,13 @@ export const DEMO_CATEGORIES = [
   { id: 'security', name: 'Security', description: 'Security improvements', color: '#eab308' }
 ]
 
-// Demo Pull Requests
+// Membership IDs match the existing demo team-detail routes.
+export const DEMO_TEAM_MEMBERSHIPS: Record<number, string[]> = {
+  1: ['demo-user-1', 'demo-user-2'],
+  2: ['demo-user-3'],
+}
+
+// Demo Pull Requests. Dates stay relative even in a long-running demo process.
 export const DEMO_PULL_REQUESTS: PullRequestSummary[] = [
   {
     id: 'demo-pr-1',
@@ -291,13 +298,14 @@ export const DEMO_PULL_REQUESTS: PullRequestSummary[] = [
       avatarUrl: 'https://github.com/github.png'
     },
     repository: {
+      id: 'demo-repo-1',
       name: 'frontend-app'
     },
     category: {
       name: 'Feature Development'
     },
-    createdAt: new Date('2024-01-10'),
-    mergedAt: new Date('2024-01-12'),
+    get createdAt() { return new Date(Date.now() - 12 * 86400000) },
+    get mergedAt() { return new Date(Date.now() - 10 * 86400000) },
     additions: 245,
     deletions: 18,
     reviewCount: 2
@@ -312,13 +320,14 @@ export const DEMO_PULL_REQUESTS: PullRequestSummary[] = [
       avatarUrl: 'https://github.com/github.png'
     },
     repository: {
+      id: 'demo-repo-2',
       name: 'api-server'
     },
     category: {
       name: 'Bug Fixes'
     },
-    createdAt: new Date('2024-01-11'),
-    mergedAt: new Date('2024-01-13'),
+    get createdAt() { return new Date(Date.now() - 9 * 86400000) },
+    get mergedAt() { return new Date(Date.now() - 7 * 86400000) },
     additions: 67,
     deletions: 42,
     reviewCount: 1
@@ -333,13 +342,14 @@ export const DEMO_PULL_REQUESTS: PullRequestSummary[] = [
       avatarUrl: 'https://github.com/github.png'
     },
     repository: {
+      id: 'demo-repo-2',
       name: 'api-server'
     },
     category: {
       name: 'Tech Debt'
     },
-    createdAt: new Date('2024-01-12'),
-    mergedAt: new Date('2024-01-14'),
+    get createdAt() { return new Date(Date.now() - 6 * 86400000) },
+    get mergedAt() { return new Date(Date.now() - 4 * 86400000) },
     additions: 156,
     deletions: 203,
     reviewCount: 3
@@ -354,12 +364,13 @@ export const DEMO_PULL_REQUESTS: PullRequestSummary[] = [
       avatarUrl: 'https://github.com/github.png'
     },
     repository: {
+      id: 'demo-repo-2',
       name: 'api-server'
     },
     category: {
       name: 'Documentation'
     },
-    createdAt: new Date('2024-01-13'),
+    get createdAt() { return new Date(Date.now() - 3 * 86400000) },
     mergedAt: null,
     additions: 89,
     deletions: 12,
@@ -375,13 +386,14 @@ export const DEMO_PULL_REQUESTS: PullRequestSummary[] = [
       avatarUrl: 'https://github.com/github.png'
     },
     repository: {
+      id: 'demo-repo-2',
       name: 'api-server'
     },
     category: {
       name: 'Testing'
     },
-    createdAt: new Date('2024-01-13'),
-    mergedAt: new Date('2024-01-15'),
+    get createdAt() { return new Date(Date.now() - 2 * 86400000) },
+    get mergedAt() { return new Date() },
     additions: 234,
     deletions: 5,
     reviewCount: 2
@@ -474,7 +486,7 @@ export const DEMO_TEAM_MEMBERS: TeamMemberStats[] = [
     avgCycleTime: 32.4,
     avgPRSize: 165,
     reviewThoroughness: 133.3,
-    contributionScore: 60
+    contributionScore: 42
   },
   {
     userId: 'demo-user-2', 
@@ -484,7 +496,7 @@ export const DEMO_TEAM_MEMBERS: TeamMemberStats[] = [
     avgCycleTime: 28.1,
     avgPRSize: 142,
     reviewThoroughness: 126.7,
-    contributionScore: 49
+    contributionScore: 34
   },
   {
     userId: 'demo-user-3',
@@ -494,7 +506,7 @@ export const DEMO_TEAM_MEMBERS: TeamMemberStats[] = [
     avgCycleTime: 35.8,
     avgPRSize: 201,
     reviewThoroughness: 183.3,
-    contributionScore: 46
+    contributionScore: 34
   },
   {
     userId: 'demo-user-4',
@@ -504,7 +516,7 @@ export const DEMO_TEAM_MEMBERS: TeamMemberStats[] = [
     avgCycleTime: 41.2,
     avgPRSize: 178,
     reviewThoroughness: 177.8,
-    contributionScore: 34
+    contributionScore: 25
   }
 ]
 
@@ -520,6 +532,15 @@ export const DEMO_CATEGORY_DISTRIBUTION: CategoryDistribution[] = [
 
 // Generator functions for dynamic data
 export class DemoDataGenerator {
+  static getPullRequests(organizationId: string, teamId?: number, repositoryId?: string): PullRequestSummary[] {
+    const repositoryIds = DEMO_REPOSITORIES
+      .filter(repository => repository.organizationId === organizationId && (!repositoryId || repository.id === repositoryId))
+      .map(repository => repository.id)
+    const members = teamId === undefined ? undefined : DEMO_TEAM_MEMBERSHIPS[teamId] || []
+    const authors = members && DEMO_USERS.filter(user => members.includes(user.id)).map(user => user.login)
+    return DEMO_PULL_REQUESTS.filter(pr => repositoryIds.includes(pr.repository.id) && (!authors || authors.includes(pr.author.login)))
+  }
+
   static generateTimeSeries(days: number): TimeSeriesDataPoint[] {
     const data: TimeSeriesDataPoint[] = []
     const endDate = new Date()

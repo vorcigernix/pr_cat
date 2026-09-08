@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useTeamFilterParams } from "@/hooks/use-team-filter"
+import { useDashboardQuery } from "@/hooks/use-metrics"
 import { IconExternalLink, IconAlertTriangle, IconClock, IconUsers, IconTrendingUp, IconCheck, IconArrowUpRight } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
@@ -43,36 +43,8 @@ type RecommendationsResponse = {
 };
 
 export function ActionableRecommendations() {
-  const [recommendations, setRecommendations] = React.useState<RecommendationsResponse | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const teamFilterParams = useTeamFilterParams();
-
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const url = `/api/metrics/recommendations?${teamFilterParams}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch recommendations: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setRecommendations(data);
-      } catch (error) {
-        console.error("Failed to load recommendations:", error);
-        setError(error instanceof Error ? error.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [teamFilterParams]);
+  const { data: recommendations, isLoading: loading, error: requestError, refresh } = useDashboardQuery<RecommendationsResponse>('/api/metrics/recommendations');
+  const error = requestError?.message;
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -153,7 +125,7 @@ export function ActionableRecommendations() {
       </Card>
     );
   }
-  
+
   if (error) {
     return (
       <Card>
@@ -163,9 +135,9 @@ export function ActionableRecommendations() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">{error}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline" 
+          <Button
+            onClick={() => void refresh()}
+            variant="outline"
             size="sm"
             className="mt-4"
           >
@@ -203,11 +175,11 @@ export function ActionableRecommendations() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle>Workflow Insights</CardTitle>
             <CardDescription>
-              Opportunities to enhance your development flow
+              Rule-based suggestions from recorded PR activity
             </CardDescription>
           </div>
           <div className="text-right">
@@ -223,26 +195,26 @@ export function ActionableRecommendations() {
       <CardContent>
         <Tabs defaultValue="high" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="high" className="relative">
-              High Impact Opportunities
+            <TabsTrigger value="high" className="relative min-w-0 text-xs sm:text-sm">
+              High priority
               {groupedRecs.high.length > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
+                <Badge variant="secondary" className="ml-2 hidden text-xs sm:inline-flex">
                   {groupedRecs.high.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="medium" className="relative">
-              Quick Wins Available
+            <TabsTrigger value="medium" className="relative min-w-0 text-xs sm:text-sm">
+              Medium priority
               {groupedRecs.medium.length > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
+                <Badge variant="secondary" className="ml-2 hidden text-xs sm:inline-flex">
                   {groupedRecs.medium.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="low" className="relative">
-              Minor Improvements
+            <TabsTrigger value="low" className="relative min-w-0 text-xs sm:text-sm">
+              Low priority
               {groupedRecs.low.length > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
+                <Badge variant="secondary" className="ml-2 hidden text-xs sm:inline-flex">
                   {groupedRecs.low.length}
                 </Badge>
               )}
@@ -252,8 +224,8 @@ export function ActionableRecommendations() {
           <TabsContent value="high" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {groupedRecs.high.map((rec) => (
-                <Card 
-                  key={rec.id} 
+                <Card
+                  key={rec.id}
                   className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} ${getBorderColor(rec.priority)}`}
                 >
                   <CardHeader className="pb-3">
@@ -292,7 +264,7 @@ export function ActionableRecommendations() {
               {groupedRecs.high.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   <IconCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No high-impact opportunities identified - great work!</p>
+                  <p className="text-sm">No high-priority suggestions for these filters.</p>
                 </div>
               )}
             </div>
@@ -301,8 +273,8 @@ export function ActionableRecommendations() {
           <TabsContent value="medium" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {groupedRecs.medium.map((rec) => (
-                <Card 
-                  key={rec.id} 
+                <Card
+                  key={rec.id}
                   className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} ${getBorderColor(rec.priority)}`}
                 >
                   <CardHeader className="pb-3">
@@ -350,8 +322,8 @@ export function ActionableRecommendations() {
           <TabsContent value="low" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {groupedRecs.low.map((rec) => (
-                <Card 
-                  key={rec.id} 
+                <Card
+                  key={rec.id}
                   className={`bg-gradient-to-tl ${getImpactGradient(rec.priority)} ${getBorderColor(rec.priority)}`}
                 >
                   <CardHeader className="pb-3">
@@ -399,4 +371,4 @@ export function ActionableRecommendations() {
       </CardContent>
     </Card>
   );
-} 
+}

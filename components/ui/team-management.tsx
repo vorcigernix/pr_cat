@@ -253,16 +253,8 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
   };
 
   // Add team member
-  const handleAddMember = async (e: React.FormEvent, formData?: AddMemberFormData) => {
-    e.preventDefault();
+  const handleAddMember = async (dataToSend: AddMemberFormData) => {
     if (!selectedTeam) return;
-
-    // Use passed formData or fall back to state
-    const dataToSend = formData || addMemberForm;
-
-    // Debug: log what we're about to send
-    console.log('handleAddMember called with form data:', dataToSend);
-    console.log('Selected team:', selectedTeam);
 
     // Optimistic update: immediately add the member to the UI
     const optimisticMemberId = optimisticMemberIdRef.current;
@@ -784,8 +776,7 @@ export function TeamManagement({ organizationId, organizationMembers, onRefreshM
                                     role: addMemberForm.role || 'member'
                                   };
                                   setAddMemberForm(completeForm);
-                                  const mockEvent = { preventDefault: () => {} } as React.FormEvent;
-                                  await handleAddMember(mockEvent, completeForm);
+                                  await handleAddMember(completeForm);
                                 }}
                               >
                                 <UserPlus className="h-3 w-3 mr-1" />

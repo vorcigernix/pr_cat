@@ -51,7 +51,7 @@ PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps en
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm (required package manager)
+- Bun 1.4.2 (required package manager) and Node.js 24+ (or Node.js 22.13+ within the 22.x series)
 - GitHub account with access to repositories you want to track
 - Turso database account (for development and production)
 
@@ -98,16 +98,20 @@ PORT=3000
 3. Install dependencies:
 
 ```bash
-pnpm install
+bun install
 ```
+
+`bun.lock` is the authoritative lockfile. Use `bun install --frozen-lockfile` for reproducible CI installs and `bun run test` to run the Jest suite.
 
 4. Run the development server:
 
 ```bash
-pnpm dev
+bun run dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+For automatic PR categorization, configure a provider, model, and API key for each organization in **Settings → AI**. See the [AI setup guide](ENVIRONMENT_SETUP.md#ai-categorization-optional).
 
 ### Setting Up GitHub OAuth
 
@@ -137,7 +141,7 @@ pnpm dev
 
 ## Development
 
-The application uses Next.js 15 with the App Router and is structured as follows:
+The application uses Next.js 16 with the App Router and is structured as follows:
 
 - `app/`: Next.js app router pages and API routes
 - `components/`: UI components
@@ -161,7 +165,7 @@ This repository includes an orientation harness for contributors and coding agen
 Run architecture validation:
 
 ```bash
-pnpm architecture:check
+bun run architecture:check
 ```
 
 ## Deployment

@@ -7,7 +7,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { getService } from '@/lib/core/container/di-container'
 import { IGitHubAppService } from '@/lib/core/ports'
+import { syncOrganizationAssociations } from '@/lib/infrastructure/adapters/github/organization-sync'
 import type { Repository } from '@/lib/core/domain/entities'
+import { accessibleInstallations } from '../access'
 
 
 export const runtime = 'nodejs'
@@ -30,8 +32,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const installationIdNum = parseInt(installationId)
-    if (isNaN(installationIdNum)) {
+    const installationIdNum = Number(installationId)
+    if (!/^\d+$/.test(installationId) || !Number.isSafeInteger(installationIdNum) || installationIdNum <= 0) {
       return NextResponse.json({ error: 'Invalid installation ID' }, { status: 400 })
     }
 
@@ -41,6 +43,9 @@ export async function GET(
     
     // Get installation details
     const installation = await githubAppService.getInstallation(installationIdNum)
+    if ((await accessibleInstallations([installation], session)).length === 0) {
+      return NextResponse.json({ error: 'Installation not found' }, { status: 404 })
+    }
     
     // Get repositories if requested
     const includeRepos = request.nextUrl.searchParams.get('include_repositories') === 'true'
@@ -52,7 +57,7 @@ export async function GET(
         console.log(`[GitHubApp API] Found ${repositories.length} repositories for installation ${installationIdNum}`)
       } catch (error) {
         console.warn(`[GitHubApp API] Could not fetch repositories for installation ${installationIdNum}:`, error)
-        repositories = undefined
+        return NextResponse.json({ error: 'Failed to fetch installation repositories' }, { status: 502 })
       }
     }
 
@@ -97,8 +102,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const installationIdNum = parseInt(installationId)
-    if (isNaN(installationIdNum)) {
+    const installationIdNum = Number(installationId)
+    if (!/^\d+$/.test(installationId) || !Number.isSafeInteger(installationIdNum) || installationIdNum <= 0) {
       return NextResponse.json({ error: 'Invalid installation ID' }, { status: 400 })
     }
 
@@ -106,13 +111,22 @@ export async function POST(
 
     const githubAppService = await getService<IGitHubAppService>('GitHubAppService')
     
+    const installation = await githubAppService.getInstallation(installationIdNum)
+    if ((await accessibleInstallations([installation], session)).length === 0) {
+      return NextResponse.json({ error: 'Installation not found' }, { status: 404 })
+    }
+
     // Sync the installation
     const syncResult = await githubAppService.syncInstallation(installationIdNum)
+
+    await syncOrganizationAssociations(session.user.id, [{
+      id: installation.account.id, login: installation.account.login, avatar_url: installation.account.avatarUrl ?? '',
+    }])
 
     console.log(`[GitHubApp API] Sync completed for installation ${installationIdNum}: org=${syncResult.organization.name}, repos=${syncResult.repositories.length}, errors=${syncResult.errors.length}`)
 
     return NextResponse.json({
-      success: true,
+      success: syncResult.errors.length === 0,
       organization: {
         id: syncResult.organization.id,
         name: syncResult.organization.name,
@@ -128,7 +142,7 @@ export async function POST(
         }))
       },
       errors: syncResult.errors.length > 0 ? syncResult.errors : undefined
-    })
+    }, { status: syncResult.errors.length > 0 ? 502 : 200 })
 
   } catch (error) {
     console.error(`[GitHubApp API] Error syncing installation:`, error)
@@ -165,8 +179,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const installationIdNum = parseInt(installationId)
-    if (isNaN(installationIdNum)) {
+    const installationIdNum = Number(installationId)
+    if (!/^\d+$/.test(installationId) || !Number.isSafeInteger(installationIdNum) || installationIdNum <= 0) {
       return NextResponse.json({ error: 'Invalid installation ID' }, { status: 400 })
     }
 
@@ -174,6 +188,11 @@ export async function DELETE(
 
     const githubAppService = await getService<IGitHubAppService>('GitHubAppService')
     
+    const installation = await githubAppService.getInstallation(installationIdNum)
+    if ((await accessibleInstallations([installation], session)).length === 0) {
+      return NextResponse.json({ error: 'Installation not found' }, { status: 404 })
+    }
+
     // Clear the token cache
     await githubAppService.clearTokenCache(installationIdNum)
 
@@ -184,6 +203,9 @@ export async function DELETE(
 
   } catch (error) {
     console.error(`[GitHubApp API] Error clearing token cache:`, error)
+    if (error instanceof Error && error.message.includes('Not Found')) {
+      return NextResponse.json({ error: 'Installation not found' }, { status: 404 })
+    }
     return NextResponse.json(
       { 
         error: 'Failed to clear token cache',

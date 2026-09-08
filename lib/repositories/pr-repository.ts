@@ -194,34 +194,6 @@ export async function getPullRequestReviews(pullRequestId: number): Promise<PRRe
   );
 }
 
-export async function createPullRequestReview(review: Omit<PRReview, 'id'>): Promise<PRReview> {
-  const result = await execute(
-    'INSERT INTO pr_reviews (github_id, pull_request_id, reviewer_id, state, submitted_at) VALUES (?, ?, ?, ?, ?)',
-    [review.github_id, review.pull_request_id, review.reviewer_id, review.state, review.submitted_at]
-  );
-  
-  const id = result.lastInsertId;
-  if (!id) {
-    throw new Error('Failed to create pull request review');
-  }
-  
-  const reviews = await query<PRReview>('SELECT * FROM pr_reviews WHERE id = ?', [id]);
-  if (reviews.length === 0) {
-    throw new Error('Failed to retrieve created review');
-  }
-  
-  return reviews[0];
-}
-
-export async function findReviewByGitHubId(githubId: number): Promise<PRReview | null> {
-  const reviews = await query<PRReview>(
-    `SELECT * FROM pr_reviews WHERE github_id = ?`,
-    [githubId]
-  );
-  
-  return reviews.length > 0 ? reviews[0] : null;
-}
-
 export async function updatePullRequestReview(id: number, data: Partial<PRReview>): Promise<PRReview | null> {
   const updates: string[] = [];
   const values: InValue[] = [];

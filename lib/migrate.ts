@@ -1,4 +1,4 @@
-import { execute, query } from './db';
+import { batch, execute, query } from './db';
 
 // The schema SQL is embedded directly in the code to avoid file system operations
 // which are not supported in Edge Runtime
@@ -165,11 +165,15 @@ const MIGRATIONS = [
   {
     version: 2,
     name: 'add_ai_status_columns',
-    sql: `
-      -- Add AI processing status columns to pull_requests table
-      ALTER TABLE pull_requests ADD COLUMN ai_status TEXT DEFAULT 'pending';
-      ALTER TABLE pull_requests ADD COLUMN error_message TEXT;
-    `
+    sql: async () => {
+      const columns = await query<{ name: string }>('PRAGMA table_info(pull_requests)');
+      return [
+        columns.some(column => column.name === 'ai_status')
+          ? '' : "ALTER TABLE pull_requests ADD COLUMN ai_status TEXT DEFAULT 'pending'",
+        columns.some(column => column.name === 'error_message')
+          ? '' : 'ALTER TABLE pull_requests ADD COLUMN error_message TEXT'
+      ].filter(Boolean).join(';');
+    }
   },
   {
     version: 3,
@@ -224,8 +228,72 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);
       CREATE INDEX IF NOT EXISTS idx_team_members_user_id ON team_members(user_id);
     `
+  },
+  {
+    version: 5,
+    name: 'add_dashboard_indexes',
+    sql: `
+      CREATE INDEX IF NOT EXISTS idx_pull_requests_repo_created_at ON pull_requests(repository_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_pull_requests_repo_state_merged_at ON pull_requests(repository_id, state, merged_at);
+    `
+  },
+  {
+    version: 6,
+    name: 'settings_uniqueness',
+    sql: `
+      CREATE TABLE IF NOT EXISTS settings_duplicates_v6_archive (
+        archive_id INTEGER PRIMARY KEY,
+        original_setting_id INTEGER NOT NULL,
+        user_id TEXT,
+        organization_id INTEGER,
+        key TEXT NOT NULL,
+        value TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        archived_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      INSERT INTO settings_duplicates_v6_archive
+        (original_setting_id, user_id, organization_id, key, value, created_at, updated_at)
+      SELECT id, user_id, organization_id, key, value, created_at, updated_at
+      FROM (
+        SELECT settings.*, ROW_NUMBER() OVER (
+          PARTITION BY user_id, organization_id, key
+          ORDER BY julianday(updated_at) DESC, id DESC
+        ) AS duplicate_rank
+        FROM settings
+      ) WHERE duplicate_rank > 1;
+
+      DELETE FROM settings WHERE id IN (
+        SELECT id FROM (
+          SELECT id, ROW_NUMBER() OVER (
+            PARTITION BY user_id, organization_id, key
+            ORDER BY julianday(updated_at) DESC, id DESC
+          ) AS duplicate_rank
+          FROM settings
+        ) WHERE duplicate_rank > 1
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_organization_key
+        ON settings(organization_id, key) WHERE user_id IS NULL;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_user_key
+        ON settings(user_id, key) WHERE organization_id IS NULL;
+    `
+  },
+  {
+    version: 7,
+    name: 'repository_sync_state',
+    sql: `
+      CREATE TABLE IF NOT EXISTS repository_sync_state (
+        repository_id INTEGER PRIMARY KEY REFERENCES repositories(id) ON DELETE CASCADE,
+        updated_through TEXT NOT NULL,
+        last_synced_at TEXT NOT NULL
+      );
+    `
   }
 ];
+
+export const CURRENT_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;
 
 export async function runMigrations() {
   console.log('Checking database migrations...');
@@ -258,18 +326,17 @@ export async function runMigrations() {
     for (const migration of pendingMigrations) {
       console.log(`Applying migration ${migration.version}: ${migration.name}`);
       
-      // Split the migration SQL into individual statements and execute them
-      const statements = migration.sql
+      // Apply each migration and its version marker in one native write transaction.
+      const sql = typeof migration.sql === 'function' ? await migration.sql() : migration.sql;
+      const statements = sql
         .split(';')
         .map(s => s.trim())
         .filter(s => s.length > 0);
       
-      for (const statement of statements) {
-        await execute(`${statement};`);
-      }
-      
-      // Record the migration as applied
-      await execute('INSERT INTO schema_migrations (version) VALUES (?)', [migration.version]);
+      await batch([
+        ...statements,
+        { sql: 'INSERT INTO schema_migrations (version) VALUES (?)', args: [migration.version] },
+      ]);
       
       console.log(`Migration ${migration.version} completed successfully.`);
     }
@@ -314,4 +381,4 @@ export async function seedDefaultCategories() {
     console.error('Failed to seed default categories:', error);
     return { success: false, error };
   }
-} 
+}

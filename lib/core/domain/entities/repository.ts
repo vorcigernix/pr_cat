@@ -21,6 +21,7 @@ export interface Repository {
   organizationId: string
   createdAt: Date
   updatedAt: Date
+  lastSyncedAt?: Date | null
   pushedAt: Date | null
 }
 

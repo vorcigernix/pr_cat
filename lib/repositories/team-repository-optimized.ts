@@ -28,8 +28,10 @@ export async function getTeamsByOrganizationWithMembersOptimized(organizationId:
     team_created_at: string;
     team_updated_at: string;
     member_id: number | null;
-    member_role: string | null;
+    member_role: TeamMember['role'] | null;
     member_joined_at: string | null;
+    member_created_at: string | null;
+    member_updated_at: string | null;
     user_id: string | null;
     user_name: string | null;
     user_email: string | null;
@@ -47,6 +49,8 @@ export async function getTeamsByOrganizationWithMembersOptimized(organizationId:
       tm.id as member_id,
       tm.role as member_role,
       tm.joined_at as member_joined_at,
+      tm.created_at as member_created_at,
+      tm.updated_at as member_updated_at,
       u.id as user_id,
       u.name as user_name,
       u.email as user_email,
@@ -81,22 +85,22 @@ export async function getTeamsByOrganizationWithMembersOptimized(organizationId:
     const team = teamsMap.get(row.team_id)!;
     
     // Only add member if there's actually a member (LEFT JOIN may return null)
-    if (row.member_id && row.user_id) {
+    if (row.member_id !== null && row.user_id !== null) {
       team.members.push({
         id: row.member_id,
         team_id: row.team_id,
         user_id: row.user_id,
-        role: row.member_role as 'member' | 'lead' | 'admin',
+        role: row.member_role!,
         joined_at: row.member_joined_at!,
-        created_at: row.team_created_at, // Using team's created_at as fallback
-        updated_at: row.team_updated_at, // Using team's updated_at as fallback
+        created_at: row.member_created_at!,
+        updated_at: row.member_updated_at!,
         user: {
           id: row.user_id,
           name: row.user_name,
           email: row.user_email,
           image: row.user_image,
-          created_at: row.user_created_at || '',
-          updated_at: row.user_updated_at || ''
+          created_at: row.user_created_at!,
+          updated_at: row.user_updated_at!
         }
       });
       team.member_count++;

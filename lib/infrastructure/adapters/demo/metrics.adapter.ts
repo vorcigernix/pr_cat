@@ -11,11 +11,13 @@ import {
   TeamPerformanceMetrics
 } from '../../../core/domain/entities'
 import { RepositoryInsights } from '../../../core/domain/entities'
-import { TimeRange } from '../../../core/domain/value-objects'
 import { 
   DEMO_METRICS_SUMMARY, 
   DEMO_RECOMMENDATIONS,
   DEMO_TEAM_MEMBERS,
+  DEMO_TEAM_MEMBERSHIPS,
+  DEMO_REPOSITORIES,
+  DEMO_USERS,
   DemoDataGenerator
 } from './data/demo-data'
 
@@ -122,13 +124,18 @@ export class DemoMetricsService implements IMetricsService {
   async getTeamPerformance(
     organizationId: string,
     repositoryIds?: string[],
-    _teamId?: number,
+    teamId?: number,
     _timeRange?: string
   ): Promise<TeamPerformanceMetrics> {
-    const teamMembers = [...DEMO_TEAM_MEMBERS]
-    
-    // Filter by repositories if specified (for demo, just return all)
-    const filteredMembers = repositoryIds ? teamMembers : teamMembers
+    const scopedAuthors = new Set(DemoDataGenerator.getPullRequests(organizationId)
+      .filter(pr => !repositoryIds?.length || repositoryIds.includes(pr.repository.id))
+      .map(pr => pr.author.login))
+    const teamMembers = teamId === undefined ? undefined : DEMO_TEAM_MEMBERSHIPS[teamId] || []
+    // Aggregate counts are illustrative; contributor/repository membership follows the fixture.
+    const filteredMembers = DEMO_TEAM_MEMBERS.filter(member =>
+      (!teamMembers || teamMembers.includes(member.userId)) &&
+      DEMO_USERS.some(user => user.id === member.userId && scopedAuthors.has(user.login))
+    ).map(member => ({ ...member, contributionScore: member.prsCreated + member.prsReviewed }))
 
     const totalContributors = filteredMembers.length
     const avgTeamCycleTime = filteredMembers.length > 0
@@ -143,7 +150,7 @@ export class DemoMetricsService implements IMetricsService {
     const totalReviews = filteredMembers.reduce((sum, member) => sum + member.prsReviewed, 0)
     
     const collaborationIndex = totalPRsCreated > 0 ? (totalReviews / totalPRsCreated) : 0
-    const reviewCoverage = 94.4 // Static demo value
+    const reviewCoverage = filteredMembers.length ? 94.4 : 0 // Simulated aggregate
 
     return {
       teamMembers: filteredMembers,
@@ -155,7 +162,7 @@ export class DemoMetricsService implements IMetricsService {
     }
   }
 
-  async getRepositoryInsights(_organizationId: string): Promise<RepositoryInsights> {
+  async getRepositoryInsights(organizationId: string, _teamId?: number, _timeRange?: string, repositoryId?: string): Promise<RepositoryInsights> {
     // Demo repository insights data
     const repositories = [
       {
@@ -229,110 +236,40 @@ export class DemoMetricsService implements IMetricsService {
       }
     ]
 
-    const topPerformers = repositories
+    const scopedRepositories = repositories.filter(repository => (!repositoryId || repository.repositoryId === repositoryId) &&
+      DEMO_REPOSITORIES.some(demo => demo.id === repository.repositoryId && demo.organizationId === organizationId))
+
+    const topPerformers = scopedRepositories
       .filter(repo => repo.hasData)
       .sort((a, b) => b.metrics.healthScore - a.metrics.healthScore)
       .slice(0, 2)
 
-    const needsAttention = repositories
+    const needsAttention = scopedRepositories
       .filter(repo => repo.hasData && (repo.metrics.healthScore < 80 || repo.metrics.reviewCoverage < 90))
       .slice(0, 2)
 
-    const repositoriesWithData = repositories.filter(repo => repo.hasData)
+    const repositoriesWithData = scopedRepositories.filter(repo => repo.hasData)
     const organizationAverages = {
       avgCycleTime: Math.round(
-        repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.avgCycleTime, 0) / repositoriesWithData.length * 10
+        repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.avgCycleTime, 0) / (repositoriesWithData.length || 1) * 10
       ) / 10,
       avgPRSize: Math.round(
-        repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.avgPRSize, 0) / repositoriesWithData.length
+        repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.avgPRSize, 0) / (repositoriesWithData.length || 1)
       ),
       avgCategorizationRate: Math.round(
-        repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.categorizationRate, 0) / repositoriesWithData.length * 10
+        repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.categorizationRate, 0) / (repositoriesWithData.length || 1) * 10
       ) / 10,
       avgHealthScore: Math.round(
-        repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.healthScore, 0) / repositoriesWithData.length * 10
+        repositoriesWithData.reduce((sum, repo) => sum + repo.metrics.healthScore, 0) / (repositoriesWithData.length || 1) * 10
       ) / 10
     }
 
     return {
-      repositories,
+      repositories: scopedRepositories,
       topPerformers,
       needsAttention,
       organizationAverages
     }
   }
 
-  async getDeveloperMetrics(
-    organizationId: string,
-    userId?: string,
-    _timeRange?: TimeRange
-  ): Promise<{
-    userId: string
-    name: string
-    prsCreated: number
-    prsReviewed: number
-    avgCycleTime: number
-    avgPRSize: number
-    contributionScore: number
-  }[]> {
-    let metrics = DEMO_TEAM_MEMBERS.map(member => ({
-      userId: member.userId,
-      name: member.name,
-      prsCreated: member.prsCreated,
-      prsReviewed: member.prsReviewed,
-      avgCycleTime: member.avgCycleTime,
-      avgPRSize: member.avgPRSize,
-      contributionScore: member.contributionScore
-    }))
-
-    if (userId) {
-      metrics = metrics.filter(m => m.userId === userId)
-    }
-
-    return metrics
-  }
-
-  async getCycleTimeTrends(
-    organizationId: string,
-    repositoryId?: string,
-    timeRange?: TimeRange
-  ): Promise<{
-    date: string
-    avgCycleTime: number
-    prCount: number
-  }[]> {
-    const range = timeRange || TimeRange.fromPreset('30d')
-    const days = range.getDays()
-    const trends = []
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      
-      trends.push({
-        date: date.toISOString().split('T')[0],
-        avgCycleTime: Math.round((30 + Math.random() * 40) * 10) / 10,
-        prCount: Math.floor(Math.random() * 8) + 1
-      })
-    }
-    
-    return trends
-  }
-
-  async getReviewCoverage(
-    _organizationId: string,
-    _timeRange?: TimeRange
-  ): Promise<{
-    totalPRs: number
-    reviewedPRs: number
-    coverage: number
-    trendDirection: 'up' | 'down' | 'stable'
-  }> {
-    return {
-      totalPRs: 127,
-      reviewedPRs: 120,
-      coverage: 94.5,
-      trendDirection: 'stable'
-    }
-  }
 }

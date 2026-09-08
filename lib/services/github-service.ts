@@ -1,20 +1,9 @@
 import { GitHubClient } from '@/lib/github';
-import { 
-  findOrCreateOrganization, 
-  findOrCreateRepository,
-  findUserById,
-  createPullRequest,
-  findPullRequestByNumber,
-  updatePullRequest,
-  findReviewByGitHubId,
-  createPullRequestReview,
-  setRepositoryTracking,
-  findRepositoryByGitHubId,
-  addUserToOrganization,
-  findOrCreateUserByGitHubId,
-  findOrganizationById
-} from '@/lib/repositories';
-import { GitHubRepository, GitHubPullRequest, GitHubOrganization, GitHubUser, PRReview } from '@/lib/types';
+import { findUserById, setRepositoryTracking, findRepositoryByGitHubId } from '@/lib/repositories';
+import { syncOrganizationAssociations, syncOrganizationRepositories, syncOrganizationMembers } from '@/lib/infrastructure/adapters/github/organization-sync';
+import { GitHubRepository, GitHubOrganization, GitHubUser } from '@/lib/types';
+import type { PullRequestSyncResult } from '@/lib/core/ports/github.port';
+import { syncRepositoryPullRequests } from '@/lib/infrastructure/adapters/github/pull-request-sync';
 import { createInstallationClient } from "@/lib/github-app";
 
 export class GitHubService {
@@ -24,244 +13,28 @@ export class GitHubService {
     this.client = new GitHubClient(accessToken);
   }
   
-  async syncUserOrganizations(userId: string): Promise<GitHubOrganization[]> {
-    const user = await findUserById(userId);
-    if (!user) {
-      console.error(`User not found in database with ID: ${userId}`);
-      throw new Error(`User not found in database with ID: ${userId}. This may be due to ID mismatch between Auth.js and the database.`);
-    }
-    
-    // Fetch organizations from GitHub
-    const githubOrgs = await this.client.getUserOrganizations();
-    console.log(`Found ${githubOrgs.length} GitHub organizations for user ${userId}`);
-    
-    // Store organizations in the database and link to user
-    const storedOrgs = await Promise.all(
-      githubOrgs.map(async (org) => {
-        // Create or find the organization
-        const dbOrg = await findOrCreateOrganization({
-          github_id: org.id,
-          name: org.login,
-          avatar_url: org.avatar_url,
-        });
-        
-        console.log(`Linking user ${userId} to organization ${dbOrg.id} (${org.login})`);
-        
-        // Link the user to the organization as an owner
-        await addUserToOrganization(userId, dbOrg.id, 'owner');
-        
-        // Fetch and sync repositories for this organization 
-        await this.syncOrganizationRepositories(org.login);
-        
-        // Fetch and sync members for this organization
-        await this.syncOrganizationMembers(org.login, dbOrg.id);
-        
-        return dbOrg;
-      })
-    );
-    
-    console.log(`Successfully processed ${storedOrgs.length} organizations for user ${userId}`);
-    return githubOrgs;
-  }
-  
-  async syncOrganizationRepositories(organizationName: string): Promise<GitHubRepository[]> {
-    // Fetch repositories from GitHub
-    const githubRepos = await this.client.getOrganizationRepositories(organizationName);
-    
-    // Find organization in database
-    const org = await findOrCreateOrganization({
-      github_id: githubRepos[0]?.owner.id || 0,
-      name: organizationName,
-      avatar_url: '',
-    });
-    
-    // Store repositories in the database
-    await Promise.all(
-      githubRepos.map(async (repo) => {
-        await findOrCreateRepository({
-          github_id: repo.id,
-          organization_id: org.id,
-          name: repo.name,
-          full_name: repo.full_name,
-          description: repo.description || null,
-          private: repo.private,
-          is_tracked: false
-        });
-      })
-    );
-    
-    return githubRepos;
-  }
-
-  async syncOrganizationMembers(organizationName: string, organizationId?: number): Promise<void> {
-    try {
-      // Fetch organization members from GitHub
-      const members = await this.client.getOrganizationMembers(organizationName);
-      console.log(`Found ${members.length} members in organization ${organizationName}`);
-      
-      // Find organization in database by name if ID not provided
-      let org;
-      if (organizationId) {
-        org = await findOrganizationById(organizationId);
-      } else {
-        org = await findOrCreateOrganization({
-          github_id: 0, // We'll need to get this from somewhere else
-          name: organizationName,
-          avatar_url: '',
-        });
-      }
-      
-      if (!org) {
-        console.error(`Organization ${organizationName} not found in database`);
-        return;
-      }
-      
-      // Store members in the database
-      await Promise.all(
-        members.map(async (member) => {
-          // Ensure user exists in our database
-          const dbUser = await findOrCreateUserByGitHubId({
-            id: member.id.toString(),
-            login: member.login,
-            avatar_url: member.avatar_url,
-            name: member.name || member.login
-          });
-          
-          // Link user to organization if not already linked
-          await addUserToOrganization(dbUser.id, org.id, 'member');
-        })
-      );
-      
-      console.log(`Successfully synced ${members.length} members for organization ${organizationName}`);
-    } catch (error) {
-      console.error(`Error syncing members for organization ${organizationName}:`, error);
-      // Don't throw - this is not critical for the main sync
-    }
-  }
-  
-  async syncRepositoryPullRequests(owner: string, repo: string, repositoryId: number): Promise<GitHubPullRequest[]> {
-    // Fetch all pull requests from GitHub
-    const githubPRs = await this.client.getAllPullRequests(owner, repo, 'all');
-    
-    // Process each pull request
-    await Promise.all(
-      githubPRs.map(async (pr) => {
-        const existingPR = await findPullRequestByNumber(repositoryId, pr.number);
-        
-        const state = pr.merged_at 
-          ? 'merged' 
-          : pr.state === 'closed' ? 'closed' : 'open';
-        
-        // Ensure author exists in our database
-        const prAuthor = pr.user ? await findOrCreateUserByGitHubId({
-          id: pr.user.id.toString(),
-          login: pr.user.login,
-          avatar_url: pr.user.avatar_url,
-          name: pr.user.name // pr.user might not have 'name', adjust if necessary based on GitHub API response
-        }) : null;
-
-        if (existingPR) {
-          // Update existing PR
-          await updatePullRequest(existingPR.id, {
-            title: pr.title,
-            description: pr.body || null,
-            state,
-            updated_at: pr.updated_at,
-            closed_at: pr.closed_at,
-            merged_at: pr.merged_at,
-            draft: pr.draft,
-            // author_id is not typically updated, but if it could change or be initially null, handle here
-          });
-        } else {
-          // Create new PR
-          if (!prAuthor) {
-            console.warn(`Skipping PR #${pr.number} for repo ${owner}/${repo} due to missing author information from GitHub.`);
-            return; // Skip this PR if author couldn't be processed
-          }
-          const newPR = await createPullRequest({
-            github_id: pr.id,
-            repository_id: repositoryId,
-            number: pr.number,
-            title: pr.title,
-            description: pr.body || null,
-            author_id: prAuthor.id, // Use the ID from our users table
-            state,
-            created_at: pr.created_at,
-            updated_at: pr.updated_at,
-            closed_at: pr.closed_at,
-            merged_at: pr.merged_at,
-            draft: pr.draft,
-            additions: pr.additions || null,
-            deletions: pr.deletions || null,
-            changed_files: pr.changed_files || null,
-            category_id: null,
-            category_confidence: null
-          });
-          
-          // Fetch and store PR reviews
-          await this.syncPullRequestReviews(owner, repo, pr.number, newPR.id);
+  async syncUserOrganizations(userId: string, options: { includeDetails?: boolean } = {}): Promise<GitHubOrganization[]> {
+    if (!await findUserById(userId)) throw new Error(`User not found in database with ID: ${userId}`);
+    const organizations: GitHubOrganization[] = [];
+    for (let page = 1; ; page++) {
+      const githubOrgs = await this.client.getUserOrganizations(page);
+      const stored = await syncOrganizationAssociations(userId, githubOrgs);
+      organizations.push(...githubOrgs);
+      if (options.includeDetails !== false) {
+        for (const org of stored) {
+          const result = await syncOrganizationRepositories(this.client, org.name, org.id);
+          if (result.errors.length > 0) throw new Error(result.errors[0].error);
+          await syncOrganizationMembers(this.client, org.name, org.id);
         }
-      })
-    );
-    
-    return githubPRs;
-  }
-  
-  async syncPullRequestReviews(owner: string, repo: string, prNumber: number, pullRequestId: number): Promise<void> {
-    const reviews = await this.client.getPullRequestReviews(owner, repo, prNumber);
-    
-    await Promise.all(
-      reviews.map(async (review) => {
-        // Skip reviews without an ID or user
-        if (!review.id || !review.user) return;
-        
-        const existingReview = await findReviewByGitHubId(review.id);
-        
-        if (!existingReview) {
-          // Ensure reviewer exists in our database
-          const reviewAuthor = await findOrCreateUserByGitHubId({
-            id: review.user.id.toString(),
-            login: review.user.login,
-            avatar_url: review.user.avatar_url,
-            name: review.user.name // review.user might not have 'name', adjust if necessary
-          });
-
-          if (!reviewAuthor) {
-            console.warn(`Skipping review for PR #${prNumber} in ${owner}/${repo} by ${review.user.login} due to missing author information.`);
-            return; // Skip this review if author couldn't be processed
-          }
-
-          // Map GitHub review state to our enum
-          const reviewState = this.mapReviewState(review.state);
-          
-          await createPullRequestReview({
-            github_id: review.id,
-            pull_request_id: pullRequestId,
-            reviewer_id: reviewAuthor.id, // Use the ID from our users table
-            state: reviewState,
-            submitted_at: review.submitted_at
-          });
-        }
-      })
-    );
-  }
-  
-  // Helper to map GitHub review state to our enum
-  private mapReviewState(state: string): PRReview['state'] {
-    switch (state.toLowerCase()) {
-      case 'approved':
-        return 'approved';
-      case 'changes_requested':
-        return 'changes_requested';
-      case 'commented':
-        return 'commented';
-      case 'dismissed':
-        return 'dismissed';
-      default:
-        return 'commented'; // Default fallback
+      }
+      if (githubOrgs.length < 100) return organizations;
     }
   }
-  
+
+  async syncRepositoryPullRequests(owner: string, repo: string, repositoryId: number): Promise<PullRequestSyncResult> {
+    return syncRepositoryPullRequests(this.client, repositoryId, owner, repo);
+  }
+
   async getCurrentUser(): Promise<GitHubUser> {
     return this.client.getCurrentUser();
   }
@@ -336,7 +109,10 @@ export class GitHubService {
     await setRepositoryTracking(repository.id, true);
     
     // Sync pull requests
-    await this.syncRepositoryPullRequests(owner, repo, repository.id);
+    const sync = await this.syncRepositoryPullRequests(owner, repo, repository.id);
+    if (sync.errors.length > 0) {
+      return { success: false, webhookId: webhook.id, message: 'Tracking enabled, but initial PR sync failed. Retry synchronization.' };
+    }
     
     return { 
       success: true, 
@@ -416,60 +192,12 @@ export async function syncSingleOrganizationRepositories(
   orgName: string,
   organizationDbId: number
 ): Promise<{ newCount: number; updatedCount: number; syncedCount: number; errors: string[] }> {
-  let newCount = 0;
-  let updatedCount = 0;
-  const errors: string[] = [];
-
-  try {
-    console.log(`Syncing repositories for organization '${orgName}' (DB ID: ${organizationDbId}) using installation ID ${installationId}`);
-    const installationClient = await createInstallationClient(installationId);
-    
-    // Fetch repositories from GitHub for the specific organization
-    const githubRepos = await installationClient.getOrganizationRepositories(orgName);
-    console.log(`Found ${githubRepos.length} repositories on GitHub for '${orgName}'`);
-
-    for (const repo of githubRepos) {
-      try {
-        const existingRepo = await findRepositoryByGitHubId(repo.id);
-        
-        const repoData = {
-          github_id: repo.id,
-          organization_id: organizationDbId,
-          name: repo.name,
-          full_name: repo.full_name,
-          description: repo.description || null,
-          private: repo.private,
-          // is_tracked defaults to false in findOrCreateRepository if not specified or existingRepo.is_tracked is undefined
-          is_tracked: existingRepo ? existingRepo.is_tracked : false 
-        };
-
-        const savedRepo = await findOrCreateRepository(repoData);
-
-        if (existingRepo) {
-          if (existingRepo.name !== savedRepo.name || existingRepo.description !== savedRepo.description || existingRepo.private !== savedRepo.private) {
-            updatedCount++;
-          }
-        } else {
-          newCount++;
-        }
-      } catch (repoError) {
-        const errorMessage = `Failed to process repository '${repo.full_name}': ${repoError instanceof Error ? repoError.message : String(repoError)}`;
-        console.error(errorMessage);
-        errors.push(errorMessage);
-      }
-    }
-    
-    const syncedCount = githubRepos.length - errors.length;
-    console.log(`Successfully synced ${syncedCount} repositories for '${orgName}'. New: ${newCount}, Updated: ${updatedCount}. Errors: ${errors.length}`);
-    
-    return { newCount, updatedCount, syncedCount, errors };
-
-  } catch (error) {
-    const errorMessage = `Error syncing repositories for organization '${orgName}': ${error instanceof Error ? error.message : String(error)}`;
-    console.error(errorMessage);
-    // Re-throw or handle as appropriate for the calling API route
-    // For now, let's ensure the API route can catch this and return a 500
-    // We can also return the error count here if preferred.
-    throw new Error(errorMessage); 
-  }
-} 
+  const client = await createInstallationClient(installationId);
+  const result = await syncOrganizationRepositories(client, orgName, organizationDbId);
+  return {
+    newCount: result.created,
+    updatedCount: result.updated,
+    syncedCount: result.processed,
+    errors: result.errors.map(error => error.error),
+  };
+}

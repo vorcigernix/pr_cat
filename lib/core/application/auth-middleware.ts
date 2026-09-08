@@ -28,7 +28,8 @@ export function withAuth<TRequest = NextRequest, TResponse = NextResponse>(
 ): (request: TRequest) => Promise<TResponse | NextResponse> {
   return async (request: TRequest) => {
     try {
-      const context = await createAuthenticatedContext()
+      const organizationId = request instanceof NextRequest ? request.nextUrl.searchParams.get('organizationId') ?? undefined : undefined
+      const context = await createAuthenticatedContext(organizationId)
       
       if (!context) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -63,7 +64,7 @@ export function withOptionalAuth<TRequest = NextRequest, TResponse = NextRespons
 /**
  * Create authenticated context or return null if not authenticated
  */
-async function createAuthenticatedContext(): Promise<ApplicationContext | null> {
+async function createAuthenticatedContext(organizationId?: string): Promise<ApplicationContext | null> {
   try {
     const authService = await ServiceLocator.getAuthService()
     const session = await authService.getSession()
@@ -72,13 +73,20 @@ async function createAuthenticatedContext(): Promise<ApplicationContext | null> 
       return null
     }
 
-    const primaryOrganization = session.primaryOrganization || session.organizations[0]
+    const primaryOrganization = organizationId !== undefined
+      ? session.organizations.find(organization => organization.id.toString() === organizationId)
+      : session.primaryOrganization || session.organizations[0]
+    if (!primaryOrganization) return null
     
     // Get user permissions for the primary organization
     const permissions: UserPermissions = await authService.getUserPermissions(
       session.user.id,
       primaryOrganization.id
     )
+
+    if (!permissions.canRead) {
+      return null
+    }
 
     return createApplicationContext(
       session.user,

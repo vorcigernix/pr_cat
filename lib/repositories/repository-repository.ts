@@ -73,7 +73,7 @@ export async function updateRepository(
     return findRepositoryById(id);
   }
   
-  updates.push('updated_at = datetime("now")');
+  updates.push("updated_at = datetime('now')");
   
   await execute(
     `UPDATE repositories SET ${updates.join(', ')} WHERE id = ?`,
@@ -85,7 +85,7 @@ export async function updateRepository(
 
 export async function setRepositoryTracking(id: number, isTracked: boolean): Promise<Repository | null> {
   await execute(
-    'UPDATE repositories SET is_tracked = ?, updated_at = datetime("now") WHERE id = ?',
+    "UPDATE repositories SET is_tracked = ?, updated_at = datetime('now') WHERE id = ?",
     [isTracked ? 1 : 0, id]
   );
   
@@ -169,9 +169,15 @@ export async function getRepositoryStatistics(
 }
 
 export async function getRepositoriesByUser(
-  userId: string, 
-  organizationId?: number
+  userId: string,
+  organizationId?: number,
+  options: {
+    includeTrackedOnly?: boolean;
+    orderBy?: string;
+    orderDir?: 'ASC' | 'DESC';
+  } = {}
 ): Promise<Repository[]> {
+  const { includeTrackedOnly = false, orderBy = 'name', orderDir = 'ASC' } = options;
   let sql = `
     SELECT r.* 
     FROM repositories r
@@ -181,12 +187,16 @@ export async function getRepositoriesByUser(
   
   const params: InValue[] = [userId];
   
-  if (organizationId) {
+  if (organizationId !== undefined) {
     sql += ` AND r.organization_id = ?`;
     params.push(organizationId);
   }
   
-  sql += ` ORDER BY r.name ASC`;
+  if (includeTrackedOnly) {
+    sql += ' AND r.is_tracked = 1';
+  }
+
+  sql += ` ORDER BY r.${orderBy} ${orderDir}`;
   
   return await query<Repository>(sql, params);
 }

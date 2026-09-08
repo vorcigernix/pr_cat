@@ -165,16 +165,20 @@ export class TursoOrganizationRepository implements IOrganizationRepository {
       // Note: isArchived and language are not in current DB schema
       // These would need to be added to support full filtering
 
-      const repositories = await query<DbTypes.Repository>(`
-        SELECT * FROM repositories
+      const repositories = await query<DbTypes.Repository & { last_synced_at: string | null }>(`
+        SELECT repositories.*, sync.last_synced_at FROM repositories
+        LEFT JOIN repository_sync_state sync ON sync.repository_id = repositories.id
         ${whereClause}
         ORDER BY name ASC
       `, params)
 
-      return repositories.map(mapDbRepositoryToDomain)
+      return repositories.map(repository => ({
+        ...mapDbRepositoryToDomain(repository),
+        lastSyncedAt: repository.last_synced_at ? new Date(repository.last_synced_at) : null
+      }))
     } catch (error) {
       console.error('Error getting organization repositories:', error)
-      return []
+      throw error
     }
   }
 

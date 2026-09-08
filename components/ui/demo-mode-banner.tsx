@@ -19,7 +19,7 @@ export function DemoModeBanner({ className }: DemoModeBannerProps) {
       <div className="hover:bg-[#0f0f10] hover:border-t-[#262626] bg-[#111111] group mx-auto flex w-fit items-center gap-4 rounded-full border border-[#262626]/60 p-1 pl-4 shadow-md shadow-black/30 transition-colors duration-300">
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-          <span className="text-[#f5f5f5] text-sm">Demo Mode • Sample Analytics Data</span>
+          <span className="text-[#f5f5f5] text-sm">Demo Mode • Simulated Analytics</span>
         </div>
         <span className="border-[#0b0b0b] block h-4 w-0.5 border-l bg-[#3f3f46]"></span>
         

@@ -24,8 +24,8 @@ export class TimeRange {
     return new TimeRange(start, end)
   }
 
-  static fromPreset(preset: '7d' | '30d' | '90d'): TimeRange {
-    const daysMap = { '7d': 7, '30d': 30, '90d': 90 }
+  static fromPreset(preset: '7d' | '14d' | '30d' | '90d'): TimeRange {
+    const daysMap = { '7d': 7, '14d': 14, '30d': 30, '90d': 90 }
     return TimeRange.fromDays(daysMap[preset])
   }
 

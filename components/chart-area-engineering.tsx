@@ -16,103 +16,16 @@ import {
   ChartConfig,
   ChartContainer,
 } from "@/components/ui/chart"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group"
-import { TimeSeriesDataPoint } from "@/app/api/services/metrics-data"
+import type { TimeSeriesDataPoint } from "@/lib/core"
 
-// Default sample data for when the component is used without providing data
-const defaultChartData: TimeSeriesDataPoint[] = [
-  {
-    date: "2025-04-20",
-    prThroughput: 2,
-    cycleTime: 45.2,
-    reviewTime: 16.8,
-    codingHours: 4.7
-  },
-  {
-    date: "2025-04-21",
-    prThroughput: 3,
-    cycleTime: 52.1,
-    reviewTime: 18.3,
-    codingHours: 5.2
-  },
-  {
-    date: "2025-04-22",
-    prThroughput: 1,
-    cycleTime: 48.5,
-    reviewTime: 22.1,
-    codingHours: 4.9
-  },
-  {
-    date: "2025-04-23",
-    prThroughput: 2,
-    cycleTime: 43.2,
-    reviewTime: 15.7,
-    codingHours: 5.5
-  },
-  {
-    date: "2025-04-24",
-    prThroughput: 4,
-    cycleTime: 39.8,
-    reviewTime: 12.3,
-    codingHours: 6.1
-  }
-];
-
-interface ChartAreaEngineeringProps {
-  initialChartData?: TimeSeriesDataPoint[]; // Make this optional
-}
-
-export function ChartAreaEngineering({ initialChartData = defaultChartData }: ChartAreaEngineeringProps) {
+export function ChartAreaEngineering({ chartData }: { chartData: TimeSeriesDataPoint[] }) {
   const isMobile = useIsMobile()
-  const [timeRange, setTimeRange] = React.useState("30d")
-  // Initialize state with server-fetched data or default values
-  const chartData = initialChartData;
-  const [metrics, setMetrics] = React.useState<string[]>(["prThroughput", "cycleTime", "codingHours"]);
+  const [selectedMetrics, setSelectedMetrics] = React.useState<string[] | null>(null)
+  const metrics = selectedMetrics ?? (isMobile ? ["prThroughput", "cycleTime"] : ["prThroughput", "cycleTime", "codingHours"])
 
-  // No need for loading state or data fetching useEffect
-
-  React.useEffect(() => {
-    if (isMobile) {
-      setTimeRange("7d")
-      setMetrics(["prThroughput", "cycleTime"]);
-    }
-  }, [isMobile])
-
-  const filteredData = React.useMemo(() => {
-    if (!chartData.length) return [];
-    
-    // Sort data by date in ascending order
-    const sortedData = [...chartData].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    
-    // Filter based on time range
-    const today = new Date();
-    let daysToSubtract = 30;
-    if (timeRange === "7d") {
-      daysToSubtract = 7;
-    } else if (timeRange === "90d") {
-      daysToSubtract = 90;
-    }
-    
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - daysToSubtract);
-    
-    return sortedData.filter(item => {
-      const date = new Date(item.date);
-      return date >= startDate;
-    });
-  }, [chartData, timeRange]);
+  const filteredData = React.useMemo(() => [...chartData].sort((a, b) =>
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  ), [chartData]);
 
   const chartConfig = {
     prThroughput: {
@@ -124,24 +37,22 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
       color: "var(--chart-2)",
     },
     reviewTime: {
-      label: "Feedback Time (hrs)",
+      label: "Estimated review time (hrs)",
       color: "var(--chart-3)",
     },
     codingHours: {
-      label: "Flow State Hours",
+      label: "Estimated coding hours",
       color: "var(--chart-4)",
     },
   } as ChartConfig;
 
   const handleMetricToggle = (value: string) => {
     if (metrics.includes(value)) {
-      // Remove the metric if it's already selected
-      if (metrics.length > 1) { // Ensure at least one metric is always selected
-        setMetrics(metrics.filter(m => m !== value));
+      if (metrics.length > 1) {
+        setSelectedMetrics(metrics.filter(m => m !== value));
       }
     } else {
-      // Add the metric
-      setMetrics([...metrics, value]);
+      setSelectedMetrics([...metrics, value]);
     }
   };
 
@@ -151,7 +62,7 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
         <CardTitle>Team Flow Metrics</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Team collaboration health over time
+            PRs and cycle time for the selected period. Estimates use 30% of cycle time for review and one coding hour per 50 changed lines.
           </span>
           <span className="@[540px]/card:hidden">Team flow trends</span>
         </CardDescription>
@@ -161,6 +72,7 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
               <button 
                 key={key}
                 onClick={() => handleMetricToggle(key)}
+                aria-pressed={metrics.includes(key)}
                 className={`px-2 py-1 text-xs rounded-md transition-colors ${
                   metrics.includes(key) 
                   ? 'bg-primary/10 text-primary' 
@@ -171,37 +83,6 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
               </button>
             ))}
           </div>
-          <ToggleGroup
-            type="single"
-            value={timeRange}
-            onValueChange={setTimeRange}
-            variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
-          >
-            <ToggleGroupItem value="7d">7 days</ToggleGroupItem>
-            <ToggleGroupItem value="30d">30 days</ToggleGroupItem>
-            <ToggleGroupItem value="90d">90 days</ToggleGroupItem>
-          </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="flex w-28 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-              size="sm"
-              aria-label="Select time range"
-            >
-              <SelectValue placeholder="Last 30 days" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
-              </SelectItem>
-              <SelectItem value="90d" className="rounded-lg">
-                Last 90 days
-              </SelectItem>
-            </SelectContent>
-          </Select>
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
@@ -234,7 +115,7 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
             <Tooltip 
               formatter={(value, name) => {
                 // Format the tooltip value based on the metric
-                if (name === "Delivery Speed (hrs)" || name === "Feedback Time (hrs)" || name === "Flow State Hours") {
+                if (name === "Delivery Speed (hrs)" || name === "Estimated review time (hrs)" || name === "Estimated coding hours") {
                   return [`${value} hrs`, name];
                 }
                 return [value, name];
@@ -268,7 +149,7 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
               <Area
                 type="monotone"
                 dataKey="reviewTime"
-                name="Feedback Time (hrs)"
+                name="Estimated review time (hrs)"
                 stroke={chartConfig.reviewTime.color}
                 fillOpacity={1}
                 fill={`url(#fillreviewTime)`}
@@ -279,7 +160,7 @@ export function ChartAreaEngineering({ initialChartData = defaultChartData }: Ch
               <Area
                 type="monotone"
                 dataKey="codingHours"
-                name="Flow State Hours"
+                name="Estimated coding hours"
                 stroke={chartConfig.codingHours.color}
                 fillOpacity={1}
                 fill={`url(#fillcodingHours)`}

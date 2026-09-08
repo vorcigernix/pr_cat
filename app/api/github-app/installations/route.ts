@@ -7,6 +7,8 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { getService } from '@/lib/core/container/di-container'
 import { IGitHubAppService } from '@/lib/core/ports'
+import { syncOrganizationAssociations } from '@/lib/infrastructure/adapters/github/organization-sync'
+import { accessibleInstallations } from './access'
 
 
 export const runtime = 'nodejs'
@@ -44,9 +46,7 @@ export async function GET() {
     const installations = await githubAppService.listInstallations()
     
     // Filter to only organizations (if needed)
-    const organizationInstallations = installations.filter(
-      installation => installation.account.type === 'Organization'
-    )
+    const organizationInstallations = await accessibleInstallations(installations, session)
 
     console.log(`[GitHubApp API] Found ${organizationInstallations.length} organization installations`)
 
@@ -97,9 +97,11 @@ export async function POST() {
 
     // Get all installations
     const installations = await githubAppService.listInstallations()
-    const organizationInstallations = installations.filter(
-      installation => installation.account.type === 'Organization'
-    )
+    const organizationInstallations = await accessibleInstallations(installations, session)
+
+    await syncOrganizationAssociations(session.user.id, organizationInstallations.map(installation => ({
+      id: installation.account.id, login: installation.account.login, avatar_url: installation.account.avatarUrl ?? '',
+    })))
 
     // Sync each installation
     const results = []
@@ -130,12 +132,12 @@ export async function POST() {
     console.log(`[GitHubApp API] Sync completed. Processed ${results.length} installations, ${errors.length} errors`)
 
     return NextResponse.json({
-      success: true,
+      success: errors.length === 0,
       synced: results,
       totalInstallations: organizationInstallations.length,
       totalErrors: errors.length,
       errors: errors.length > 0 ? errors : undefined
-    })
+    }, { status: errors.length > 0 ? 502 : 200 })
 
   } catch (error) {
     console.error('[GitHubApp API] Error syncing installations:', error)

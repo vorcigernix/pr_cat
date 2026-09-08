@@ -2,14 +2,7 @@
 version: 2
 
 updates:
-  # ─────────────────────────────────────────────────────────────
-  # npm / yarn / pnpm — all three share the "npm" ecosystem.
-  # Dependabot picks the right tool based on the lockfile present:
-  #   package-lock.json  → npm
-  #   yarn.lock          → yarn
-  #   pnpm-lock.yaml     → pnpm
-  # ─────────────────────────────────────────────────────────────
-  - package-ecosystem: "npm"
+  - package-ecosystem: "bun"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -25,6 +18,13 @@ updates:
       prefix-development: "chore(deps-dev)"
       include: "scope"
     groups:
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "@next/eslint-plugin-next"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
       # Batch the boring stuff into one PR; keep majors separate.
       minor-and-patch:
         update-types:
@@ -39,32 +39,6 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "next"
         update-types: ["version-update:semver-major"]
-
-  # ─────────────────────────────────────────────────────────────
-  # Bun — separate ecosystem. Requires a text-based bun.lock file.
-  # Run `bun install --save-text-lockfile` once if you're still on
-  # bun.lockb; from Bun 1.2 onward it's the default.
-  # ─────────────────────────────────────────────────────────────
-  - package-ecosystem: "bun"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Europe/Prague"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "bun"
-    commit-message:
-      prefix: "chore(deps)"
-      prefix-development: "chore(deps-dev)"
-      include: "scope"
-    groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
 
   # ─────────────────────────────────────────────────────────────
   # Keep the pipeline itself current too. Cheap insurance.

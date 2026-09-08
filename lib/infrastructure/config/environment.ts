@@ -90,9 +90,9 @@ export class EnvironmentConfig {
     // Add auth config
     config.auth = {
       secret: process.env.NEXTAUTH_SECRET || 'demo-secret-key-not-for-production',
-      url: process.env.NEXTAUTH_URL || process.env.VERCEL_URL 
+      url: process.env.NEXTAUTH_URL || (process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}` 
-        : 'http://localhost:3000'
+        : 'http://localhost:3000')
     }
 
     return config
@@ -164,7 +164,7 @@ export class EnvironmentConfig {
     if (this._config.hasGitHubApp) {
       features.push('github')
     } else {
-      missingEnvVars.push('GITHUB_APP_ID', 'GITHUB_PRIVATE_KEY')
+      missingEnvVars.push('GITHUB_APP_ID', 'GITHUB_APP_PRIVATE_KEY')
     }
 
     features.push('auth')

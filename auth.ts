@@ -119,12 +119,12 @@ async function upsertUser(githubId: string, userData: UpsertUserData) {
   
   const { rowsAffected } = await execute(
     `INSERT INTO users (id, name, email, image, created_at, updated_at) 
-     VALUES (?, ?, ?, ?, datetime("now"), datetime("now")) 
+     VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
      ON CONFLICT(id) DO UPDATE SET 
        name = excluded.name, 
        email = excluded.email, 
        image = excluded.image, 
-       updated_at = datetime("now")`,
+       updated_at = datetime('now')`,
     [githubId, name ?? null, email ?? null, image ?? null]
   )
   
@@ -254,11 +254,11 @@ export const config = {
         
         user.id = githubId;
         
-        // Sync organizations if we have an access token
+        // Persist membership before the dashboard; explicit sync loads repositories and members.
         if (account?.access_token) {
           try {
             const githubService = new GitHubService(account.access_token);
-            await githubService.syncUserOrganizations(githubId);
+            await githubService.syncUserOrganizations(githubId, { includeDetails: false });
           } catch (syncError) {
             console.error(`Organization sync failed for user ${githubId}:`, syncError);
           }

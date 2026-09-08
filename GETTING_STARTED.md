@@ -12,11 +12,11 @@ Before testing, make sure you have:
 
 ## 0. Database Initialization
 
-The application has been optimized to work with Edge Runtime, which means the database migrations need to be run explicitly:
+Initialize a fresh database explicitly before testing database-backed features:
 
 1. Start the development server:
    ```bash
-   pnpm dev
+   bun run dev
    ```
 
 2. Check the database status:
@@ -24,11 +24,11 @@ The application has been optimized to work with Edge Runtime, which means the da
    curl http://localhost:3000/api/status
    ```
 
-3. If you see "migrationNeeded": true, run the migrations by visiting:
+3. If you see "migrationNeeded": true, run the migrations:
    ```bash
-   curl http://localhost:3000/api/migrate
+   curl -X POST http://localhost:3000/api/migrate
    ```
-   Note: You may need to be authenticated to run migrations.
+   In production, configure `MIGRATION_SECRET` and include `Authorization: Bearer <MIGRATION_SECRET>` in the request. A signed-in session alone does not authorize migrations.
 
 4. Verify the database is properly initialized:
    ```bash
@@ -40,7 +40,7 @@ The application has been optimized to work with Edge Runtime, which means the da
 
 1. Start the development server:
    ```bash
-   pnpm dev
+   bun run dev
    ```
 
 2. Open http://localhost:3000 in your browser
@@ -134,7 +134,7 @@ For testing webhooks locally, you need to expose your local server to the intern
 
 1. Start your Next.js development server:
    ```bash
-   pnpm dev
+   bun run dev
    ```
 
 2. In a new terminal, start ngrok on port 3000:
@@ -230,4 +230,4 @@ For debugging API requests:
 3. Use curl with verbose flag for detailed API interactions:
    ```bash
    curl -v -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN" http://localhost:3000/api/status
-   ``` 
+   ```

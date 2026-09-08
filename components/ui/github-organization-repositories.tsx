@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetchJson } from "@/lib/fetch-json";
 import { useSession } from "next-auth/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,83 +46,27 @@ export function GitHubOrganizationRepositories({
 }: GitHubOrganizationRepositoriesProps) {
   const { status } = useSession();
   const [isSyncingSpecific, setIsSyncingSpecific] = useState(false);
-  const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [processingRepoId, setProcessingRepoId] = useState<number | null>(null);
-  const [accessibleRepos, setAccessibleRepos] = useState<Set<string>>(new Set());
-  const [, setIsLoadingAccessible] = useState(false);
-
-  const fetchRepositoriesForOrganization = useCallback(async (isInitialLoad = false) => {
-    if (!organizationId) {
-      setRepositories([]);
-      setLoading(false);
-      return;
-    }
-    console.log(`Fetching repositories for orgId: ${organizationId}, orgName: ${organizationName}, initial: ${isInitialLoad}`);
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/github/organizations/repositories?orgId=${organizationId}`);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Failed to fetch repositories for " + organizationName }));
-        throw new Error(errorData.message || `Failed to fetch repositories for ${organizationName}`);
-      }
-      const data: RepositoriesResponse = await response.json();
-      if (data.repositories) {
-        setRepositories(data.repositories);
-      } else if (data.organizationsWithRepositories && data.organizationsWithRepositories.length > 0) {
-        const orgData = data.organizationsWithRepositories.find(
-          (orgEntry) =>
-            orgEntry.organization.id === organizationId ||
-            orgEntry.organization.name === organizationName
-        );
-        setRepositories(orgData ? orgData.repositories : []);
-      } else {
-        setRepositories([]);
-      }
-    } catch (fetchError) {
-      const defaultMessage = `Failed to load repositories for ${organizationName}. Please try syncing manually.`;
-      if (fetchError instanceof Error && fetchError.message.includes("Failed to fetch")) {
-         setError(defaultMessage);
-      } else {
-        setError(fetchError instanceof Error ? fetchError.message : "An unexpected error occurred.");
-      }
-      console.error(`Error fetching repositories for ${organizationName}:`, fetchError);
-    } finally {
-      setLoading(false);
-    }
-  }, [organizationId, organizationName]);
-
-  const fetchAccessibleRepositories = useCallback(async () => {
-    if (!organizationName) return;
-    
-    setIsLoadingAccessible(true);
-    try {
-      const response = await fetch(`/api/github/organizations/${organizationName}/accessible-repositories`);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to fetch accessible repositories');
-      }
-      
-      const data = await response.json();
-      if (data.accessibleRepositories) {
-        setAccessibleRepos(new Set(data.accessibleRepositories));
-      }
-    } catch (error) {
-      console.error('Error fetching accessible repositories:', error);
-    } finally {
-      setIsLoadingAccessible(false);
-    }
-  }, [organizationName]);
+  const canFetch = status === "authenticated" && Number.isSafeInteger(organizationId) && Boolean(organizationName);
+  const { data, isLoading: loading, error: fetchError, mutate } = useSWR<RepositoriesResponse | Repository[], Error>(
+    canFetch ? `/api/github/organizations/repositories?orgId=${organizationId}` : null, fetchJson
+  );
+  const { data: accessibility, error: accessibilityError, isLoading: loadingAccess, mutate: mutateAccessible } = useSWR<{ accessibleRepositories: string[] }, Error>(
+    canFetch ? `/api/github/organizations/${encodeURIComponent(organizationName)}/accessible-repositories` : null, fetchJson
+  );
+  const repositories = Array.isArray(data) ? data : data?.repositories ?? data?.organizationsWithRepositories?.find(
+    entry => entry.organization.id === organizationId || entry.organization.name === organizationName
+  )?.repositories ?? [];
+  const accessibleRepos = new Set(!loadingAccess && !accessibilityError ? accessibility?.accessibleRepositories ?? [] : []);
+  const error = fetchError?.message || syncError;
 
   const syncSpecificOrganizationRepositories = async () => {
     setIsSyncingSpecific(true);
-    setLoading(true);
-    setError(null);
+    setSyncError(null);
     toast.info(`Syncing repositories for ${organizationName} from GitHub...`);
     try {
-      const response = await fetch(`/api/github/organizations/${organizationName}/sync`, {
+      const response = await fetch(`/api/github/organizations/${encodeURIComponent(organizationName)}/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -129,16 +75,13 @@ export function GitHubOrganizationRepositories({
         throw new Error(errorData.message || `Failed to sync ${organizationName}`);
       }
       toast.success(`Sync complete for ${organizationName}! Fetching updated data...`);
-      await fetchRepositoriesForOrganization(false);
-      // After syncing repos, refresh the accessibility data
-      await fetchAccessibleRepositories();
+      await Promise.all([mutate(), mutateAccessible()]);
     } catch (syncError) {
       const errorMessage = syncError instanceof Error ? syncError.message : `Failed to sync ${organizationName}`;
-      setError(errorMessage);
+      setSyncError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsSyncingSpecific(false);
-      setLoading(false);
     }
   };
 
@@ -159,25 +102,19 @@ export function GitHubOrganizationRepositories({
         const errorData = await response.json();
         throw new Error(errorData.error || `Failed to ${newState ? "enable" : "disable"} webhook`);
       }
-      setRepositories((prevRepos) =>
-        prevRepos.map((repo) =>
-            repo.id === repository.id ? { ...repo, is_tracked: newState } : repo
-        )
-      );
-      toast.success(`Webhook ${newState ? "enabled" : "disabled"} for ${repository.name}`);
+      const result: { success?: boolean; message?: string } = await response.json();
+      await mutate();
+      if (result.success === false) {
+        toast.warning(result.message || "Webhook updated, but synchronization did not complete. Retry synchronization.");
+      } else {
+        toast.success(result.message || `Webhook ${newState ? "enabled" : "disabled"} for ${repository.name}`);
+      }
     } catch (error) {
       toast.error(`Error: ${error instanceof Error ? error.message : "Failed to update webhook"}`);
     } finally {
       setProcessingRepoId(null);
     }
   };
-
-  useEffect(() => {
-    if (status === "authenticated" && organizationId && organizationName) {
-      fetchRepositoriesForOrganization(true);
-      fetchAccessibleRepositories();
-    }
-  }, [status, organizationId, organizationName, fetchRepositoriesForOrganization, fetchAccessibleRepositories]);
 
   if (status === "loading" || (loading && !isSyncingSpecific)) {
     return (
@@ -193,6 +130,10 @@ export function GitHubOrganizationRepositories({
     );
   }
 
+  if (status === "unauthenticated") {
+    return <p>Sign in to manage repository webhooks.</p>;
+  }
+
   if (error) {
     return (
       <Card>
@@ -204,7 +145,7 @@ export function GitHubOrganizationRepositories({
           <div className="text-destructive">{error}</div>
         </CardContent>
         <CardFooter>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => fetchRepositoriesForOrganization(false)}>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => { setSyncError(null); return mutate(); }}>
             Retry Fetch
             <IconRefresh className="ml-2 h-4 w-4" />
           </Button>
@@ -228,7 +169,11 @@ export function GitHubOrganizationRepositories({
         </div>
       </CardHeader>
       <CardContent>
-        {repositories.length > 0 && repositories.some(repo => !accessibleRepos.has(repo.full_name)) && (
+        {accessibilityError && <div role="alert" className="mb-4 space-y-2">
+          <p className="text-destructive">Could not check repository access: {accessibilityError.message}</p>
+          <Button variant="outline" size="sm" onClick={() => mutateAccessible()}>Retry Access Check</Button>
+        </div>}
+        {!loadingAccess && !accessibilityError && repositories.length > 0 && repositories.some(repo => !accessibleRepos.has(repo.full_name)) && (
           <div className="text-sm bg-amber-50 dark:bg-amber-950/30 p-3 rounded-md mb-4 border border-amber-200 dark:border-amber-800 text-foreground">
             <div className="flex items-center mb-1">
               <IconAlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mr-2" /> 

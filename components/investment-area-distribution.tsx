@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useTeamFilterParams, useTeamFilter } from "@/hooks/use-team-filter";
+import { useState } from "react";
+import { useTeamFilter } from "@/hooks/use-team-filter";
+import { useDashboardQuery } from "@/hooks/use-metrics";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import {
   Card,
@@ -11,13 +12,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { 
-  ChartConfig, 
-  ChartContainer, 
+import {
+  ChartConfig,
+  ChartContainer,
   ChartLegend,
   ChartLegendContent,
-  ChartTooltip, 
-  ChartTooltipContent 
+  ChartTooltip,
+  ChartTooltipContent
 } from "@/components/ui/chart";
 
 type TimeSeriesDataPoint = {
@@ -37,73 +38,22 @@ type TimeSeriesResponse = {
 };
 
 export function InvestmentAreaDistribution() {
-  const teamFilterParams = useTeamFilterParams();
   const { timeRange } = useTeamFilter();
-  const [data, setData] = useState<TimeSeriesDataPoint[]>([]);
-  const [categories, setCategories] = useState<CategoryInfo[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const teamFilterQuery = useMemo(() => new URLSearchParams(teamFilterParams).toString(), [teamFilterParams]);
-  const requestQuery = useMemo(() => {
-    const params = new URLSearchParams(teamFilterQuery);
-    params.set('timeRange', timeRange);
-    params.set('format', 'timeseries');
-    return params.toString();
-  }, [teamFilterQuery, timeRange]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetch(`/api/pull-requests/category-distribution?${requestQuery}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch category distribution: ${response.status} ${response.statusText}`);
-        }
-        
-        const timeSeriesData: TimeSeriesResponse = await response.json();
-        
-        setData(timeSeriesData.data);
-        setCategories(timeSeriesData.categories);
-        
-        // Auto-select all categories for bar chart (they work well together)
-        setSelectedCategories(timeSeriesData.categories.map(cat => cat.key));
-        
-      } catch (error) {
-        console.error("Failed to load category distribution:", error);
-        setError(error instanceof Error ? error.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [requestQuery]);
-
-  const filteredData = data.filter(item => {
-    const date = new Date(item.date);
-    const today = new Date();
-    let daysToSubtract = 30;
-    
-    if (timeRange === "7d") {
-      daysToSubtract = 7;
-    } else if (timeRange === "90d") {
-      daysToSubtract = 90;
-    }
-    
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - daysToSubtract);
-    
-    return date >= startDate;
-  });
+  const { data: response, isLoading: loading, error: requestError, refresh } = useDashboardQuery<TimeSeriesResponse>(
+    '/api/pull-requests/category-distribution', { format: 'timeseries' }
+  );
+  const error = requestError?.message;
+  const filteredData = response?.data || [];
+  const categories = response?.categories || [];
+  const [selection, setSelectedCategories] = useState<string[] | null>(null);
+  const availableSelection = selection?.filter(key => categories.some(category => category.key === key));
+  const selectedCategories = availableSelection?.length ? availableSelection : categories.map(category => category.key);
 
   const getStandardizedColor = (categoryKey: string, categoryLabel: string) => {
     // Standardize colors to match PR activity table
     const lowerKey = categoryKey.toLowerCase();
     const lowerLabel = categoryLabel.toLowerCase();
-    
+
     if (lowerKey.includes('bug') || lowerLabel.includes('bug') || lowerLabel.includes('fix')) {
       return '#ef4444'; // red-500
     }
@@ -119,7 +69,7 @@ export function InvestmentAreaDistribution() {
     if (lowerKey.includes('ui') || lowerLabel.includes('ux') || lowerLabel.includes('product')) {
       return '#8b5cf6'; // violet-500
     }
-    
+
     // Default fallback color
     return '#6b7280'; // gray-500
   };
@@ -147,6 +97,7 @@ export function InvestmentAreaDistribution() {
   const getTimeRangeLabel = () => {
     switch (timeRange) {
       case '7d': return 'Last 7 days';
+      case '14d': return 'Last 14 days';
       case '30d': return 'Last 30 days';
       case '90d': return 'Last 90 days';
       default: return 'Last 30 days';
@@ -176,8 +127,8 @@ export function InvestmentAreaDistribution() {
         </CardHeader>
         <CardContent>
           <p className="text-red-500">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => void refresh()}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Retry
@@ -187,7 +138,7 @@ export function InvestmentAreaDistribution() {
     );
   }
 
-  if (data.length === 0 || categories.length === 0) {
+  if (filteredData.length === 0 || categories.length === 0) {
     return (
       <Card className="@container/card">
         <CardHeader>
@@ -214,17 +165,17 @@ export function InvestmentAreaDistribution() {
           </span>
         </CardDescription>
       </CardHeader>
-      
+
       {/* Filters Row */}
       <div className="flex items-center justify-between gap-4 px-6 pb-4">
         <div className="hidden lg:flex gap-2">
           {categories.map((category) => (
-            <button 
+            <button
               key={category.key}
               onClick={() => handleCategoryToggle(category.key)}
               className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                selectedCategories.includes(category.key) 
-                ? 'bg-primary/10 text-primary' 
+                selectedCategories.includes(category.key)
+                ? 'bg-primary/10 text-primary'
                 : 'bg-transparent text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -234,7 +185,7 @@ export function InvestmentAreaDistribution() {
         </div>
 
       </div>
-      
+
       <CardContent>
         <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
           <BarChart accessibilityLayer data={filteredData}>
@@ -250,15 +201,15 @@ export function InvestmentAreaDistribution() {
               }}
             />
             <ChartTooltip content={<ChartTooltipContent variant="labelless" />} />
-            <ChartLegend content={<ChartLegendContent />} />
-            
+            <ChartLegend content={<ChartLegendContent className="flex-wrap gap-x-3 gap-y-2" />} />
+
             {selectedCategories.map((categoryKey, index) => {
               const category = categories.find(c => c.key === categoryKey);
               if (!category) return null;
-              
+
               const isFirst = index === 0;
               const isLast = index === selectedCategories.length - 1;
-              
+
               return (
                 <Bar
                   key={categoryKey}
@@ -266,12 +217,12 @@ export function InvestmentAreaDistribution() {
                   stackId="a"
                   fill={`var(--color-${categoryKey})`}
                   radius={
-                    selectedCategories.length === 1 
+                    selectedCategories.length === 1
                       ? [4, 4, 4, 4] // Single bar gets rounded on all corners
-                      : isLast 
+                      : isLast
                         ? [4, 4, 0, 0] // Top bar gets rounded top corners
-                        : isFirst 
-                          ? [0, 0, 4, 4] // Bottom bar gets rounded bottom corners  
+                        : isFirst
+                          ? [0, 0, 4, 4] // Bottom bar gets rounded bottom corners
                           : [0, 0, 0, 0] // Middle bars have no radius
                   }
                 />
@@ -282,4 +233,4 @@ export function InvestmentAreaDistribution() {
       </CardContent>
     </Card>
   );
-} 
+}

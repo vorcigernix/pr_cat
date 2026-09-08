@@ -23,8 +23,6 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Find the organization by name and ensure user has access (e.g., via user_organizations or GitHub App installation check)
-    // This might involve checking if the user has an installation for this org.
     const organization = await findOrganizationByNameAndUser(orgName, user.id);
     if (!organization) {
       return NextResponse.json({ error: `Organization '${orgName}' not found or not accessible by user.` }, { status: 404 });
@@ -35,27 +33,20 @@ export async function POST(
         return NextResponse.json({ error: `GitHub App not installed or installation ID missing for ${orgName}`}, { status: 403 });
     }
 
-    // Sync repositories for this specific organization
-    // This function will need to use the installation_id to create an authenticated GitHub client
     const syncResult = await syncSingleOrganizationRepositories(organization.installation_id, organization.name, organization.id);
 
     return NextResponse.json({ 
-      message: `Successfully initiated sync for ${orgName}.`,
-      syncedRepositories: syncResult.syncedCount, // Example response
+      message: syncResult.errors.length > 0 ? `Sync incomplete for ${orgName}.` : `Synchronized repositories for ${orgName}.`,
+      errors: syncResult.errors,
+      syncedRepositories: syncResult.syncedCount,
       newRepositories: syncResult.newCount,
       updatedRepositories: syncResult.updatedCount,
-    });
+    }, { status: syncResult.errors.length > 0 ? 502 : 200 });
 
   } catch (error) {
     console.error(`Error syncing repositories for organization ${orgName}:`, error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error during organization sync";
     
-    if (errorMessage.includes('syncSingleOrganizationRepositories is not a function') || errorMessage.includes('findOrganizationByNameAndUser is not a function')) {
-        return NextResponse.json(
-            { error: `API endpoint for syncing ${orgName} is under development. Missing service functions.` }, 
-            { status: 501 } // Not Implemented
-        );
-    }
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 } 

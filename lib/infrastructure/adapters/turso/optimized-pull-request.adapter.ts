@@ -26,7 +26,8 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
     organizationId: string, 
     pagination?: Pagination,
     teamId?: number,
-    timeRange?: string
+    timeRange?: string,
+    repositoryId?: string
   ): Promise<PaginatedResult<PullRequestSummary>> {
     const pageObj = pagination || Pagination.create(1, 10);
     const offset = typeof pageObj.offset === 'number' ? pageObj.offset : 0;
@@ -45,12 +46,17 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
     let whereClause = 'WHERE r.organization_id = ?'
     const params: InValue[] = [parseInt(organizationId)]
 
+    if (repositoryId) {
+      whereClause += ' AND pr.repository_id = ?'
+      params.push((Number(repositoryId) || -1))
+    }
+
     if (teamId) {
       joinClause = `
         INNER JOIN team_members tm ON pr.author_id = tm.user_id
         INNER JOIN teams t ON tm.team_id = t.id
       `
-      whereClause += ' AND t.id = ?'
+      whereClause += ' AND t.id = ? AND t.organization_id = r.organization_id'
       params.push(teamId)
     }
 
@@ -78,32 +84,13 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
       LIMIT ? OFFSET ?
     `, [...params, limit, offset])
 
-    // Get total count for pagination (with same filters)
-    const countParams: InValue[] = [parseInt(organizationId)]
-    let countWhereClause = 'WHERE r.organization_id = ?'
-    let countJoinClause = ''
-
-    if (teamId) {
-      countJoinClause = `
-        INNER JOIN team_members tm ON pr.author_id = tm.user_id
-        INNER JOIN teams t ON tm.team_id = t.id
-      `
-      countWhereClause += ' AND t.id = ?'
-      countParams.push(teamId)
-    }
-
-    if (cutoffDate) {
-      countWhereClause += ' AND pr.created_at >= ?'
-      countParams.push(cutoffDate.toISOString())
-    }
-
     const countResult = await query<{ total: number }>(`
       SELECT COUNT(pr.id) as total
       FROM pull_requests pr
       LEFT JOIN repositories r ON pr.repository_id = r.id
-      ${countJoinClause}
-      ${countWhereClause}
-    `, countParams)
+      ${joinClause}
+      ${whereClause}
+    `, params)
 
     const total = countResult[0]?.total || 0
     const data = prs.map(mapPullRequestWithDetailsToSummary)
@@ -182,10 +169,26 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
   async getCategoryDistribution(
     organizationId: string,
     timeRange?: TimeRange,
-    _teamId?: number
+    teamId?: number,
+    repositoryId?: string
   ): Promise<CategoryDistribution[]> {
     let whereClause = 'WHERE r.organization_id = ?'
     const params: InValue[] = [parseInt(organizationId)]
+
+    if (repositoryId) {
+      whereClause += ' AND pr.repository_id = ?'
+      params.push((Number(repositoryId) || -1))
+    }
+
+    if (teamId !== undefined) {
+      whereClause += ` AND EXISTS (
+        SELECT 1 FROM team_members tm
+        INNER JOIN teams t ON tm.team_id = t.id
+        WHERE tm.user_id = pr.author_id AND t.id = ?
+          AND t.organization_id = r.organization_id
+      )`
+      params.push(teamId)
+    }
 
     if (timeRange) {
       whereClause += ' AND pr.created_at >= ? AND pr.created_at <= ?'
@@ -224,7 +227,8 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
   async getCategoryTimeSeries(
     organizationId: string,
     days: number,
-    teamId?: number
+    teamId?: number,
+    repositoryId?: string
   ): Promise<CategoryTimeSeriesData> {
     const endDate = new Date()
     const startDate = new Date(endDate)
@@ -243,12 +247,17 @@ export class OptimizedTursoPullRequestRepository implements IPullRequestReposito
     let whereClause = 'WHERE r.organization_id = ? AND DATE(pr.created_at) >= DATE(?) AND DATE(pr.created_at) <= DATE(?)'
     const params: InValue[] = [parseInt(organizationId), startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
 
+    if (repositoryId) {
+      whereClause += ' AND pr.repository_id = ?'
+      params.push((Number(repositoryId) || -1))
+    }
+
     if (teamId) {
       joinClause = `
         INNER JOIN team_members tm ON pr.author_id = tm.user_id
         INNER JOIN teams t ON tm.team_id = t.id
       `
-      whereClause += ' AND t.id = ?'
+      whereClause += ' AND t.id = ? AND t.organization_id = r.organization_id'
       params.push(teamId)
     }
 

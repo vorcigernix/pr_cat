@@ -103,6 +103,12 @@ TURSO_TOKEN=                # From Turso dashboard
 TURSO_POOL_SIZE=5          # Database connection pool size (default: 5)
 ```
 
+### AI Categorization (Optional)
+
+Configure AI separately for each organization in the dashboard's **Settings → AI** tab. Select a provider and model, enter that provider's API key, and save. Choose **None** to disable automatic categorization for that organization. The optional AI environment variables in `environment.example` do not populate these organization settings.
+
+For new Google configurations, use the recommended `gemini-3.8-flash`, a stable model listed in [Google's model documentation](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash). Existing `gemini-3.5-flash` selections are preserved. Saved `gemini-2.5-pro-preview-05-06` selections resolve to stable `gemini-2.5-pro` when settings are read; no manual database migration is required.
+
 ## Local Development Setup
 
 ### 1. Create `.env.local` file
@@ -144,13 +150,16 @@ TURSO_TOKEN=your-turso-token
 
 ```bash
 # Install dependencies
-pnpm install
-
-# Run database migrations
-curl -X POST http://localhost:3000/api/migrate
+bun install
 
 # Start development server
-pnpm dev
+bun run dev
+```
+
+With the server running, initialize the local database in another terminal:
+
+```bash
+curl -X POST http://localhost:3000/api/migrate
 ```
 
 ### 4. Testing Webhooks Locally

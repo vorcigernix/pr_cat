@@ -1,69 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaEngineering } from "@/components/chart-area-engineering"
-import { SimpleTimeRangePicker, type TimeRangeValue } from "@/components/simple-time-range-picker"
 import { PRQualityDetails } from "@/components/pr-quality-details"
-import { RepositoryFilter } from "@/components/repository-filter"
-import { SiteHeader } from "@/components/site-header"
+import { DashboardHeader } from "@/components/dashboard-header"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { TimeSeriesDataPoint } from "@/app/api/services/metrics-data"
+import { useDashboardQuery } from "@/hooks/use-metrics"
+import { TimeSeriesDataPoint } from "@/lib/core"
 
 export default function LifecyclePage() {
-  const [selectedRepository, setSelectedRepository] = useState<string>("all");
-  const [timeRange, setTimeRange] = useState<TimeRangeValue>("30d");
-  const [chartData, setChartData] = useState<TimeSeriesDataPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch chart data based on filters
-  useEffect(() => {
-    const fetchChartData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Build query parameters
-        const params = new URLSearchParams();
-        
-        if (selectedRepository && selectedRepository !== "all") {
-          params.append("repositoryId", selectedRepository);
-        }
-        
-        // Use timeRange instead of specific dates
-        params.append("timeRange", timeRange);
-        
-        const url = `/api/metrics/time-series${params.toString() ? `?${params.toString()}` : ''}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch time series data: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setChartData(data);
-      } catch (error) {
-        console.error("Failed to load chart data:", error);
-        setError(error instanceof Error ? error.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChartData();
-  }, [selectedRepository, timeRange]);
-
-  const handleRepositoryChange = (repositoryId: string) => {
-    setSelectedRepository(repositoryId);
-  };
-
-  const handleTimeRangeChange = (range: TimeRangeValue) => {
-    setTimeRange(range);
-  };
+  const { data: chartData = [], isLoading: loading, error: requestError } = useDashboardQuery<TimeSeriesDataPoint[]>('/api/metrics/time-series');
+  const error = requestError?.message;
 
   return (
     <SidebarProvider
@@ -76,22 +26,10 @@ export default function LifecyclePage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader pageTitle="PR Lifecycle" />
+        <DashboardHeader pageTitle="PR Lifecycle" />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="flex justify-between items-center px-4 lg:px-6">
-                <div className="flex gap-3">
-                  <RepositoryFilter 
-                    onRepositoryChange={handleRepositoryChange}
-                    selectedRepository={selectedRepository}
-                  />
-                  <SimpleTimeRangePicker 
-                    value={timeRange}
-                    onValueChange={handleTimeRangeChange}
-                  />
-                </div>
-              </div>
               <div className="px-4 lg:px-6">
                 {loading ? (
                   <div className="h-[400px] w-full animate-pulse bg-muted rounded-lg flex items-center justify-center">
@@ -102,7 +40,7 @@ export default function LifecyclePage() {
                     <p className="text-destructive">Error loading chart: {error}</p>
                   </div>
                 ) : (
-                  <ChartAreaEngineering initialChartData={chartData} />
+                  <ChartAreaEngineering chartData={chartData} />
                 )}
               </div>
               <PRQualityDetails />
@@ -112,4 +50,4 @@ export default function LifecyclePage() {
       </SidebarInset>
     </SidebarProvider>
   )
-} 
+}

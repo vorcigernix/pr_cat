@@ -1,5 +1,5 @@
 import { createClient } from '@libsql/client';
-import type { Client, InValue } from '@libsql/client';
+import type { Client, InValue, InStatement, ResultSet } from '@libsql/client';
 
 // Lightweight connection pool for libsql client
 // Note: libsql is HTTP-based; pooling primarily helps with parallelism and keep-alive reuse
@@ -72,7 +72,7 @@ export async function query<T = unknown>(
     
     return result.rows as T[];
   } catch (error) {
-    console.error('Database query error:', { sql, params, error });
+    console.error('Database query error:', { sql, parameterCount: params.length });
     throw new Error(`Query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -94,20 +94,21 @@ export async function execute(
       rowsAffected: result.rowsAffected,
     };
   } catch (error) {
-    console.error('Database execute error:', { sql, params, error });
+    console.error('Database execute error:', { sql, parameterCount: params.length });
     throw new Error(`Execute failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+export function batch(statements: InStatement[]): Promise<ResultSet[]> {
+  return getDbClient().batch(statements, 'write');
 }
 
 export async function transaction<T>(
   callback: (tx: { query: typeof query; execute: typeof execute }) => Promise<T>
 ): Promise<T> {
-  // Ensure a single client is used for the entire transaction
-  const db = getDbClient();
+  const db = await getDbClient().transaction('write');
   
   try {
-    await db.execute({ sql: 'BEGIN TRANSACTION' });
-    
     const txClient = {
       query: async <U = unknown>(sql: string, params: QueryParams = []): Promise<U[]> => {
         const result = await db.execute({ sql, args: params });
@@ -124,16 +125,17 @@ export async function transaction<T>(
     
     const result = await callback(txClient);
     
-    await db.execute({ sql: 'COMMIT' });
+    await db.commit();
     return result;
   } catch (error) {
     try {
-      await db.execute({ sql: 'ROLLBACK' });
-    } catch (rollbackError) {
-      console.error('Failed to rollback transaction:', rollbackError);
+      await db.rollback();
+    } catch {
+      console.error('Failed to rollback transaction');
     }
-    console.error('Transaction error:', error);
     throw error;
+  } finally {
+    db.close();
   }
 }
 
@@ -143,4 +145,4 @@ export function getConnectionStatus() {
     isConnected,
     hasClient: poolInitialized && pool.length > 0
   };
-} 
+}

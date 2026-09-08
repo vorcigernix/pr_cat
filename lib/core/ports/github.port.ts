@@ -8,6 +8,23 @@ import { Repository } from '../domain/entities/repository'
 import { PullRequest } from '../domain/entities/pull-request'
 import { User } from '../domain/entities/user'
 
+export interface PullRequestSyncResult {
+  processed: number
+  created: number
+  updated: number
+  unchanged: number
+  errors: Array<{ pr: number; error: string }>
+  lastSyncedAt?: string
+}
+
+export interface RepositorySyncResult {
+  processed: number
+  created: number
+  updated: number
+  unchanged: number
+  errors: Array<{ repo: string; error: string }>
+}
+
 export interface IGitHubService {
   /**
    * Get user information from GitHub
@@ -89,10 +106,7 @@ export interface IGitHubService {
   /**
    * Sync organization repositories from GitHub
    */
-  syncOrganizationRepositories(orgLogin: string): Promise<{
-    synced: Repository[]
-    errors: Array<{ repo: string; error: string }>
-  }>
+  syncOrganizationRepositories(orgLogin: string): Promise<RepositorySyncResult>
 
   /**
    * Sync repository pull requests from GitHub
@@ -100,10 +114,7 @@ export interface IGitHubService {
   syncRepositoryPullRequests(
     repositoryId: string,
     since?: Date
-  ): Promise<{
-    synced: PullRequest[]
-    errors: Array<{ pr: number; error: string }>
-  }>
+  ): Promise<PullRequestSyncResult>
 
   /**
    * Check GitHub App installation status

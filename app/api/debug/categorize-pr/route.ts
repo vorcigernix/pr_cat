@@ -9,7 +9,7 @@ import {
 import { getOrganizationAiSettings, getOrganizationApiKey } from '@/lib/repositories/settings-repository';
 import { getOrganizationCategories, findCategoryByNameAndOrg } from '@/lib/repositories/category-repository';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createGoogle } from '@ai-sdk/google';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { generateText } from 'ai';
 import { createInstallationClient } from '@/lib/github-app';
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
           aiClientProvider = createOpenAI({ apiKey });
           break;
         case 'google':
-          aiClientProvider = createGoogleGenerativeAI({ apiKey });
+          aiClientProvider = createGoogle({ apiKey });
           break;
         case 'anthropic':
           aiClientProvider = createAnthropic({ apiKey });
@@ -233,7 +233,7 @@ IMPORTANT: The category name must match EXACTLY one of the categories listed abo
       // Call AI model
       const { text } = await generateText({
         model: modelInstance,
-        system: systemPrompt,
+        instructions: systemPrompt,
         prompt: userPrompt,
       });
       

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServiceLocator, withAuth, ApplicationContext, TimeRange } from '@/lib/core';
+import { z } from 'zod';
+import { dashboardFiltersSchema } from '@/lib/core/domain/value-objects/dashboard-filters';
 
 export const runtime = 'nodejs';
+
+const categoryFiltersSchema = dashboardFiltersSchema.extend({
+  format: z.enum(['total', 'timeseries']).default('total'),
+});
 
 // Pure business logic handler
 const categoryDistributionHandler = async (
@@ -10,10 +16,11 @@ const categoryDistributionHandler = async (
 ): Promise<NextResponse> => {
   try {
     // Parse query parameters
-    const searchParams = request.nextUrl.searchParams;
-    const timeRange = searchParams.get('timeRange') || '30d';
-    const format = searchParams.get('format') || 'total';
-    const teamId = searchParams.get('teamId');
+    const filters = categoryFiltersSchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
+    if (!filters.success) {
+      return NextResponse.json({ error: 'Invalid category filters' }, { status: 400 });
+    }
+    const { timeRange, format, teamId, repositoryId } = filters.data;
 
     // Get pull request repository via dependency injection
     const prRepository = await ServiceLocator.getPullRequestRepository();
@@ -23,24 +30,25 @@ const categoryDistributionHandler = async (
     
     if (format === 'timeseries') {
       // Get time series data for category distribution
-      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 };
-      const days = daysMap[timeRange] || 30;
+      const days = Number.parseInt(timeRange, 10);
       
       const data = await prRepository.getCategoryTimeSeries(
         organizationId, 
         days, 
-        teamId ? parseInt(teamId) : undefined
+        teamId,
+        repositoryId
       );
-      return NextResponse.json(data);
+      return NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } });
     } else {
       // Get total category distribution
-      const timeRangeObj = TimeRange.fromPreset(timeRange as '7d' | '30d' | '90d');
+      const timeRangeObj = TimeRange.fromPreset(timeRange);
       const data = await prRepository.getCategoryDistribution(
         organizationId, 
         timeRangeObj, 
-        teamId ? parseInt(teamId) : undefined
+        teamId,
+        repositoryId
       );
-      return NextResponse.json(data);
+      return NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } });
     }
   } catch (error) {
     console.error('Error getting category distribution:', error);

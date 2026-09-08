@@ -72,7 +72,7 @@ export async function updateUser(id: string, data: Partial<Omit<User, 'id' | 'cr
     return findUserById(id);
   }
   
-  updates.push('updated_at = datetime("now")');
+  updates.push("updated_at = datetime('now')");
   
   await execute(
     `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
@@ -90,17 +90,6 @@ export async function getUserOrganizations(userId: string): Promise<Organization
     WHERE uo.user_id = ?
     ORDER BY o.name
   `, [userId]);
-}
-
-export async function addUserToOrganization(
-  userId: string, 
-  organizationId: number, 
-  role: UserOrganization['role'] = 'member'
-): Promise<void> {
-  await execute(
-    'INSERT OR IGNORE INTO user_organizations (user_id, organization_id, role) VALUES (?, ?, ?)',
-    [userId, organizationId, role]
-  );
 }
 
 export async function removeUserFromOrganization(userId: string, organizationId: number): Promise<void> {

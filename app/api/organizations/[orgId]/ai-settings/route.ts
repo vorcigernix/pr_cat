@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { AiSettingsService } from '@/lib/services/ai-settings-service';
 import { z } from 'zod';
-import { unauthorized, badRequest, errorResponse } from '@/lib/api-errors';
+import { ApiError, unauthorized, badRequest, errorResponse } from '@/lib/api-errors';
 
 
 const updateAiSettingsSchema = z.object({
@@ -24,14 +24,15 @@ export async function GET(
     const { orgId } = await params;
     const session = await auth();
     if (!session?.user?.id) throw unauthorized();
-    const numericOrgId = parseInt(orgId);
-    if (isNaN(numericOrgId)) throw badRequest('Invalid organization ID');
+    const numericOrgId = Number(orgId);
+    if (!/^\d+$/.test(orgId) || !Number.isSafeInteger(numericOrgId)) throw badRequest('Invalid organization ID');
 
     const aiSettings = await AiSettingsService.get(session.user.id, numericOrgId);
     return NextResponse.json(aiSettings);
   } catch (error) {
-    console.error(`Error fetching AI settings:`, error);
-    return errorResponse(error, 'Failed to fetch AI settings');
+    if (error instanceof ApiError) return errorResponse(error);
+    console.error('Error fetching AI settings');
+    return errorResponse(undefined, 'Failed to fetch AI settings');
   }
 }
 
@@ -46,17 +47,18 @@ export async function PUT(
     const session = await auth();
     if (!session?.user?.id) throw unauthorized();
 
-    const numericOrgId = parseInt(orgId);
-    if (isNaN(numericOrgId)) throw badRequest('Invalid organization ID');
+    const numericOrgId = Number(orgId);
+    if (!/^\d+$/.test(orgId) || !Number.isSafeInteger(numericOrgId)) throw badRequest('Invalid organization ID');
 
-    const body = await request.json();
+    const body = await request.json().catch(() => { throw badRequest('Invalid JSON body'); });
     const validationResult = updateAiSettingsSchema.safeParse(body);
     if (!validationResult.success) throw badRequest('Validation failed', z.treeifyError(validationResult.error));
 
     await AiSettingsService.update(session.user.id, numericOrgId, validationResult.data);
     return NextResponse.json({ message: 'AI settings updated successfully' });
   } catch (error) {
-    console.error(`Error updating AI settings:`, error);
-    return errorResponse(error, 'Failed to update AI settings');
+    if (error instanceof ApiError) return errorResponse(error);
+    console.error('Error updating AI settings');
+    return errorResponse(undefined, 'Failed to update AI settings');
   }
-} 
+}

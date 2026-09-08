@@ -14,8 +14,8 @@ export async function findOrganizationByGitHubId(githubId: number): Promise<Orga
 
 export async function createOrganization(organization: Omit<Organization, 'id' | 'created_at' | 'updated_at'>): Promise<Organization> {
   const result = await execute(
-    'INSERT INTO organizations (github_id, name, avatar_url) VALUES (?, ?, ?)',
-    [organization.github_id, organization.name, organization.avatar_url]
+    'INSERT INTO organizations (github_id, name, avatar_url, installation_id) VALUES (?, ?, ?, ?)',
+    [organization.github_id, organization.name, organization.avatar_url, organization.installation_id ?? null]
   );
   
   const id = result.lastInsertId;
@@ -49,7 +49,7 @@ export async function updateOrganization(
     return findOrganizationById(id);
   }
   
-  updates.push('updated_at = datetime("now")');
+  updates.push("updated_at = datetime('now')");
   
   await execute(
     `UPDATE organizations SET ${updates.join(', ')} WHERE id = ?`,

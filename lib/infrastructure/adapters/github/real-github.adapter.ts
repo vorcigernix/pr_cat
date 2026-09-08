@@ -3,6 +3,11 @@
  * Implements IGitHubService using actual GitHub API calls via Octokit
  */
 
+import { syncRepositoryPullRequests, savePullRequestReviews } from './pull-request-sync'
+import { syncOrganizationRepositories } from './organization-sync'
+import { query } from '@/lib/db'
+import type { Organization as StoredOrganization } from '@/lib/types'
+import type { PullRequestSyncResult, RepositorySyncResult } from '../../../core/ports/github.port'
 import { IGitHubService } from '../../../core/ports'
 import { Organization, Repository, PullRequest, User } from '../../../core/domain/entities'
 import { GitHubClient, createGitHubClient } from '../../../github'
@@ -15,8 +20,6 @@ import {
   createPullRequest,
   findPullRequestByNumber,
   updatePullRequest,
-  findReviewByGitHubId,
-  createPullRequestReview,
   findRepositoryById,
   findOrCreateUserByGitHubId,
   findOrganizationById,
@@ -31,7 +34,7 @@ import * as OrganizationRepository from '../../../repositories/organization-repo
 import * as PullRequestRepository from '../../../repositories/pr-repository'
 import { generateText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createGoogle } from '@ai-sdk/google'
 import { createAnthropic } from '@ai-sdk/anthropic'
 
 type GitHubRepositoryOwnerWithAvatar = GitHubRepository['owner'] & {
@@ -95,14 +98,7 @@ interface PullRequestWebhookPayload {
 }
 
 interface PullRequestReviewWebhookPayload extends PullRequestWebhookPayload {
-  review: {
-    id: number
-    state: string
-    submitted_at: string
-    user: {
-      id: number
-    }
-  }
+  review: GitHubPullRequestReviewPayload
 }
 
 interface InstallationWebhookPayload {
@@ -214,7 +210,7 @@ export class RealGitHubAPIService implements IGitHubService {
    */
   async getOrganizationRepositories(
     orgLogin: string,
-    _options?: {
+    options?: {
       type?: 'all' | 'public' | 'private'
       sort?: 'created' | 'updated' | 'pushed' | 'full_name'
       per_page?: number
@@ -225,7 +221,7 @@ export class RealGitHubAPIService implements IGitHubService {
       throw new Error('GitHub client not initialized. Access token required.')
     }
 
-    const githubRepos = await this.client.getOrganizationRepositories(orgLogin)
+    const githubRepos = await this.client.getOrganizationRepositories(orgLogin, options?.page ?? 1)
     
     return githubRepos.map(repo => {
       const repository = repo as GitHubRepositoryDetails
@@ -379,147 +375,37 @@ export class RealGitHubAPIService implements IGitHubService {
   /**
    * Sync organization repositories from GitHub
    */
-  async syncOrganizationRepositories(orgLogin: string): Promise<{
-    synced: Repository[]
-    errors: Array<{ repo: string; error: string }>
-  }> {
+  async syncOrganizationRepositories(orgLogin: string): Promise<RepositorySyncResult> {
     try {
-      const repositories = await this.getOrganizationRepositories(orgLogin)
-      
-      // Store repositories in database
-      const org = await findOrCreateOrganization({
-        github_id: repositories[0] ? parseInt(repositories[0].id) : 0,
-        name: orgLogin,
-        avatar_url: '',
-      })
-
-      const synced: Repository[] = []
-      const errors: Array<{ repo: string; error: string }> = []
-
-      for (const repo of repositories) {
-        try {
-          await findOrCreateRepository({
-            github_id: parseInt(repo.id),
-            organization_id: org.id,
-            name: repo.name,
-            full_name: repo.fullName,
-            description: repo.description,
-            private: repo.isPrivate,
-            is_tracked: false
-          })
-          synced.push(repo)
-        } catch (error) {
-          errors.push({
-            repo: repo.fullName,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          })
-        }
-      }
-
-      return { synced, errors }
+      const organizations = await query<StoredOrganization>('SELECT * FROM organizations WHERE name = ? COLLATE NOCASE', [orgLogin]);
+      const organization = organizations[0];
+      if (!organization) throw new Error('Organization not found; synchronize membership first');
+      const client = this.client ?? (organization.installation_id ? await createInstallationClient(organization.installation_id) : undefined);
+      if (!client) throw new Error('No GitHub client available; install the GitHub App or sign in again');
+      return syncOrganizationRepositories(client, orgLogin, organization.id);
     } catch (error) {
-      return {
-        synced: [],
-        errors: [{ repo: orgLogin, error: error instanceof Error ? error.message : 'Unknown error' }]
-      }
+      return { processed: 0, created: 0, updated: 0, unchanged: 0,
+        errors: [{ repo: orgLogin, error: error instanceof Error ? error.message : String(error) }] };
     }
   }
 
   /**
    * Sync repository pull requests from GitHub
    */
-  async syncRepositoryPullRequests(
-    repositoryId: string,
-    since?: Date
-  ): Promise<{
-    synced: PullRequest[]
-    errors: Array<{ pr: number; error: string }>
-  }> {
+  async syncRepositoryPullRequests(repositoryId: string, since?: Date): Promise<PullRequestSyncResult> {
+    const empty: PullRequestSyncResult = { processed: 0, created: 0, updated: 0, unchanged: 0, errors: [] };
     try {
-      // Find repository in database
-      const dbRepo = await findRepositoryById(parseInt(repositoryId))
-      if (!dbRepo) {
-        return {
-          synced: [],
-          errors: [{ pr: 0, error: `Repository ${repositoryId} not found` }]
-        }
-      }
-
-      const [owner, repo] = dbRepo.full_name.split('/')
-      if (!owner || !repo) {
-        return {
-          synced: [],
-          errors: [{ pr: 0, error: 'Invalid repository full name format' }]
-        }
-      }
-
-      let pullRequests = await this.getRepositoryPullRequests(owner, repo)
-      
-      // Filter by 'since' date if provided
-      if (since) {
-        pullRequests = pullRequests.filter(pr => new Date(pr.createdAt) >= since)
-      }
-
-      const synced: PullRequest[] = []
-      const errors: Array<{ pr: number; error: string }> = []
-
-      for (const pr of pullRequests) {
-        try {
-          const existingPR = await findPullRequestByNumber(parseInt(repositoryId), pr.number)
-          
-          if (existingPR) {
-            // Update existing PR
-            await updatePullRequest(existingPR.id, {
-              title: pr.title,
-              state: pr.status as 'open' | 'closed' | 'merged'
-            })
-          } else {
-            // Create new PR
-            const author = await findOrCreateUserByGitHubId({
-              id: pr.developer.id.toString(),
-              login: pr.developer.name, // Use name as login since domain only has name
-              avatar_url: '',
-              name: pr.developer.name
-            })
-
-            if (author) {
-              await createPullRequest({
-                github_id: parseInt(pr.id.toString()),
-                repository_id: parseInt(repositoryId),
-                number: pr.number,
-                title: pr.title,
-                description: null, // Domain entity doesn't have description
-                author_id: author.id,
-                state: pr.status as 'open' | 'closed' | 'merged',
-                created_at: pr.createdAt,
-                updated_at: pr.createdAt, // Use createdAt since domain has both as strings
-                closed_at: null,
-                merged_at: pr.status === 'merged' ? pr.mergedAt : null,
-                draft: false,
-                additions: pr.linesAdded || 0,
-                deletions: 0,
-                changed_files: pr.files || 0,
-                category_id: null,
-                category_confidence: null
-              })
-            }
-          }
-          
-          synced.push(pr)
-        } catch (error) {
-          errors.push({
-            pr: pr.number,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          })
-        }
-      }
-
-      return { synced, errors }
+      const repository = await findRepositoryById(Number(repositoryId));
+      if (!repository) throw new Error('Repository not found');
+      const [owner, repo] = repository.full_name.split('/');
+      if (!owner || !repo) throw new Error('Invalid repository full name');
+      const organization = repository.organization_id === null ? null : await findOrganizationById(repository.organization_id);
+      const client = this.client ?? (organization?.installation_id
+        ? await createInstallationClient(organization.installation_id) : undefined);
+      if (!client) throw new Error('GitHub access token or installation required');
+      return syncRepositoryPullRequests(client, repository.id, owner, repo, since);
     } catch (error) {
-      return {
-        synced: [],
-        errors: [{ pr: 0, error: error instanceof Error ? error.message : 'Unknown error' }]
-      }
+      return { ...empty, errors: [{ pr: 0, error: error instanceof Error ? error.message : String(error) }] };
     }
   }
 
@@ -728,9 +614,9 @@ export class RealGitHubAPIService implements IGitHubService {
         closed_at: pr.closed_at,
         merged_at: pr.merged_at,
         draft: pr.draft,
-        additions: pr.additions || null,
-        deletions: pr.deletions || null,
-        changed_files: pr.changed_files || null,
+        additions: pr.additions ?? null,
+        deletions: pr.deletions ?? null,
+        changed_files: pr.changed_files ?? null,
         category_id: null,
         category_confidence: null
       })
@@ -761,23 +647,7 @@ export class RealGitHubAPIService implements IGitHubService {
     const existingPR = await findPullRequestByNumber(repoInDb.id, pull_request.number)
     if (!existingPR) return
 
-    // Check if review exists
-    const existingReview = await findReviewByGitHubId(review.id)
-    const reviewState = this.mapReviewState(review.state) as 'approved' | 'changes_requested' | 'commented' | 'dismissed'
-
-    if (existingReview) {
-      // Update review (implementation depends on your updatePullRequestReview function)
-      // await updatePullRequestReview(existingReview.id, { state: reviewState })
-    } else {
-      // Create new review
-      await createPullRequestReview({
-        github_id: review.id,
-        pull_request_id: existingPR.id,
-        reviewer_id: review.user.id.toString(),
-        state: reviewState,
-        submitted_at: review.submitted_at
-      })
-    }
+    await savePullRequestReviews(existingPR.id, [review])
   }
 
   /**
@@ -799,81 +669,72 @@ export class RealGitHubAPIService implements IGitHubService {
 
     console.log(`[Webhook] Installation ${action} for org ${orgLogin} (${orgGitHubId}), installation ID: ${installationId}`)
 
-    try {
-      // Find or create organization
-      let org = await OrganizationRepository.findOrganizationByGitHubId(orgGitHubId)
+    // Find or create organization
+    let org = await OrganizationRepository.findOrganizationByGitHubId(orgGitHubId)
 
-      if (!org && action === 'created') {
-        console.log(`[Webhook] Creating organization ${orgLogin}`)
-        org = await OrganizationRepository.createOrganization({
-          github_id: orgGitHubId,
-          name: orgLogin,
-          avatar_url: orgAvatarUrl
-        })
-        console.log(`[Webhook] Created organization ${orgLogin} with DB ID ${org.id}`)
-      } else if (!org) {
-        console.log(`[Webhook] Organization ${orgLogin} not found for action ${action}`)
-        return
-      }
+    if (!org && action === 'created') {
+      console.log(`[Webhook] Creating organization ${orgLogin}`)
+      org = await OrganizationRepository.createOrganization({
+        github_id: orgGitHubId,
+        name: orgLogin,
+        avatar_url: orgAvatarUrl
+      })
+      console.log(`[Webhook] Created organization ${orgLogin} with DB ID ${org.id}`)
+    } else if (!org) {
+      console.log(`[Webhook] Organization ${orgLogin} not found for action ${action}`)
+      return
+    }
 
-      if (action === 'created') {
-        // Update with installation ID
-        const updatedOrg = await OrganizationRepository.updateOrganization(org.id, {
-          installation_id: installationId,
-          name: orgLogin,
-          avatar_url: orgAvatarUrl
-        })
-        
-        if (updatedOrg) {
-          console.log(`[Webhook] Stored installation ID ${installationId} for org ${orgLogin}`)
-        } else {
-          console.error(`[Webhook] Failed to update org ${orgLogin} with installation ID`)
-        }
+    if (action === 'created') {
+      // Update with installation ID
+      const updatedOrg = await OrganizationRepository.updateOrganization(org.id, {
+        installation_id: installationId,
+        name: orgLogin,
+        avatar_url: orgAvatarUrl
+      })
 
-        // Process repositories if provided in payload
-        if (repositories && repositories.length > 0) {
-          console.log(`[Webhook] Processing ${repositories.length} repositories for installation`)
-          
-          for (const repoData of repositories) {
-            try {
-              await findOrCreateRepository({
-                github_id: repoData.id,
-                name: repoData.name,
-                full_name: repoData.full_name,
-                private: repoData.private,
-                organization_id: org.id,
-                description: null,
-                is_tracked: true
-              })
-              console.log(`[Webhook] Added repository ${repoData.full_name} to org ${org.id}`)
-            } catch (repoError) {
-              console.error(`[Webhook] Error adding repository ${repoData.full_name}:`, repoError)
-            }
-          }
-        }
-      } else if (action === 'deleted') {
-        // Clear installation ID
-        const updatedOrg = await OrganizationRepository.updateOrganization(org.id, {
-          installation_id: null
-        })
-        
-        if (updatedOrg) {
-          console.log(`[Webhook] Cleared installation ID for org ${orgLogin}`)
-        } else {
-          console.error(`[Webhook] Failed to clear installation ID for org ${orgLogin}`)
-        }
-      } else if (action === 'suspend') {
-        console.log(`[Webhook] App suspended for org ${orgLogin}`)
-        await OrganizationRepository.updateOrganization(org.id, { installation_id: null })
-      } else if (action === 'unsuspend') {
-        console.log(`[Webhook] App unsuspended for org ${orgLogin}`)
-        await OrganizationRepository.updateOrganization(org.id, { installation_id: installationId })
+      if (updatedOrg) {
+        console.log(`[Webhook] Stored installation ID ${installationId} for org ${orgLogin}`)
       } else {
-        console.log(`[Webhook] Unhandled installation action: ${action}`)
+        console.error(`[Webhook] Failed to update org ${orgLogin} with installation ID`)
       }
-    } catch (error) {
-      console.error(`[Webhook] Error handling installation event:`, error)
-      throw error
+
+      // Process repositories if provided in payload
+      if (repositories && repositories.length > 0) {
+        console.log(`[Webhook] Processing ${repositories.length} repositories for installation`)
+
+        for (const repoData of repositories) {
+          await findOrCreateRepository({
+            github_id: repoData.id,
+            name: repoData.name,
+            full_name: repoData.full_name,
+            private: repoData.private,
+            organization_id: org.id,
+            description: null,
+            is_tracked: true
+          })
+          console.log(`[Webhook] Added repository ${repoData.full_name} to org ${org.id}`)
+        }
+      }
+    } else if (action === 'deleted') {
+      // Clear installation ID
+      const updatedOrg = await OrganizationRepository.updateOrganization(org.id, {
+        installation_id: null
+      })
+
+      if (updatedOrg) {
+        console.log(`[Webhook] Cleared installation ID for org ${orgLogin}`)
+      } else {
+        console.error(`[Webhook] Failed to clear installation ID for org ${orgLogin}`)
+      }
+    } else if (action === 'suspend') {
+      console.log(`[Webhook] App suspended for org ${orgLogin}`)
+      await OrganizationRepository.updateOrganization(org.id, { installation_id: null })
+    } else if (action === 'unsuspend') {
+      console.log(`[Webhook] App unsuspended for org ${orgLogin}`)
+      await OrganizationRepository.updateOrganization(org.id, { installation_id: installationId })
+    } else {
+      console.log(`[Webhook] Unhandled installation action: ${action}`)
     }
   }
 
@@ -957,7 +818,7 @@ export class RealGitHubAPIService implements IGitHubService {
           aiClientProvider = createOpenAI({ apiKey })
           break
         case 'google':
-          aiClientProvider = createGoogleGenerativeAI({ apiKey })
+          aiClientProvider = createGoogle({ apiKey })
           break
         case 'anthropic':
           aiClientProvider = createAnthropic({ apiKey })
@@ -1066,7 +927,7 @@ ${diff}`
       try {
         const { text } = await generateText({
           model: modelInstance,
-          system: systemPrompt,
+          instructions: systemPrompt,
           prompt: userPrompt,
         })
 

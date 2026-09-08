@@ -56,7 +56,10 @@ TURSO_POOL_SIZE=5
 # ===========================================
 # AI PROVIDERS (Optional)
 # ===========================================
-# Choose one provider or set AI_PROVIDER=none to disable AI features
+# Configure provider, model, and API key per organization in Settings > AI.
+# Recommended model for new Google configurations: stable gemini-3.8-flash.
+# These optional environment values do not populate organization AI settings.
+# Select None in Settings > AI to disable categorization for an organization.
 
 AI_PROVIDER=none
 # AI_PROVIDER=openai

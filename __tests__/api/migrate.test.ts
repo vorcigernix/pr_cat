@@ -1,206 +1,75 @@
-// Tests for /api/migrate route authentication.
-//
-// NextResponse.json() relies on the static Response.json() which is absent in
-// jsdom, so we provide a lightweight mock of next/server here.
+/** @jest-environment node */
 
-jest.mock('next/server', () => {
-  class MockNextResponse {
-    status: number;
-    body: unknown;
+import { NextRequest } from 'next/server';
+import { POST } from '@/app/api/migrate/route';
+import { runMigrations } from '@/lib/migrate';
 
-    constructor(body: unknown, init?: { status?: number }) {
-      this.body = body;
-      this.status = init?.status ?? 200;
-    }
+jest.mock('@/lib/migrate', () => ({ runMigrations: jest.fn() }));
 
-    async json() {
-      return this.body;
-    }
+const secret = 'test-migration-secret-long-enough';
+const originalEnv = process.env.NODE_ENV;
+const originalSecret = process.env.MIGRATION_SECRET;
 
-    static json(body: unknown, init?: { status?: number }) {
-      return new MockNextResponse(body, init);
-    }
-  }
-
-  // Minimal NextRequest stand-in that supports headers.get().
-  class MockNextRequest {
-    headers: Headers;
-    constructor(_url: string, init?: { headers?: Record<string, string> }) {
-      this.headers = new Headers(init?.headers ?? {});
-    }
-  }
-
-  return {
-    NextRequest: MockNextRequest,
-    NextResponse: MockNextResponse,
-  };
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.mocked(runMigrations).mockResolvedValue({ success: true });
+  Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+  delete process.env.MIGRATION_SECRET;
 });
 
-jest.mock('@/lib/migrate', () => ({
-  runMigrations: jest.fn(),
-}));
+afterEach(() => {
+  Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, writable: true });
+  if (originalSecret === undefined) delete process.env.MIGRATION_SECRET;
+  else process.env.MIGRATION_SECRET = originalSecret;
+});
 
-jest.mock('@/lib/db', () => ({
-  query: jest.fn(),
-  execute: jest.fn(),
-  getDbClient: jest.fn(),
-  checkDbHealth: jest.fn(),
-  getConnectionStatus: jest.fn(() => ({ isConnected: true, hasClient: true })),
-}));
-
-const { runMigrations } = require('@/lib/migrate') as { runMigrations: jest.Mock };
-const { NextRequest } = require('next/server');
-
-const VALID_SECRET = 'test-migration-secret-long-enough';
-
-function makeRequest(headers?: Record<string, string>) {
-  return new NextRequest('http://localhost:3000/api/migrate', { headers });
-}
-
-async function callPOST(request: unknown) {
-  const mod = await import('@/app/api/migrate/route');
-  return mod.POST(request as any);
-}
-
-describe('POST /api/migrate', () => {
-  const originalEnv = process.env.NODE_ENV;
-  const originalSecret = process.env.MIGRATION_SECRET;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    runMigrations.mockResolvedValue({ success: true });
-    delete process.env.MIGRATION_SECRET;
+it.each([
+  [undefined, undefined],
+  [secret, undefined],
+  [secret, 'Bearer wrong-secret'],
+  [secret, `Basic ${secret}`],
+])('rejects unauthorized production migrations (configured secret: %s, header: %s)', async (configured, authorization) => {
+  if (configured) process.env.MIGRATION_SECRET = configured;
+  const request = new NextRequest('http://localhost/api/migrate', {
+    headers: authorization ? { authorization } : {},
   });
 
-  afterEach(() => {
-    Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, writable: true });
-    if (originalSecret !== undefined) {
-      process.env.MIGRATION_SECRET = originalSecret;
-    } else {
-      delete process.env.MIGRATION_SECRET;
-    }
-  });
+  const response = await POST(request);
 
-  describe('production mode', () => {
-    beforeEach(() => {
-      Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    });
+  expect(response.status).toBe(401);
+  expect(await response.json()).toEqual({ error: 'Unauthorized' });
+  expect(runMigrations).not.toHaveBeenCalled();
+});
 
-    it('returns 401 when MIGRATION_SECRET is not configured', async () => {
-      const response = await callPOST(makeRequest());
-      const body = await response.json();
+it('runs migrations when the correct production secret is provided', async () => {
+  process.env.MIGRATION_SECRET = secret;
+  const response = await POST(new NextRequest('http://localhost/api/migrate', {
+    headers: { authorization: `Bearer ${secret}` },
+  }));
 
-      expect(response.status).toBe(401);
-      expect(body.error).toBe('Unauthorized');
-      expect(runMigrations).not.toHaveBeenCalled();
-    });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ message: 'Migrations completed successfully' });
+  expect(runMigrations).toHaveBeenCalledTimes(1);
+});
 
-    it('returns 401 when no Authorization header is sent', async () => {
-      process.env.MIGRATION_SECRET = VALID_SECRET;
+it.each(['returned', 'thrown'])('reports a %s migration failure', async kind => {
+  process.env.MIGRATION_SECRET = secret;
+  if (kind === 'returned') jest.mocked(runMigrations).mockResolvedValue({ success: false, error: 'schema conflict' });
+  else jest.mocked(runMigrations).mockRejectedValue(new Error('connection refused'));
 
-      const response = await callPOST(makeRequest());
-      const body = await response.json();
+  const response = await POST(new NextRequest('http://localhost/api/migrate', {
+    headers: { authorization: `Bearer ${secret}` },
+  }));
 
-      expect(response.status).toBe(401);
-      expect(body.error).toBe('Unauthorized');
-      expect(runMigrations).not.toHaveBeenCalled();
-    });
+  expect(response.status).toBe(500);
+  expect(await response.json()).toEqual({ error: 'Migration failed', details: kind === 'returned' ? 'schema conflict' : 'connection refused' });
+});
 
-    it('returns 401 when the bearer token does not match', async () => {
-      process.env.MIGRATION_SECRET = VALID_SECRET;
+it.each(['development', 'test'])('allows local bootstrap in %s mode', async mode => {
+  Object.defineProperty(process.env, 'NODE_ENV', { value: mode, writable: true });
+  const response = await POST(new NextRequest('http://localhost/api/migrate'));
 
-      const response = await callPOST(
-        makeRequest({ authorization: 'Bearer wrong-secret' })
-      );
-      const body = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(body.error).toBe('Unauthorized');
-      expect(runMigrations).not.toHaveBeenCalled();
-    });
-
-    it('returns 401 when Authorization header is not Bearer scheme', async () => {
-      process.env.MIGRATION_SECRET = VALID_SECRET;
-
-      const response = await callPOST(
-        makeRequest({ authorization: `Basic ${VALID_SECRET}` })
-      );
-      const body = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(body.error).toBe('Unauthorized');
-      expect(runMigrations).not.toHaveBeenCalled();
-    });
-
-    it('runs migrations when the correct secret is provided', async () => {
-      process.env.MIGRATION_SECRET = VALID_SECRET;
-
-      const response = await callPOST(
-        makeRequest({ authorization: `Bearer ${VALID_SECRET}` })
-      );
-      const body = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(body.message).toBe('Migrations completed successfully');
-      expect(runMigrations).toHaveBeenCalledTimes(1);
-    });
-
-    it('returns 500 when migration fails', async () => {
-      process.env.MIGRATION_SECRET = VALID_SECRET;
-      runMigrations.mockResolvedValue({ success: false, error: 'schema conflict' });
-
-      const response = await callPOST(
-        makeRequest({ authorization: `Bearer ${VALID_SECRET}` })
-      );
-      const body = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(body.error).toBe('Migration failed');
-      expect(body.details).toBe('schema conflict');
-    });
-
-    it('returns 500 when migration throws', async () => {
-      process.env.MIGRATION_SECRET = VALID_SECRET;
-      runMigrations.mockRejectedValue(new Error('connection refused'));
-
-      const response = await callPOST(
-        makeRequest({ authorization: `Bearer ${VALID_SECRET}` })
-      );
-      const body = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(body.error).toBe('Migration failed');
-      expect(body.details).toBe('connection refused');
-    });
-  });
-
-  describe('development mode', () => {
-    beforeEach(() => {
-      Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
-    });
-
-    it('allows access without secret or headers', async () => {
-      const response = await callPOST(makeRequest());
-      const body = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(body.message).toBe('Migrations completed successfully');
-      expect(runMigrations).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('test mode', () => {
-    beforeEach(() => {
-      Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true });
-    });
-
-    it('allows access without secret or headers', async () => {
-      const response = await callPOST(makeRequest());
-      const body = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(body.message).toBe('Migrations completed successfully');
-      expect(runMigrations).toHaveBeenCalledTimes(1);
-    });
-  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ message: 'Migrations completed successfully' });
+  expect(runMigrations).toHaveBeenCalledTimes(1);
 });

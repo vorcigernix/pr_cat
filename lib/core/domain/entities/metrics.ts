@@ -9,6 +9,7 @@ export interface MetricsSummary {
   prsMergedLastWeek: number
   weeklyPRVolumeChange: number
   averagePRSize: number
+  sizedPRCount?: number
   openPRCount: number
   categorizationRate: number
   dataUpToDate: string

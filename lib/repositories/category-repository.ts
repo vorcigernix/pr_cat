@@ -65,7 +65,7 @@ export async function updateCategory(
     return findCategoryById(id);
   }
   
-  updates.push('updated_at = datetime("now")');
+  updates.push("updated_at = datetime('now')");
   
   await execute(
     `UPDATE categories SET ${updates.join(', ')} WHERE id = ?`,

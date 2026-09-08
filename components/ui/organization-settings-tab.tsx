@@ -66,6 +66,7 @@ export function OrganizationSettingsTab({ organizations, selectedOrganization: p
       <div className="md:col-span-2">
         {selectedOrganization ? (
           <OrganizationCategoryManager 
+            key={selectedOrganization.id}
             organizationId={selectedOrganization.id} 
             organizationName={selectedOrganization.name} 
           />

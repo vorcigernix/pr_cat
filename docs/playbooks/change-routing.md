@@ -18,8 +18,8 @@ Define contracts in `lib/core/ports/*` and implement integrations in `lib/infras
 5. Run:
 
 ```bash
-pnpm lint
-pnpm test:integration
+bun run lint
+bun run test:integration
 ```
 
 ## Anti-patterns

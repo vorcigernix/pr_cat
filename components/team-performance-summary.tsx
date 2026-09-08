@@ -1,5 +1,7 @@
 "use client"
 
+import { useDashboardQuery } from "@/hooks/use-metrics"
+
 import * as React from "react"
 import { useTeamFilter } from "@/hooks/use-team-filter"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,8 +15,6 @@ import {
   IconClock, 
   IconEye, 
   IconGitPullRequest,
-  IconTrendingUp,
-  IconTrendingDown,
   IconInfoCircle
 } from "@tabler/icons-react"
 
@@ -44,59 +44,8 @@ interface TeamPerformanceSummaryProps {
 
 export function TeamPerformanceSummary({ className = "" }: TeamPerformanceSummaryProps) {
   const { selectedTeam, selectedOrganization, timeRange } = useTeamFilter();
-  const [teamMetrics, setTeamMetrics] = React.useState<TeamPerformanceMetrics | null>(null);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-
-  const fetchTeamMetrics = React.useCallback(async () => {
-    if (!selectedOrganization) {
-      setTeamMetrics(null);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch team performance metrics
-      const params = new URLSearchParams({
-        organizationId: selectedOrganization.id.toString(),
-        timeRange,
-      });
-
-      if (selectedTeam) {
-        params.append('teamId', selectedTeam.id.toString());
-      }
-
-      const response = await fetch(`/api/metrics/team-performance?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch team metrics: ${response.status} ${response.statusText}`);
-      }
-
-      const data: TeamPerformanceMetrics = await response.json();
-      
-      // If a specific team is selected, filter to only team members
-      if (selectedTeam) {
-        // We would need team member user IDs for filtering
-        // For now, we'll assume the API handles team filtering
-        setTeamMetrics(data);
-      } else {
-        // Organization-wide metrics
-        setTeamMetrics(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch team metrics:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load team performance data');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedOrganization, selectedTeam, timeRange]);
-
-  // Fetch team metrics when team or time range changes
-  React.useEffect(() => {
-    void fetchTeamMetrics();
-  }, [fetchTeamMetrics]);
+  const { data: teamMetrics, isLoading: loading, error: requestError } = useDashboardQuery<TeamPerformanceMetrics>('/api/metrics/team-performance');
+  const error = requestError?.message;
 
   if (!selectedOrganization) {
     return (
@@ -226,7 +175,7 @@ export function TeamPerformanceSummary({ className = "" }: TeamPerformanceSummar
           <div className="bg-muted/50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Collaboration Index</p>
+                <p className="text-sm font-medium text-muted-foreground">Reviewed / Created PRs</p>
                 <p className="text-2xl font-bold">{Math.round(teamMetrics.collaborationIndex * 10) / 10}</p>
               </div>
               <IconEye className="h-5 w-5 text-muted-foreground" />
@@ -248,10 +197,10 @@ export function TeamPerformanceSummary({ className = "" }: TeamPerformanceSummar
         {teamMetrics.teamMembers.length > 0 && (
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">
-              Top Contributors ({getTimeRangeDisplay()})
+              PR Activity ({getTimeRangeDisplay()})
             </h3>
             {teamMetrics.teamMembers.slice(0, 3).map((member, index) => (
-              <div key={member.userId} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div key={member.userId} className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center text-xs">
@@ -265,34 +214,23 @@ export function TeamPerformanceSummary({ className = "" }: TeamPerformanceSummar
                   <div>
                     <p className="font-medium text-sm">{member.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Score: {member.contributionScore}
+                      Created + reviewed PRs: {member.contributionScore}
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-4 text-xs">
+                <div className="flex w-full justify-between gap-4 text-xs sm:w-auto">
                   <div className="text-center">
                     <p className="font-medium">{member.prsCreated}</p>
                     <p className="text-muted-foreground">PRs</p>
                   </div>
                   <div className="text-center">
                     <p className="font-medium">{member.prsReviewed}</p>
-                    <p className="text-muted-foreground">Reviews</p>
+                    <p className="text-muted-foreground">PRs reviewed</p>
                   </div>
                   <div className="text-center">
                     <p className="font-medium">{member.avgCycleTime}h</p>
                     <p className="text-muted-foreground">Cycle</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center space-x-1">
-                      <p className="font-medium">{member.reviewThoroughness}%</p>
-                      {member.reviewThoroughness > 100 ? (
-                        <IconTrendingUp className="h-3 w-3 text-green-500" />
-                      ) : member.reviewThoroughness < 50 ? (
-                        <IconTrendingDown className="h-3 w-3 text-orange-500" />
-                      ) : null}
-                    </div>
-                    <p className="text-muted-foreground">Review</p>
                   </div>
                 </div>
               </div>
@@ -306,39 +244,11 @@ export function TeamPerformanceSummary({ className = "" }: TeamPerformanceSummar
           </div>
         )}
 
-        {/* Team Retrospective Insights */}
-        {selectedTeam && (
-          <Card className="@container/card mt-6 bg-gradient-to-t from-gray-50/30 to-white dark:from-card/10 dark:to-card shadow-xs">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Team Retrospective Insights</CardTitle>
-              <CardDescription>
-                {getTimeRangeDisplay()} performance analysis for retrospective discussions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg border border-border/50">
-                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-2"></div>
-                <div>
-                  <p className="font-medium mb-1">Focus Area</p>
-                  <p className="text-muted-foreground">
-                    This team&apos;s {getTimeRangeDisplay().toLowerCase()} performance shows 
-                    {teamMetrics.avgTeamCycleTime > 48 ? " opportunities to improve delivery speed" : " efficient delivery cycles"}.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg border border-border/50">
-                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-2"></div>
-                <div>
-                  <p className="font-medium mb-1">Collaboration</p>
-                  <p className="text-muted-foreground">
-                    The team&apos;s collaboration index of {Math.round(teamMetrics.collaborationIndex * 10) / 10} 
-                    {teamMetrics.collaborationIndex > 1.5 ? " indicates strong peer review practices" : " suggests more cross-team reviews could help"}.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <p className="mt-4 text-xs text-muted-foreground">
+          Created PRs use their creation date; reviewed PRs use the review submission date and count each PR once per reviewer.
+          Self-reviews are excluded. Cycle time averages merged PRs, weighted per PR.
+          Coverage is the share of created PRs with a submitted peer review by now.
+        </p>
       </CardContent>
     </Card>
   );

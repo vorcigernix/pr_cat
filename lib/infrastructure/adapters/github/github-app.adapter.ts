@@ -8,9 +8,8 @@ import { IGitHubAppService, InstallationInfo } from '../../../core/ports/github-
 import { Organization } from '../../../core/domain/entities/organization'
 import { Repository } from '../../../core/domain/entities/repository'
 import { GitHubClient } from '../../../github'
-import { 
-  findOrCreateRepository
-} from '../../../repositories'
+import { syncRepositoryPage } from './organization-sync'
+import { mapDbOrganizationToDomain } from '../turso/mappers'
 import * as OrganizationRepository from '../../../repositories/organization-repository'
 
 // Token cache to store installation tokens with expiration times
@@ -38,16 +37,6 @@ interface GitHubAppInstallationPayload {
   updated_at: string
 }
 
-interface DbOrganizationRecord {
-  id: number
-  name: string
-  avatar_url?: string | null
-  installation_id?: number | null
-  created_at?: string
-  updated_at?: string
-  display_name?: string | null
-  description?: string | null
-}
 
 // In-memory cache for installation tokens
 // In production, consider using Redis for distributed caching
@@ -194,12 +183,12 @@ export class GitHubAppService implements IGitHubAppService {
   /**
    * Get repositories accessible by an installation
    */
-  async getInstallationRepositories(installationId: number): Promise<Repository[]> {
+  async getInstallationRepositories(installationId: number, page = 1): Promise<Repository[]> {
     try {
       const token = await this.getInstallationToken(installationId)
       const client = new GitHubClient(token, installationId)
       
-      const response = await client.octokitClient.apps.listReposAccessibleToInstallation()
+      const response = await client.octokitClient.apps.listReposAccessibleToInstallation({ page, per_page: 100 })
       
       return response.data.repositories.map(repo => ({
         id: repo.id.toString(),
@@ -289,7 +278,7 @@ export class GitHubAppService implements IGitHubAppService {
             name: installation.account.login,
             avatar_url: installation.account.avatarUrl || null
           })
-          organization = this.mapDbOrgToDomain(updatedOrg!)
+          organization = mapDbOrganizationToDomain(updatedOrg!)
         } else {
           // Create new organization
           const newOrg = await OrganizationRepository.createOrganization({
@@ -298,7 +287,7 @@ export class GitHubAppService implements IGitHubAppService {
             avatar_url: installation.account.avatarUrl || null,
             installation_id: installationId
           })
-          organization = this.mapDbOrgToDomain(newOrg)
+          organization = mapDbOrganizationToDomain(newOrg)
         }
       } catch (error) {
         const errorMsg = `Failed to sync organization: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -309,25 +298,14 @@ export class GitHubAppService implements IGitHubAppService {
       // Get and sync repositories
       const repositories: Repository[] = []
       try {
-        const installationRepos = await this.getInstallationRepositories(installationId)
-        
-        for (const repo of installationRepos) {
-          try {
-            await findOrCreateRepository({
-              github_id: parseInt(repo.id),
-              organization_id: parseInt(organization.id),
-              name: repo.name,
-              full_name: repo.fullName,
-              description: repo.description,
-              private: repo.isPrivate,
-              is_tracked: true // Mark as tracked since it's accessible by the app
-            })
-            repositories.push(repo)
-          } catch (repoError) {
-            const errorMsg = `Failed to sync repository ${repo.fullName}: ${repoError instanceof Error ? repoError.message : 'Unknown error'}`
-            errors.push(errorMsg)
-            console.error(`[GitHubApp] ${errorMsg}`)
-          }
+        for (let page = 1; ; page++) {
+          const installationRepos = await this.getInstallationRepositories(installationId, page)
+          await syncRepositoryPage(Number(organization.id), installationRepos.map(repo => ({
+            id: Number(repo.id), name: repo.name, full_name: repo.fullName,
+            description: repo.description ?? undefined, private: repo.isPrivate
+          })))
+          repositories.push(...installationRepos)
+          if (installationRepos.length < 100) break
         }
       } catch (error) {
         const errorMsg = `Failed to get installation repositories: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -396,25 +374,6 @@ export class GitHubAppService implements IGitHubAppService {
       errors,
       appId: appId || undefined,
       hasPrivateKey: !!privateKey
-    }
-  }
-
-  /**
-   * Helper method to map database organization to domain entity
-   */
-  private mapDbOrgToDomain(dbOrg: DbOrganizationRecord): Organization {
-    return {
-      id: dbOrg.id.toString(),
-      login: dbOrg.name, // GitHub login name
-      name: dbOrg.display_name || dbOrg.name,
-      description: dbOrg.description || null,
-      avatarUrl: dbOrg.avatar_url || '',
-      type: 'Organization' as const,
-      htmlUrl: `https://github.com/${dbOrg.name}`,
-      isInstalled: !!dbOrg.installation_id,
-      installationId: dbOrg.installation_id?.toString() || null,
-      createdAt: new Date(dbOrg.created_at || Date.now()),
-      updatedAt: new Date(dbOrg.updated_at || Date.now())
     }
   }
 

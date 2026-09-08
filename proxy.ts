@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Simple in-memory rate limiting for Edge Runtime
-// This is supplementary to Vercel's platform-level rate limiting
+// Per-process rate limiting supplements platform-level rate limiting.
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Only apply to API routes
   if (!request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.next();
@@ -16,26 +15,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Skip rate limiting for webhooks (handled by Vercel Firewall)
+  // Delivery IDs are opaque identifiers; signature and replay checks belong to the handler.
   if (request.nextUrl.pathname.startsWith('/api/webhook/')) {
-    // But add timestamp validation for webhook security
-    const timestamp = request.headers.get('x-hub-signature-256');
-    if (timestamp) {
-      // Webhook requests should have recent timestamps (within 5 minutes)
-      const webhookTime = request.headers.get('x-github-delivery');
-      if (webhookTime) {
-        const requestTime = new Date(webhookTime).getTime();
-        const now = Date.now();
-        const fiveMinutes = 5 * 60 * 1000;
-        
-        if (Math.abs(now - requestTime) > fiveMinutes) {
-          return NextResponse.json(
-            { error: 'Webhook timestamp too old' },
-            { status: 401 }
-          );
-        }
-      }
-    }
     return NextResponse.next();
   }
 
@@ -65,7 +46,7 @@ export async function proxy(request: NextRequest) {
   const now = Date.now();
   let requestData = requestCounts.get(identifier);
   
-  if (!requestData || now > requestData.resetTime) {
+  if (!requestData || now >= requestData.resetTime) {
     requestData = { count: 1, resetTime: now + window };
   } else {
     requestData.count++;
@@ -76,7 +57,7 @@ export async function proxy(request: NextRequest) {
   // Clean old entries periodically (1% chance per request)
   if (Math.random() < 0.01) {
     for (const [key, data] of requestCounts.entries()) {
-      if (now > data.resetTime) {
+      if (now >= data.resetTime) {
         requestCounts.delete(key);
       }
     }

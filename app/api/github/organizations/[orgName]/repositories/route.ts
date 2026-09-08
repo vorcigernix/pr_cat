@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getService } from '@/lib/core/container/di-container';
-import { IGitHubService } from '@/lib/core/ports';
+import { RealGitHubAPIService } from '@/lib/infrastructure/adapters/github/real-github.adapter';
+import { findOrganizationByNameAndUser } from '@/lib/repositories/organization-repository';
 
 
 // Use the context object directly with proper typing for Next.js route handler
@@ -22,13 +22,13 @@ export async function GET(
   }
   
   try {
-    const githubService = await getService<IGitHubService>('GitHubService');
-    const result = await githubService.syncOrganizationRepositories(orgName);
-    
-    return NextResponse.json({ 
-      repositories: result.synced,
-      errors: result.errors 
-    });
+    const organization = await findOrganizationByNameAndUser(orgName, session.user.id);
+    if (!organization) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    const page = Number(request.nextUrl.searchParams.get('page') ?? '1');
+    if (!Number.isSafeInteger(page) || page < 1) return NextResponse.json({ error: 'Invalid page' }, { status: 400 });
+    const client = new RealGitHubAPIService(session.accessToken);
+    const repositories = await client.getOrganizationRepositories(organization.name, { page });
+    return NextResponse.json({ repositories, errors: [] });
   } catch (error) {
     console.error('GitHub API error:', error);
     return NextResponse.json(

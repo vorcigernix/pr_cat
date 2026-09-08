@@ -1,5 +1,6 @@
 import { query, execute } from '@/lib/db';
 import { Team, TeamMember, User, TeamWithMembers } from '@/lib/types';
+import { getTeamsByOrganizationWithMembersOptimized } from '@/lib/repositories/team-repository-optimized';
 import type { InValue } from '@libsql/client';
 
 type TeamMemberUserRow = {
@@ -28,18 +29,6 @@ type TeamMemberUserRow = {
 export async function findTeamById(id: number): Promise<Team | null> {
   const teams = await query<Team>('SELECT * FROM teams WHERE id = ?', [id]);
   return teams.length > 0 ? teams[0] : null;
-}
-
-/**
- * Retrieves all teams belonging to a specific organization
- * @param organizationId The organization ID to filter by
- * @returns Array of teams ordered by name
- */
-export async function findTeamsByOrganization(organizationId: number): Promise<Team[]> {
-  return query<Team>(
-    'SELECT * FROM teams WHERE organization_id = ? ORDER BY name',
-    [organizationId]
-  );
 }
 
 /**
@@ -142,7 +131,7 @@ export async function updateTeam(
     return findTeamById(id);
   }
   
-  updates.push('updated_at = datetime("now")');
+  updates.push("updated_at = datetime('now')");
   
   await execute(
     `UPDATE teams SET ${updates.join(', ')} WHERE id = ?`,
@@ -216,7 +205,7 @@ export async function updateTeamMember(
     return findTeamMember(teamId, userId);
   }
   
-  updates.push('updated_at = datetime("now")');
+  updates.push("updated_at = datetime('now')");
   
   await execute(
     `UPDATE team_members SET ${updates.join(', ')} WHERE team_id = ? AND user_id = ?`,
@@ -292,20 +281,7 @@ export async function getTeamWithMembers(teamId: number): Promise<TeamWithMember
 }
 
 export async function getTeamsByOrganizationWithMembers(organizationId: number): Promise<TeamWithMembers[]> {
-  const teams = await findTeamsByOrganization(organizationId);
-  
-  const teamsWithMembers = await Promise.all(
-    teams.map(async (team) => {
-      const members = await getTeamMembers(team.id);
-      return {
-        ...team,
-        members,
-        member_count: members.length
-      };
-    })
-  );
-  
-  return teamsWithMembers;
+  return getTeamsByOrganizationWithMembersOptimized(organizationId);
 }
 
 export async function getUserTeams(userId: string): Promise<(TeamMember & { team: Team })[]> {

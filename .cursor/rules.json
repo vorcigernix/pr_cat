@@ -5,7 +5,7 @@
     "required": [
       {
         "name": "Next.js",
-        "version": "15.x",
+        "version": "16.x",
         "canUpgrade": true,
         "canDowngrade": false
       },
@@ -33,12 +33,12 @@
       "description": "Following Next.js App Router convention"
     },
     "packageManager": {
-      "name": "pnpm",
-      "description": "Always use pnpm for package management",
+      "name": "bun",
+      "description": "Always use Bun for package management",
       "required": true
     },
     "routeHandlers": {
-      "description": "Dynamic route parameter handling for Next.js 15",
+      "description": "Dynamic route parameter handling for Next.js 16",
       "rules": [
         "Route parameters in dynamic routes must be structured as Promise objects",
         "Use { params }: { params: Promise<{ paramName: string }> } as function argument signature",
@@ -54,10 +54,10 @@
       "rules": [
         "Always prefer using components from shadcn/ui when a suitable component exists.",
         "Install new shadcn/ui components using the following command to ensure compatibility and correct project setup:",
-        "pnpm dlx shadcn@latest add [component-name]"
+        "bunx shadcn@latest add [component-name]"
       ],
       "examples": [
-        "pnpm dlx shadcn@latest add button card dialog"
+        "bunx shadcn@latest add button card dialog"
       ]
     }
   }

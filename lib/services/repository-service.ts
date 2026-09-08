@@ -1,14 +1,6 @@
 import { query } from '@/lib/db';
 import { Repository } from '@/lib/types';
-import type { InValue } from '@libsql/client';
-import {
-  findRepositoryById,
-  findRepositoryByGitHubId,
-  findRepositoryByFullName,
-  setRepositoryTracking,
-  updateRepository,
-  getOrganizationRepositories,
-} from '@/lib/repositories';
+import { getRepositoriesByUser } from '@/lib/repositories/repository-repository';
 
 type OrganizationRow = {
   id: number;
@@ -21,64 +13,6 @@ type OrganizationRow = {
  * Centralized service for repository access with proper access control
  */
 export class RepositoryService {
-  /**
-   * Get repositories by organization
-   * This is the primary method for accessing repositories in the application.
-   * The access control is organization-based: if a user has access to an organization
-   * (by adding the app to that organization), they can access all its repositories.
-   * 
-   * @param organizationId The organization ID to filter by
-   * @param options Additional options
-   * @returns List of repositories
-   */
-  static async getRepositoriesByOrganization(
-    organizationId: number,
-    options: {
-      includeTrackedOnly?: boolean;
-      orderBy?: string;
-      orderDir?: 'ASC' | 'DESC';
-    } = {}
-  ): Promise<Repository[]> {
-    const { includeTrackedOnly = false, orderBy = 'name', orderDir = 'ASC' } = options;
-    
-    let sql = `SELECT * FROM repositories WHERE organization_id = ?`;
-    const params: InValue[] = [organizationId];
-    
-    if (includeTrackedOnly) {
-      sql += ` AND is_tracked = 1`;
-    }
-    
-    sql += ` ORDER BY ${orderBy} ${orderDir}`;
-    
-    return await query<Repository>(sql, params);
-  }
-  
-  /**
-   * Get all repositories across all organizations
-   * This should only be used in admin contexts or when organizational
-   * boundaries aren't relevant for the specific use case.
-   */
-  static async getAllRepositories(
-    options: {
-      includeTrackedOnly?: boolean;
-      orderBy?: string;
-      orderDir?: 'ASC' | 'DESC';
-    } = {}
-  ): Promise<Repository[]> {
-    const { includeTrackedOnly = false, orderBy = 'name', orderDir = 'ASC' } = options;
-    
-    let sql = `SELECT * FROM repositories`;
-    const params: InValue[] = [];
-    
-    if (includeTrackedOnly) {
-      sql += ` WHERE is_tracked = 1`;
-    }
-    
-    sql += ` ORDER BY ${orderBy} ${orderDir}`;
-    
-    return await query<Repository>(sql, params);
-  }
-  
   /**
    * Get repositories for organizations accessible to a user
    * This is useful for showing repositories grouped by organizations the user has access to.
@@ -100,22 +34,25 @@ export class RepositoryService {
       ORDER BY o.name ASC
     `, [userId]);
     
-    // Get repositories for each organization
-    const result = await Promise.all(orgs.map(async (org) => {
-      const repos = await this.getRepositoriesByOrganization(org.id, options);
-      
-      return {
-        organization: {
-          id: org.id,
-          name: org.name,
-          github_id: org.github_id,
-          avatar_url: org.avatar_url
-        },
-        repositories: repos
-      };
+    if (orgs.length === 0) return [];
+
+    const repositories = await getRepositoriesByUser(userId, undefined, options);
+    const repositoriesByOrganization = new Map<Repository['organization_id'], Repository[]>();
+    for (const repository of repositories) {
+      const group = repositoriesByOrganization.get(repository.organization_id) ?? [];
+      group.push(repository);
+      repositoriesByOrganization.set(repository.organization_id, group);
+    }
+
+    return orgs.map(org => ({
+      organization: {
+        id: org.id,
+        name: org.name,
+        github_id: org.github_id,
+        avatar_url: org.avatar_url
+      },
+      repositories: repositoriesByOrganization.get(org.id) ?? []
     }));
-    
-    return result;
   }
   
   /**
@@ -151,7 +88,7 @@ export class RepositoryService {
     const org = orgs[0];
 
     // Get repositories for this specific organization
-    const repos = await this.getRepositoriesByOrganization(org.id, options);
+    const repos = await getRepositoriesByUser(userId, org.id, options);
     
     return {
       organization: {
@@ -163,49 +100,4 @@ export class RepositoryService {
       repositories: repos
     };
   }
-  
-  /**
-   * Get a single repository by ID
-   */
-  static async getRepositoryById(id: number): Promise<Repository | null> {
-    return findRepositoryById(id);
-  }
-  
-  /**
-   * Get a single repository by GitHub ID
-   */
-  static async getRepositoryByGitHubId(githubId: number): Promise<Repository | null> {
-    return findRepositoryByGitHubId(githubId);
-  }
-  
-  /**
-   * Get a single repository by full name (owner/repo)
-   */
-  static async getRepositoryByFullName(fullName: string): Promise<Repository | null> {
-    return findRepositoryByFullName(fullName);
-  }
-  
-  /**
-   * Set the tracking status for a repository
-   */
-  static async setRepositoryTracking(id: number, isTracked: boolean): Promise<Repository | null> {
-    return setRepositoryTracking(id, isTracked);
-  }
-  
-  /**
-   * Update a repository
-   */
-  static async updateRepository(
-    id: number, 
-    data: Partial<Omit<Repository, 'id' | 'github_id' | 'created_at' | 'updated_at'>>
-  ): Promise<Repository | null> {
-    return updateRepository(id, data);
-  }
-  
-  /**
-   * Get repositories for an organization
-   */
-  static async getOrganizationRepositories(organizationId: number): Promise<Repository[]> {
-    return getOrganizationRepositories(organizationId);
-  }
-} 
+}

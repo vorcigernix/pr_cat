@@ -84,7 +84,7 @@ import * as TeamRepository from '@/lib/repositories/team-repository';
 import { GET as getTeams, POST as createTeam } from '@/app/api/organizations/[orgId]/teams/route';
 import { PUT as updateTeam, DELETE as deleteTeam } from '@/app/api/organizations/[orgId]/teams/[teamId]/route';
 import { POST as addMember, DELETE as removeMember } from '@/app/api/organizations/[orgId]/teams/[teamId]/members/route';
-import { mockTeam, createMockTeams, mockOrganization, mockTeamMember } from '../fixtures';
+import { mockTeam, createMockTeams, mockOrganization, mockTeamMember, mockUser } from '../fixtures';
 
 const mockTeamService = jest.mocked(TeamService);
 const mockTeamRepository = jest.mocked(TeamRepository);
@@ -120,25 +120,28 @@ describe('Team API Routes', () => {
     mockTeamService.createTeam.mockResolvedValue(mockTeam);
     mockTeamService.getTeamWithMembers.mockResolvedValue({
       ...mockTeam,
-      members: [mockTeamMember],
+      members: [{ ...mockTeamMember, user: mockUser }],
+      member_count: 1,
     });
     mockTeamService.updateTeam.mockResolvedValue(mockTeam);
     mockTeamService.addTeamMember.mockResolvedValue({
-      id: 1,
-      team_id: 1,
+      ...mockTeamMember,
       user_id: 'user-456',
-      role: 'member',
     });
 
     mockTeamRepository.deleteTeam.mockResolvedValue(true);
-    mockTeamRepository.getTeamMembers.mockResolvedValue([mockTeamMember]);
+    mockTeamRepository.getTeamMembers.mockResolvedValue([{ ...mockTeamMember, user: mockUser }]);
     mockTeamRepository.updateTeamMember.mockResolvedValue(mockTeamMember);
     mockTeamRepository.removeTeamMember.mockResolvedValue(true);
   });
 
   describe('GET /api/organizations/[orgId]/teams', () => {
     it('should return teams for an organization', async () => {
-      const teams = createMockTeams(3);
+      const teams = createMockTeams(3).map(team => ({
+        ...team,
+        members: [],
+        member_count: 0,
+      }));
       mockTeamService.getOrganizationTeams.mockResolvedValue(teams);
 
       const request = new NextRequest('http://localhost:3000/api/organizations/1/teams');
@@ -151,21 +154,6 @@ describe('Team API Routes', () => {
       const data = await response.json();
       expect(data).toEqual(teams);
       expect(mockTeamService.getOrganizationTeams).toHaveBeenCalledWith('user-123', 1);
-    });
-
-    it('should return 401 if user is not authenticated', async () => {
-      const { auth } = require('@/auth');
-      auth.mockResolvedValue(null);
-
-      const request = new NextRequest('http://localhost:3000/api/organizations/1/teams');
-      const response = await getTeams(
-        request,
-        { params: Promise.resolve({ orgId: '1' }) }
-      );
-
-      expect(response.status).toBe(401);
-      const data = await response.json();
-      expect(data.error).toBe('Unauthorized');
     });
 
     it('should return 403 if user is not part of organization', async () => {

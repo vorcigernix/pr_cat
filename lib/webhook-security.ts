@@ -4,6 +4,8 @@ import crypto from 'crypto';
 // Cache for processed webhook IDs to prevent replay attacks
 const processedWebhooks = new Map<string, number>();
 const WEBHOOK_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_TRACKED_DELIVERIES = 10_000;
+const MAX_PAYLOAD_BYTES = 5 * 1024 * 1024;
 
 /**
  * Verify GitHub webhook signature with enhanced security
@@ -25,7 +27,7 @@ export function verifyGitHubSignature(
   const expectedSignatureWithPrefix = `sha256=${expectedSignature}`;
   
   // Use crypto.timingSafeEqual to prevent timing attacks
-  if (signature.length !== expectedSignatureWithPrefix.length) {
+  if (!/^sha256=[a-f0-9]{64}$/.test(signature)) {
     return { valid: false, error: 'Invalid signature format' };
   }
   
@@ -40,10 +42,10 @@ export function verifyGitHubSignature(
 /**
  * Check if webhook has already been processed (replay attack prevention)
  */
-export async function checkWebhookReplay(
+export function checkWebhookReplay(
   deliveryId: string | null,
   timestamp?: string | null
-): Promise<{ isReplay: boolean; error?: string }> {
+): { isReplay: boolean; error?: string } {
   if (!deliveryId) {
     return { isReplay: false, error: 'No delivery ID provided' };
   }
@@ -53,58 +55,30 @@ export async function checkWebhookReplay(
     const webhookTime = new Date(timestamp).getTime();
     const now = Date.now();
     
+    if (!Number.isFinite(webhookTime)) return { isReplay: false, error: 'Invalid webhook timestamp' };
+
     // Reject webhooks older than 5 minutes
     if (Math.abs(now - webhookTime) > WEBHOOK_EXPIRY_MS) {
       return { isReplay: true, error: 'Webhook timestamp too old' };
     }
   }
   
-  // Check if we've already processed this webhook ID
-  const existingTimestamp = processedWebhooks.get(deliveryId);
-  if (existingTimestamp) {
-    return { isReplay: true, error: 'Webhook already processed' };
+  const now = Date.now();
+  // Map insertion order lets cleanup stop at the first unexpired delivery.
+  for (const [id, receivedAt] of processedWebhooks) {
+    if (now - receivedAt <= WEBHOOK_EXPIRY_MS) break;
+    processedWebhooks.delete(id);
   }
-  
-  // If using Vercel KV (optional, for distributed systems)
-  // Commented out until @vercel/kv is installed
-  // if (process.env.KV_REST_API_URL) {
-  //   try {
-  //     const kvKey = `webhook:${deliveryId}`;
-  //     const exists = await kv.get(kvKey);
-  //     
-  //     if (exists) {
-  //       return { isReplay: true, error: 'Webhook already processed (KV)' };
-  //     }
-  //     
-  //     // Store with expiry
-  //     await kv.set(kvKey, Date.now(), { ex: 300 }); // 5 minutes TTL
-  //   } catch (error) {
-  //     console.warn('Failed to check/store webhook in KV:', error);
-  //     // Fall back to in-memory storage
-  //   }
-  // }
-  
-  // Store in memory
-  processedWebhooks.set(deliveryId, Date.now());
-  
-  // Clean up old entries periodically
-  if (Math.random() < 0.01) {
-    cleanupProcessedWebhooks();
+  if (processedWebhooks.has(deliveryId)) return { isReplay: true, error: 'Webhook already processed' };
+  if (processedWebhooks.size >= MAX_TRACKED_DELIVERIES) {
+    return { isReplay: false, error: 'Webhook delivery cache is full; retry later' };
   }
-  
+  processedWebhooks.set(deliveryId, now);
   return { isReplay: false };
 }
 
-/**
- * Clean up old processed webhook IDs from memory
- */
-function cleanupProcessedWebhooks() {
-  const now = Date.now();
-  for (const [id, timestamp] of processedWebhooks.entries()) {
-    if (now - timestamp > WEBHOOK_EXPIRY_MS) {
-      processedWebhooks.delete(id);
-    }
-  }
+export function releaseWebhookDelivery(deliveryId: string): void {
+  processedWebhooks.delete(deliveryId);
 }
 
 /**
@@ -112,14 +86,14 @@ function cleanupProcessedWebhooks() {
  */
 export function validatePayloadSize(
   contentLength: string | null,
-  maxSizeBytes: number = 5 * 1024 * 1024 // 5MB default
+  maxSizeBytes: number = MAX_PAYLOAD_BYTES
 ): { valid: boolean; error?: string } {
   if (!contentLength) {
     return { valid: true }; // Can't validate without header
   }
   
-  const size = parseInt(contentLength, 10);
-  if (isNaN(size)) {
+  const size = Number(contentLength);
+  if (!/^\d+$/.test(contentLength) || !Number.isSafeInteger(size)) {
     return { valid: false, error: 'Invalid content-length header' };
   }
   
@@ -161,7 +135,7 @@ export async function validateWebhook(
   request: Request,
   secret: string,
   allowedEvents: string[] = ['pull_request', 'pull_request_review', 'installation', 'ping']
-): Promise<{ valid: boolean; error?: string; eventType?: string; payload?: unknown }> {
+): Promise<{ valid: boolean; error?: string; eventType?: string; payload?: Record<string, unknown>; deliveryId?: string }> {
   // Extract headers
   const signature = request.headers.get('x-hub-signature-256');
   const eventType = request.headers.get('x-github-event');
@@ -180,24 +154,35 @@ export async function validateWebhook(
     return { valid: false, error: eventCheck.error };
   }
   
-  // Read body
+  if (!deliveryId) return { valid: false, error: 'No delivery ID provided' };
+
+  // Bound actual bytes, including requests without a Content-Length header.
   let bodyText: string;
   try {
-    bodyText = await request.text();
+    const reader = request.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let bytes = 0;
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        bytes += value.byteLength;
+        if (bytes > MAX_PAYLOAD_BYTES) {
+          await reader.cancel();
+          return { valid: false, error: 'Payload too large' };
+        }
+        chunks.push(value);
+      }
+    }
+    bodyText = Buffer.concat(chunks).toString('utf8');
   } catch {
     return { valid: false, error: 'Failed to read request body' };
   }
-  
+
   // Verify signature
   const signatureCheck = verifyGitHubSignature(bodyText, signature, secret);
   if (!signatureCheck.valid) {
     return { valid: false, error: signatureCheck.error };
-  }
-  
-  // Check for replay attack
-  const replayCheck = await checkWebhookReplay(deliveryId);
-  if (replayCheck.isReplay) {
-    return { valid: false, error: replayCheck.error };
   }
   
   // Parse JSON
@@ -208,28 +193,18 @@ export async function validateWebhook(
     return { valid: false, error: 'Invalid JSON payload' };
   }
   
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return { valid: false, error: 'Webhook payload must be an object' };
+  }
+
+  // Reserve only validated deliveries; the handler releases failures for retry.
+  const replayCheck = checkWebhookReplay(deliveryId);
+  if (replayCheck.isReplay || replayCheck.error) return { valid: false, error: replayCheck.error };
+
   return { 
     valid: true, 
     eventType: eventType!,
-    payload 
+    payload: payload as Record<string, unknown>,
+    deliveryId,
   };
-}
-
-/**
- * Generate webhook secret (for initial setup)
- */
-export function generateWebhookSecret(length: number = 32): string {
-  return crypto.randomBytes(length).toString('hex');
-}
-
-/**
- * Create a test signature for webhook testing
- */
-export function createTestSignature(payload: string, secret: string): string {
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(payload, 'utf8')
-    .digest('hex');
-  
-  return `sha256=${signature}`;
 }

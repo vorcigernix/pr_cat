@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
+import { usePullRequestsRecent } from "@/hooks/use-metrics";
+import { useTeamFilterParams } from "@/hooks/use-team-filter";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,28 +22,6 @@ import { Progress } from "@/components/ui/progress";
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip } from "recharts";
 import { IconCheck, IconAlertTriangle } from "@tabler/icons-react";
 
-type PullRequest = {
-  id: number;
-  title: string;
-  number: number;
-  developer: {
-    id: number | string;
-    name: string;
-  };
-  repository: {
-    id: number;
-    name: string;
-  };
-  status: string;
-  createdAt: string;
-  mergedAt: string;
-  cycleTime: number;
-  investmentArea?: string;
-  linesAdded?: number;
-  linesRemoved?: number;
-  files?: number;
-};
-
 type QualityFactor = {
   name: string;
   score: number;
@@ -52,10 +33,15 @@ type QualityFactor = {
 type QualityData = {
   aggregateScore: number;
   qualityFactors: QualityFactor[];
-  qualityDistribution: {
-    high: number;
-    medium: number;
-    low: number;
+  sample: {
+    total: number;
+    merged: number;
+    open: number;
+    closed: number;
+    withSize: number;
+    withCycleTime: number;
+    averageSize: number | null;
+    averageCycleTime: number | null;
   };
   sizeDistribution: {
     small: number;
@@ -65,46 +51,25 @@ type QualityData = {
   };
 };
 
+// Helper function to calculate normalized scores (0-100)
+const calculateScore = (value: number, min: number, max: number, inversed: boolean): number => {
+  const score = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+  return Math.round(inversed ? 100 - score : score);
+};
+
 export function PRQualityDetails() {
-  const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
-  const [qualityData, setQualityData] = useState<QualityData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const filterParams = useTeamFilterParams();
+  const params = new URLSearchParams(filterParams);
+  params.set('limit', '100');
+  const { data, error, isLoading: loading, refresh } = usePullRequestsRecent(params.toString());
   const [activeTab, setActiveTab] = useState("overview");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch real PR data from our API
-        const response = await fetch('/api/pull-requests/recent');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch pull requests: ${response.status} ${response.statusText}`);
-        }
-        
-        const response_data = await response.json();
-        // Handle both paginated response {data: [...]} and direct array
-        const data = Array.isArray(response_data) ? response_data : response_data.data || [];
-        setPullRequests(data);
-      } catch (error) {
-        console.error("Failed to load pull request data:", error);
-        setError(error instanceof Error ? error.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const analyzeQualityData = useCallback(() => {
-    if (pullRequests.length === 0) return;
+  const qualityData = useMemo<QualityData | null>(() => {
+    const pullRequests = Array.isArray(data) ? data : data?.data ?? [];
+    if (pullRequests.length === 0) return null;
 
     // Calculate quality metrics based on available real data
-    const prsWithSize = pullRequests.filter(pr => pr.linesAdded && pr.linesRemoved);
+    const prsWithSize = pullRequests.filter(pr => typeof pr.linesAdded === 'number' && Number.isFinite(pr.linesAdded) && pr.linesAdded >= 0 && typeof pr.linesRemoved === 'number' && Number.isFinite(pr.linesRemoved) && pr.linesRemoved >= 0);
     
     // Calculate PR size distribution
     const small = prsWithSize.filter(pr => (pr.linesAdded! + pr.linesRemoved!) < 100).length;
@@ -114,62 +79,61 @@ export function PRQualityDetails() {
     
     // Calculate average values for various factors
     const avgPRSize = prsWithSize.length > 0 ? Math.round(prsWithSize.reduce((sum, pr) => sum + (pr.linesAdded! + pr.linesRemoved!), 0) / prsWithSize.length) : 0;
-    const avgCycleTime = Math.round(pullRequests.reduce((sum, pr) => sum + pr.cycleTime, 0) / pullRequests.length);
+    const prsWithCycleTime = pullRequests.filter(pr => pr.status === 'merged' && typeof pr.cycleTime === 'number' && Number.isFinite(pr.cycleTime) && pr.cycleTime >= 0);
+    const avgCycleTime = prsWithCycleTime.length > 0 ? Math.round(prsWithCycleTime.reduce((sum, pr) => sum + pr.cycleTime, 0) / prsWithCycleTime.length) : 0;
     const mergedPRs = pullRequests.filter(pr => pr.status === "merged").length;
     const mergeRate = parseFloat(((mergedPRs / pullRequests.length) * 100).toFixed(1));
-    const categorizedPRs = pullRequests.filter(pr => pr.investmentArea).length;
+    const categorizedPRs = pullRequests.filter(pr => pr.investmentArea && pr.investmentArea.toLowerCase() !== 'uncategorized').length;
     const categorizationRate = parseFloat(((categorizedPRs / pullRequests.length) * 100).toFixed(1));
     
     // Define quality factors based on real metrics
     const qualityFactors: QualityFactor[] = [
       {
         name: "PR Size",
-        score: calculateScore(avgPRSize, 1000, 100, true), // Lower is better
-        weight: 0.3,
-        description: `Average PR size is ${avgPRSize} lines of code`,
+        score: calculateScore(avgPRSize, 100, 1000, true), // Lower is better
+        weight: prsWithSize.length ? 0.3 : 0,
+        description: prsWithSize.length ? `Average PR size is ${avgPRSize} lines of code` : 'PR size data is unavailable; excluded from the score',
         recommendation: avgPRSize > 300 ? "Consider breaking down large PRs into smaller, focused changes" : "Good job keeping PRs at a manageable size!"
       },
       {
         name: "Delivery Speed",
-        score: calculateScore(avgCycleTime, 168, 24, true), // Lower is better (hours)
-        weight: 0.25,
-        description: `Average cycle time is ${avgCycleTime} hours`,
+        score: calculateScore(avgCycleTime, 24, 168, true), // Lower is better (hours)
+        weight: prsWithCycleTime.length ? 0.25 : 0,
+        description: prsWithCycleTime.length ? `Average cycle time is ${avgCycleTime} hours` : 'Merged PR cycle time is unavailable; excluded from the score',
         recommendation: avgCycleTime > 72 ? "Consider streamlining the review and merge process" : "Good delivery speed!"
       },
       {
         name: "Merge Success Rate",
         score: calculateScore(mergeRate, 0, 100, false), // Higher is better
         weight: 0.25,
-        description: `${mergeRate}% of PRs are successfully merged`,
-        recommendation: mergeRate < 70 ? "High rejection rate may indicate issues with PR preparation" : "Healthy merge rate!"
+        description: `${mergeRate}% of PRs in this sample are merged`,
+        recommendation: 'Open PRs may still be in progress. Merge rate alone does not measure quality.'
       },
       {
         name: "Categorization Rate",
         score: calculateScore(categorizationRate, 0, 100, false), // Higher is better
         weight: 0.2,
-        description: `${categorizationRate}% of PRs are properly categorized`,
+        description: `${categorizationRate}% of PRs have an assigned category`,
         recommendation: categorizationRate < 80 ? "Improve PR categorization for better tracking" : "Good categorization coverage!"
       }
     ];
     
     // Calculate aggregate score
-    const aggregateScore = Math.round(
-      qualityFactors.reduce((sum, factor) => sum + (factor.score * factor.weight), 0)
-    );
+    const totalWeight = qualityFactors.reduce((sum, factor) => sum + factor.weight, 0);
+    const aggregateScore = Math.round(qualityFactors.reduce((sum, factor) => sum + factor.score * factor.weight, 0) / totalWeight);
     
-    // Calculate quality distribution based on aggregate scores per PR
-    // For simplicity, we'll estimate quality distribution
-    const highQuality = Math.round(pullRequests.length * 0.4); // Estimate 40% high quality
-    const mediumQuality = Math.round(pullRequests.length * 0.4); // Estimate 40% medium quality
-    const lowQuality = pullRequests.length - highQuality - mediumQuality; // Rest are low quality
-    
-    setQualityData({
+    return {
       aggregateScore,
       qualityFactors,
-      qualityDistribution: {
-        high: highQuality,
-        medium: mediumQuality,
-        low: lowQuality
+      sample: {
+        total: pullRequests.length,
+        merged: mergedPRs,
+        open: pullRequests.filter(pr => pr.status === 'open').length,
+        closed: pullRequests.filter(pr => pr.status === 'closed').length,
+        withSize: prsWithSize.length,
+        withCycleTime: prsWithCycleTime.length,
+        averageSize: prsWithSize.length ? avgPRSize : null,
+        averageCycleTime: prsWithCycleTime.length ? avgCycleTime : null,
       },
       sizeDistribution: {
         small,
@@ -177,27 +141,8 @@ export function PRQualityDetails() {
         large,
         xlarge
       }
-    });
-  }, [pullRequests]);
-
-  useEffect(() => {
-    if (pullRequests.length > 0) {
-      analyzeQualityData();
-    }
-  }, [pullRequests, analyzeQualityData]);
-
-  // Helper function to calculate normalized scores (0-100)
-  const calculateScore = (value: number, min: number, max: number, inversed: boolean): number => {
-    let score;
-    if (inversed) {
-      // For metrics where lower is better (like PR size)
-      score = 100 - Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
-    } else {
-      // For metrics where higher is better (like merge rate)
-      score = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
-    }
-    return Math.round(score);
-  };
+    };
+  }, [data]);
 
   // Get a color based on score
   const getScoreColor = (score: number) => {
@@ -217,25 +162,14 @@ export function PRQualityDetails() {
     return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
   };
 
-  // Get quality distribution chart data
-  const getQualityDistributionData = () => {
-    if (!qualityData) return [];
-    
-    return [
-      { name: "High Quality", value: qualityData.qualityDistribution.high, color: "#22c55e" },
-      { name: "Medium Quality", value: qualityData.qualityDistribution.medium, color: "#eab308" },
-      { name: "Low Quality", value: qualityData.qualityDistribution.low, color: "#ef4444" },
-    ];
-  };
-  
   // Get PR size distribution chart data
   const getSizeDistributionData = () => {
     if (!qualityData) return [];
     
     return [
       { name: "Small (<100 LOC)", value: qualityData.sizeDistribution.small, color: "#22c55e" },
-      { name: "Medium (100-300 LOC)", value: qualityData.sizeDistribution.medium, color: "#3b82f6" },
-      { name: "Large (300-1000 LOC)", value: qualityData.sizeDistribution.large, color: "#eab308" },
+      { name: "Medium (100–299 lines)", value: qualityData.sizeDistribution.medium, color: "#3b82f6" },
+      { name: "Large (300–999 lines)", value: qualityData.sizeDistribution.large, color: "#eab308" },
       { name: "X-Large (1000+ LOC)", value: qualityData.sizeDistribution.xlarge, color: "#ef4444" },
     ];
   };
@@ -248,7 +182,22 @@ export function PRQualityDetails() {
           <CardDescription>Failed to load quality data</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-destructive">{error}</p>
+          <p role="alert" className="text-sm text-destructive">{error instanceof Error ? error.message : 'Unable to load pull requests.'}</p>
+          <Button className="mt-3" variant="outline" onClick={() => void refresh()}>Retry quality data</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!loading && !qualityData) {
+    return (
+      <Card className="mx-4 lg:mx-6">
+        <CardHeader>
+          <CardTitle>PR Quality Analysis</CardTitle>
+          <CardDescription>No pull requests available to analyze</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Quality analysis will appear when pull request activity is available from your connected repositories.</p>
         </CardContent>
       </Card>
     );
@@ -273,7 +222,7 @@ export function PRQualityDetails() {
       <CardHeader>
         <CardTitle>PR Quality Analysis</CardTitle>
         <CardDescription>
-          Detailed breakdown of quality factors across pull requests
+          Measured activity from up to 100 recent pull requests matching your filters
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -288,14 +237,16 @@ export function PRQualityDetails() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Overall Quality Score</CardTitle>
+                  <CardTitle className="text-base">Workflow heuristic score</CardTitle>
+                  <CardDescription>A summary of workflow signals, not an assessment of code quality.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center py-8">
                   {/* Circular Progress Indicator - Now Clickable */}
-                  <div 
-                    className="relative w-40 h-40 mb-6 cursor-pointer hover:scale-105 transition-transform"
+                  <button
+                    type="button"
+                    className="relative w-40 h-40 mb-6 cursor-pointer hover:scale-105 transition-transform rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
                     onClick={() => setActiveTab("factors")}
-                    title="Click to see detailed quality factors"
+                    aria-label="View detailed quality factors"
                   >
                     <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 160 160">
                       {/* Gradient Definitions */}
@@ -361,18 +312,18 @@ export function PRQualityDetails() {
                         {qualityData.aggregateScore}
                       </div>
                       <div className="text-[10px] text-muted-foreground font-semibold tracking-wider uppercase mt-1">
-                        Quality Score
+                        Workflow Score
                       </div>
                       <div className="text-[9px] text-muted-foreground/70">
                         out of 100
                       </div>
                     </div>
-                  </div>
+                  </button>
                   
                   {/* Info text */}
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">
-                      Based on {qualityData.qualityFactors.length} quality factors
+                      Based on {qualityData.qualityFactors.filter(factor => factor.weight > 0).length} available workflow factors
                     </p>
                     <p className="text-xs text-muted-foreground/70 mt-2">
                       Click the chart above to see detailed breakdown
@@ -383,37 +334,19 @@ export function PRQualityDetails() {
               
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Quality Distribution</CardTitle>
+                  <CardTitle className="text-base">Pull request sample</CardTitle>
+                  <CardDescription>Up to 100 recent PRs matching the selected filters.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={getQualityDistributionData()}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="45%"
-                          outerRadius={60}
-                          innerRadius={0}
-                        >
-                          {getQualityDistributionData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          formatter={(value, name) => [`${value} PRs`, name]}
-                          labelFormatter={() => ''}
-                        />
-                        <Legend 
-                          verticalAlign="bottom"
-                          height={36}
-                          wrapperStyle={{ paddingTop: '10px' }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <dl className="space-y-3 text-sm">
+                    <div className="flex justify-between gap-3"><dt>PRs analyzed</dt><dd>{qualityData.sample.total}</dd></div>
+                    <div className="flex justify-between gap-3"><dt>Merged</dt><dd>{qualityData.sample.merged}</dd></div>
+                    <div className="flex justify-between gap-3"><dt>Open</dt><dd>{qualityData.sample.open}</dd></div>
+                    <div className="flex justify-between gap-3"><dt>Closed without merging</dt><dd>{qualityData.sample.closed}</dd></div>
+                    <div className="flex justify-between gap-3"><dt>Average changed lines</dt><dd>{qualityData.sample.averageSize ?? 'Unavailable'}</dd></div>
+                    <div className="flex justify-between gap-3"><dt>Average merged PR cycle time</dt><dd>{qualityData.sample.averageCycleTime === null ? 'Unavailable' : `${qualityData.sample.averageCycleTime} hours`}</dd></div>
+                  </dl>
+                  <p className="mt-4 text-xs text-muted-foreground">Size data: {qualityData.sample.withSize} of {qualityData.sample.total} PRs. Cycle time data: {qualityData.sample.withCycleTime} of {qualityData.sample.merged} merged PRs. Missing data is excluded from averages.</p>
                 </CardContent>
               </Card>
             </div>
@@ -421,19 +354,20 @@ export function PRQualityDetails() {
           
           <TabsContent value="factors">
             <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">Heuristic definitions: average size scores 100 at 100 changed lines or fewer and 0 at 1,000 or more. Average merged PR cycle time scores 100 at 24 hours or less and 0 at 168 hours or more. Values between these bounds are scored linearly. Merge and categorization scores use their sample percentages. Missing factors are excluded and the remaining weights are normalized.</p>
               {qualityData.qualityFactors.map((factor, index) => (
                 <Card key={index}>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-base">{factor.name}</CardTitle>
-                      <Badge variant="secondary" className={getBadgeStyle(factor.score)}>
-                        {factor.score}/100
+                      <Badge variant="secondary" className={factor.weight ? getBadgeStyle(factor.score) : ''}>
+                        {factor.weight ? `${factor.score}/100` : 'Unavailable'}
                       </Badge>
                     </div>
                     <CardDescription>{factor.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Progress value={factor.score} className="h-2 mb-2" />
+                    {factor.weight > 0 && <Progress value={factor.score} className="h-2 mb-2" />}
                     <div className="flex items-start gap-2 mt-4">
                       {factor.score >= 80 ? (
                         <IconCheck className="mt-1 text-green-500 shrink-0" size={16} />
@@ -441,11 +375,11 @@ export function PRQualityDetails() {
                         <IconAlertTriangle className="mt-1 text-yellow-500 shrink-0" size={16} />
                       )}
                       <div className="text-sm text-muted-foreground">
-                        {factor.recommendation}
+                        {factor.weight ? factor.recommendation : 'Collect this data to include this factor in the score.'}
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground">
-                      Weight: {factor.weight * 100}% of total score
+                      Weight: {Math.round(factor.weight / qualityData.qualityFactors.reduce((sum, item) => sum + item.weight, 0) * 100)}% of available factors
                     </div>
                   </CardContent>
                 </Card>
@@ -458,6 +392,7 @@ export function PRQualityDetails() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">PR Size Distribution</CardTitle>
+                  <CardDescription>Based on {qualityData.sample.withSize} of {qualityData.sample.total} PRs with known additions and deletions.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[280px]">
@@ -493,32 +428,28 @@ export function PRQualityDetails() {
               
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Size vs. Quality Insights</CardTitle>
+                  <CardTitle className="text-base">Size definitions</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="text-sm">
-                      <p className="mb-2">Key observations:</p>
+                      <p className="mb-2">Size is the sum of added and deleted lines:</p>
                       <ul className="list-disc pl-5 space-y-2">
                         <li>
-                          Small PRs ({qualityData.sizeDistribution.small} total) tend to have faster review cycles
+                          Small: fewer than 100 lines ({qualityData.sizeDistribution.small} PRs)
                         </li>
                         <li>
-                          Large PRs ({qualityData.sizeDistribution.large + qualityData.sizeDistribution.xlarge} total) may require more review time and attention
+                          Medium: 100–299 lines ({qualityData.sizeDistribution.medium} PRs)
                         </li>
                         <li>
-                          {qualityData.sizeDistribution.small > (qualityData.sizeDistribution.large + qualityData.sizeDistribution.xlarge) 
-                            ? "Team generally keeps PRs at a manageable size" 
-                            : "Team tends to create larger PRs, which may affect review quality"}
+                          Large: 300–999 lines ({qualityData.sizeDistribution.large} PRs)
                         </li>
+                        <li>Extra large: 1,000 or more lines ({qualityData.sizeDistribution.xlarge} PRs)</li>
                       </ul>
                     </div>
                     
                     <div className="pt-2 text-sm text-muted-foreground border-t">
-                      <p className="font-medium mb-1">Recommendation:</p>
-                      {qualityData.sizeDistribution.large + qualityData.sizeDistribution.xlarge > qualityData.sizeDistribution.small 
-                        ? "Consider implementing PR size limits to encourage smaller, more focused changes that are easier to review."
-                        : "Continue maintaining reasonable PR sizes to ensure high-quality reviews and faster cycle times."}
+                      <p>These size bands describe this sample. They do not measure code quality or establish a relationship with review time.</p>
                     </div>
                   </div>
                 </CardContent>

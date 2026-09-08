@@ -7,7 +7,6 @@ export {
   updateUser, 
   updateOrganizationRole,
   getUserOrganizations,
-  addUserToOrganization,
   removeUserFromOrganization,
   getOrganizationRole,
   findOrCreateUserByGitHubId,
@@ -34,8 +33,6 @@ export {
   findPullRequestByNumber, 
   updatePullRequest, 
   getRepositoryPullRequests,
-  createPullRequestReview,
-  findReviewByGitHubId,
   updatePullRequestReview,
   updatePullRequestCategory,
 } from './pr-repository';
@@ -60,7 +57,6 @@ export {
 
 // Export team repository functions
 export {
-  findTeamsByOrganization,
   findTeamsByOrganizationWithMembers,
   findTeamById,
   createTeam,
@@ -77,18 +73,3 @@ export {
   getOrganizationMembers,
   searchUsers,
 } from './team-repository';
-
-// Commented out sections for missing files remain for user to address
-// export { 
-//   getSettings, 
-//   updateSetting, 
-//   getOrganizationSettings, 
-//   updateOrganizationSetting 
-// } from './settings-repository'; 
-// export { 
-//   createRecommendation, 
-//   getRecommendationsByOrganizationId, 
-//   updateRecommendationStatus 
-// } from './recommendation-repository'; 
-
-// export * from './schema-version-repository';

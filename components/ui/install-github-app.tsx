@@ -103,6 +103,3 @@ export function GitHubAppInstalledBadge({
     </Button>
   );
 }
-
-// Backward-compatible alias while callsites migrate to explicit variants.
-export const InstallGitHubApp = InstallGitHubAppButton;

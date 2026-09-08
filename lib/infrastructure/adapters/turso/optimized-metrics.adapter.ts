@@ -11,7 +11,6 @@ import {
   TeamPerformanceMetrics
 } from '../../../core/domain/entities'
 import { RepositoryInsights } from '../../../core/domain/entities'
-import { TimeRange } from '../../../core/domain/value-objects'
 import { query } from '@/lib/db'
 import type { InValue } from '@libsql/client'
 
@@ -20,7 +19,8 @@ export class OptimizedTursoMetricsService implements IMetricsService {
   async getSummary(
     organizationId: string, 
     teamId?: number,
-    timeRange?: string
+    timeRange?: string,
+    repositoryId?: string
   ): Promise<MetricsSummary> {
     const orgId = parseInt(organizationId)
     const now = new Date()
@@ -39,22 +39,29 @@ export class OptimizedTursoMetricsService implements IMetricsService {
       INNER JOIN team_members tm ON pr.author_id = tm.user_id
       INNER JOIN teams t ON tm.team_id = t.id
     ` : '';
-    const teamWhereClause = teamId ? `AND t.id = ?` : '';
+    const teamWhereClause = teamId ? `AND t.id = ? AND t.organization_id = r.organization_id` : '';
 
     // Get tracked repositories count
     const trackedRepos = await query<{ count: number }>(`
       SELECT COUNT(*) as count
       FROM repositories
       WHERE organization_id = ? AND is_tracked = true
-    `, [orgId])
+      ${repositoryId ? 'AND id = ?' : ''}
+    `, repositoryId ? [orgId, (Number(repositoryId) || -1)] : [orgId])
 
-    // Get PRs merged in current period vs previous period (with optional team filtering)
-    const thisWeekParams = [orgId, thisPeriodStart.toISOString()]
+    // Read both comparison periods in the same scan of merged PRs.
+    const mergedParams = [
+      thisPeriodStart.toISOString(), thisPeriodStart.toISOString(),
+      orgId, lastPeriodStart.toISOString()
+    ]
     if (teamId) {
-      thisWeekParams.push(teamId);
+      mergedParams.push(teamId);
     }
-    const thisWeekPRs = await query<{ count: number }>(`
-      SELECT COUNT(*) as count
+    if (repositoryId) mergedParams.push((Number(repositoryId) || -1));
+    const mergedPRs = await query<{ current_count: number; previous_count: number }>(`
+      SELECT
+        SUM(CASE WHEN pr.merged_at >= ? THEN 1 ELSE 0 END) as current_count,
+        SUM(CASE WHEN pr.merged_at < ? THEN 1 ELSE 0 END) as previous_count
       FROM pull_requests pr
       LEFT JOIN repositories r ON pr.repository_id = r.id
       ${teamJoinClause}
@@ -62,59 +69,31 @@ export class OptimizedTursoMetricsService implements IMetricsService {
       AND pr.state = 'merged'
       AND pr.merged_at >= ?
       ${teamWhereClause}
-    `, thisWeekParams)
-
-    const lastWeekParams = [orgId, lastPeriodStart.toISOString(), thisPeriodStart.toISOString()]
-    if (teamId) {
-      lastWeekParams.push(teamId);
-    }
-    const lastWeekPRs = await query<{ count: number }>(`
-      SELECT COUNT(*) as count
-      FROM pull_requests pr
-      LEFT JOIN repositories r ON pr.repository_id = r.id
-      ${teamJoinClause}
-      WHERE r.organization_id = ?
-      AND pr.state = 'merged'
-      AND pr.merged_at >= ?
-      AND pr.merged_at < ?
-      ${teamWhereClause}
-    `, lastWeekParams)
+      ${repositoryId ? 'AND pr.repository_id = ?' : ''}
+    `, mergedParams)
 
     // Calculate weekly change
-    const thisPeriod = thisWeekPRs[0]?.count || 0
-    const lastPeriod = lastWeekPRs[0]?.count || 0
+    const thisPeriod = mergedPRs[0]?.current_count || 0
+    const lastPeriod = mergedPRs[0]?.previous_count || 0
     const weeklyChange = lastPeriod > 0 ? ((thisPeriod - lastPeriod) / lastPeriod) * 100 : 0
 
-    // Get average PR size and open count (with team filtering)
+    // Size, open count, and categorization share the same creation-date filter.
     const prStatsParams = [orgId, thisPeriodStart.toISOString()]
     if (teamId) {
       prStatsParams.push(teamId);
     }
+    if (repositoryId) prStatsParams.push((Number(repositoryId) || -1));
     const prStats = await query<{
       avg_size: number
+      sized_prs: number
       open_count: number
-    }>(`
-      SELECT 
-        AVG(COALESCE(pr.additions, 0) + COALESCE(pr.deletions, 0)) as avg_size,
-        SUM(CASE WHEN pr.state = 'open' THEN 1 ELSE 0 END) as open_count
-      FROM pull_requests pr
-      LEFT JOIN repositories r ON pr.repository_id = r.id
-      ${teamJoinClause}
-      WHERE r.organization_id = ?
-      AND pr.created_at >= ?
-      ${teamWhereClause}
-    `, prStatsParams)
-
-    // Get categorization rate (with team filtering)
-    const categorizationParams = [orgId, thisPeriodStart.toISOString()]
-    if (teamId) {
-      categorizationParams.push(teamId);
-    }
-    const categorizationStats = await query<{
       total_prs: number
       categorized_prs: number
     }>(`
       SELECT 
+        AVG(pr.additions + pr.deletions) as avg_size,
+        COUNT(pr.additions + pr.deletions) as sized_prs,
+        SUM(CASE WHEN pr.state = 'open' THEN 1 ELSE 0 END) as open_count,
         COUNT(*) as total_prs,
         SUM(CASE WHEN pr.category_id IS NOT NULL THEN 1 ELSE 0 END) as categorized_prs
       FROM pull_requests pr
@@ -123,10 +102,11 @@ export class OptimizedTursoMetricsService implements IMetricsService {
       WHERE r.organization_id = ?
       AND pr.created_at >= ?
       ${teamWhereClause}
-    `, categorizationParams)
+      ${repositoryId ? 'AND pr.repository_id = ?' : ''}
+    `, prStatsParams)
 
-    const categorizationRate = categorizationStats[0]?.total_prs > 0 
-      ? (categorizationStats[0].categorized_prs / categorizationStats[0].total_prs) * 100 
+    const categorizationRate = prStats[0]?.total_prs > 0
+      ? (prStats[0].categorized_prs / prStats[0].total_prs) * 100
       : 0
 
     return {
@@ -135,6 +115,7 @@ export class OptimizedTursoMetricsService implements IMetricsService {
       prsMergedLastWeek: lastPeriod,
       weeklyPRVolumeChange: Math.round(weeklyChange * 10) / 10,
       averagePRSize: Math.round(prStats[0]?.avg_size || 0),
+      sizedPRCount: prStats[0]?.sized_prs || 0,
       openPRCount: prStats[0]?.open_count || 0,
       categorizationRate: Math.round(categorizationRate * 10) / 10,
       dataUpToDate: now.toISOString().split('T')[0],
@@ -163,7 +144,7 @@ export class OptimizedTursoMetricsService implements IMetricsService {
 
     if (repositoryId) {
       whereClause += ' AND pr.repository_id = ?'
-      params.push(parseInt(repositoryId))
+      params.push(Number(repositoryId) || -1)
     }
 
     if (teamId) {
@@ -171,7 +152,7 @@ export class OptimizedTursoMetricsService implements IMetricsService {
         INNER JOIN team_members tm ON pr.author_id = tm.user_id
         INNER JOIN teams t ON tm.team_id = t.id
       `
-      whereClause += ' AND t.id = ?'
+      whereClause += ' AND t.id = ? AND t.organization_id = r.organization_id'
       params.push(teamId)
     }
 
@@ -239,7 +220,8 @@ export class OptimizedTursoMetricsService implements IMetricsService {
   async getRecommendations(
     organizationId: string, 
     teamId?: number, 
-    timeRange?: string
+    timeRange?: string,
+    repositoryId?: string
   ): Promise<RecommendationsResponse> {
     const orgId = parseInt(organizationId)
     
@@ -257,11 +239,13 @@ export class OptimizedTursoMetricsService implements IMetricsService {
       INNER JOIN team_members tm ON pr.author_id = tm.user_id
       INNER JOIN teams t ON tm.team_id = t.id
     ` : '';
-    const teamWhereClause = teamId ? `AND t.id = ?` : '';
+    const teamWhereClause = teamId ? `AND t.id = ? AND t.organization_id = r.organization_id` : '';
     const params = [orgId, cutoffDate.toISOString()]
     if (teamId) {
       params.push(teamId);
     }
+
+    if (repositoryId) params.push((Number(repositoryId) || -1));
 
     // 1. Analyze cycle time (with team filtering)
     const cycleTimeStats = await query<{
@@ -284,6 +268,7 @@ export class OptimizedTursoMetricsService implements IMetricsService {
       AND pr.created_at >= ?
       AND pr.merged_at IS NOT NULL
       ${teamWhereClause}
+      ${repositoryId ? 'AND pr.repository_id = ?' : ''}
     `, params)
 
     const cycleStats = cycleTimeStats[0]
@@ -329,6 +314,7 @@ export class OptimizedTursoMetricsService implements IMetricsService {
       AND pr.state = 'merged'
       AND pr.created_at >= ?
       ${teamWhereClause}
+      ${repositoryId ? 'AND pr.repository_id = ?' : ''}
     `, params)
 
     const sizeStats = prSizeStats[0]
@@ -444,127 +430,90 @@ export class OptimizedTursoMetricsService implements IMetricsService {
     organizationId: string,
     repositoryIds?: string[],
     teamId?: number,
-    timeRange?: string
+    timeRange = '14d'
   ): Promise<TeamPerformanceMetrics> {
-    const orgId = parseInt(organizationId)
-    
-    // Parse time range to days
-    const days = timeRange === '7d' ? 7 : 
-                 timeRange === '14d' ? 14 : 
-                 timeRange === '30d' ? 30 : 
-                 timeRange === '90d' ? 90 : 30;
-    
-    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-    let whereClause = 'WHERE r.organization_id = ?'
-    let joinClause = ''
-    const params: InValue[] = [orgId]
-
-    if (repositoryIds && repositoryIds.length > 0) {
-      const placeholders = repositoryIds.map(() => '?').join(',')
-      whereClause += ` AND pr.repository_id IN (${placeholders})`
-      params.push(...repositoryIds.map(id => parseInt(id)))
-    }
-
-    if (teamId) {
-      joinClause = `
-        INNER JOIN team_members tm ON pr.author_id = tm.user_id
-        INNER JOIN teams t ON tm.team_id = t.id
-      `
-      whereClause += ' AND t.id = ?'
-      params.push(teamId)
-    }
-
-    // Single optimized query to get all team member stats
-    const teamStats = await query<{
-      author_id: string
-      author_name: string
-      prs_created: number
-      prs_reviewed: number
-      avg_cycle_time: number
-      avg_pr_size: number
-      review_thoroughness: number
-      contribution_score: number
+    const cutoff = new Date(Date.now() - Number.parseInt(timeRange, 10) * 86400000).toISOString()
+    const now = new Date().toISOString()
+    const repositoryFilter = repositoryIds?.length
+      ? `AND pr.repository_id IN (${repositoryIds.map(() => '?').join(',')})` : ''
+    const scopeParams: InValue[] = [Number(organizationId), ...(repositoryIds || []).map(Number)]
+    // Membership is checked for the contributor, independently of the author of a reviewed PR.
+    const membership = teamId ? `AND EXISTS (
+      SELECT 1 FROM team_members tm JOIN teams t ON t.id = tm.team_id
+      WHERE tm.user_id = contributor_id AND t.id = ? AND t.organization_id = ?
+    )` : ''
+    const memberParams: InValue[] = teamId ? [teamId, Number(organizationId)] : []
+    const stats = await query<{
+      contributor_id: string; name: string; prs_created: number; prs_reviewed: number;
+      merged_count: number; cycle_hours: number; total_size: number; reviewed_prs: number
     }>(`
-      SELECT 
-        pr.author_id,
-        u.name as author_name,
-        COUNT(DISTINCT pr.id) as prs_created,
-        COUNT(DISTINCT rev.id) as prs_reviewed,
-        AVG(CASE 
-          WHEN pr.state = 'merged' AND pr.merged_at IS NOT NULL 
-          THEN CAST((julianday(pr.merged_at) - julianday(pr.created_at)) * 24 AS REAL)
-          ELSE NULL
-        END) as avg_cycle_time,
-        AVG(COALESCE(pr.additions, 0) + COALESCE(pr.deletions, 0)) as avg_pr_size,
-        -- Simple metric: reviews given / PRs created * 100
-        CAST(COUNT(DISTINCT rev.id) AS FLOAT) / NULLIF(COUNT(DISTINCT pr.id), 0) * 100 as review_thoroughness,
-        COUNT(DISTINCT pr.id) + COUNT(DISTINCT rev.id) as contribution_score
-      FROM pull_requests pr
-      LEFT JOIN repositories r ON pr.repository_id = r.id
-      LEFT JOIN users u ON pr.author_id = u.id
-      LEFT JOIN pr_reviews rev ON rev.reviewer_id = pr.author_id AND rev.pull_request_id != pr.id
-      ${joinClause}
-      ${whereClause}
-      AND pr.created_at >= ?
-      GROUP BY pr.author_id, u.name
-      ORDER BY contribution_score DESC
-    `, [...params, cutoffDate.toISOString()])
+      WITH scoped_prs AS (
+        SELECT pr.* FROM pull_requests pr JOIN repositories r ON r.id = pr.repository_id
+        WHERE r.organization_id = ? ${repositoryFilter}
+      ), authored AS (
+        SELECT pr.author_id AS contributor_id, COUNT(*) AS prs_created,
+          SUM(CASE WHEN pr.state = 'merged' AND pr.merged_at IS NOT NULL THEN 1 ELSE 0 END) AS merged_count,
+          SUM(CASE WHEN pr.state = 'merged' AND pr.merged_at IS NOT NULL
+            THEN (julianday(pr.merged_at) - julianday(pr.created_at)) * 24 ELSE 0 END) AS cycle_hours,
+          SUM(COALESCE(pr.additions, 0) + COALESCE(pr.deletions, 0)) AS total_size,
+          SUM(CASE WHEN EXISTS (SELECT 1 FROM pr_reviews rev WHERE rev.pull_request_id = pr.id
+            AND rev.reviewer_id != pr.author_id AND julianday(rev.submitted_at) <= julianday(?))
+            THEN 1 ELSE 0 END) AS reviewed_prs
+        FROM scoped_prs pr
+        WHERE julianday(pr.created_at) >= julianday(?) AND julianday(pr.created_at) <= julianday(?)
+          AND pr.author_id IS NOT NULL
+        GROUP BY pr.author_id
+      ), reviewed AS (
+        SELECT rev.reviewer_id AS contributor_id, COUNT(DISTINCT rev.pull_request_id) AS prs_reviewed
+        FROM pr_reviews rev JOIN scoped_prs pr ON pr.id = rev.pull_request_id
+        WHERE julianday(rev.submitted_at) >= julianday(?) AND julianday(rev.submitted_at) <= julianday(?)
+          AND rev.reviewer_id IS NOT NULL AND (pr.author_id IS NULL OR rev.reviewer_id != pr.author_id)
+        GROUP BY rev.reviewer_id
+      ), contributors AS (
+        SELECT contributor_id FROM authored UNION SELECT contributor_id FROM reviewed
+      )
+      SELECT c.contributor_id, u.name,
+        COALESCE(a.prs_created, 0) AS prs_created, COALESCE(v.prs_reviewed, 0) AS prs_reviewed,
+        COALESCE(a.merged_count, 0) AS merged_count, COALESCE(a.cycle_hours, 0) AS cycle_hours,
+        COALESCE(a.total_size, 0) AS total_size, COALESCE(a.reviewed_prs, 0) AS reviewed_prs
+      FROM contributors c LEFT JOIN authored a USING (contributor_id)
+      LEFT JOIN reviewed v USING (contributor_id) LEFT JOIN users u ON u.id = c.contributor_id
+      WHERE 1 = 1 ${membership}
+      ORDER BY (COALESCE(a.prs_created, 0) + COALESCE(v.prs_reviewed, 0)) DESC, c.contributor_id
+    `, [...scopeParams, now, cutoff, now, cutoff, now, ...memberParams])
 
-    const teamMembers = teamStats.map(stat => ({
-      userId: stat.author_id,
-      name: stat.author_name || 'Unknown',
+    const teamMembers = stats.map(stat => ({
+      userId: stat.contributor_id,
+      name: stat.name || 'Unknown',
       prsCreated: stat.prs_created,
       prsReviewed: stat.prs_reviewed,
-      avgCycleTime: Math.round((stat.avg_cycle_time || 0) * 10) / 10,
-      avgPRSize: Math.round(stat.avg_pr_size || 0),
-      reviewThoroughness: Math.round((stat.review_thoroughness || 0) * 10) / 10,
-      contributionScore: stat.contribution_score
+      avgCycleTime: stat.merged_count ? Math.round(stat.cycle_hours / stat.merged_count * 10) / 10 : 0,
+      avgPRSize: stat.prs_created ? Math.round(stat.total_size / stat.prs_created) : 0,
+      reviewThoroughness: stat.prs_created ? Math.round(stat.prs_reviewed / stat.prs_created * 1000) / 10 : 0,
+      contributionScore: stat.prs_created + stat.prs_reviewed
     }))
-
-    const totalContributors = teamMembers.length
-    const avgTeamCycleTime = totalContributors > 0
-      ? teamMembers.reduce((sum, member) => sum + member.avgCycleTime, 0) / totalContributors
-      : 0
-
-    const avgTeamPRSize = totalContributors > 0
-      ? teamMembers.reduce((sum, member) => sum + member.avgPRSize, 0) / totalContributors
-      : 0
-
-    const totalPRsCreated = teamMembers.reduce((sum, member) => sum + member.prsCreated, 0)
-    const totalReviews = teamMembers.reduce((sum, member) => sum + member.prsReviewed, 0)
-    
-    const collaborationIndex = totalPRsCreated > 0 ? (totalReviews / totalPRsCreated) : 0
-
-    // Get organization-wide review coverage for context
-    const reviewCoverageQuery = await query<{ coverage: number }>(`
-      SELECT 
-        CASE 
-          WHEN COUNT(DISTINCT pr.id) = 0 THEN 0
-          ELSE CAST(COUNT(DISTINCT CASE WHEN rev.id IS NOT NULL THEN pr.id END) AS FLOAT) / COUNT(DISTINCT pr.id) * 100
-        END as coverage
-      FROM pull_requests pr
-      LEFT JOIN repositories r ON pr.repository_id = r.id
-      LEFT JOIN pr_reviews rev ON pr.id = rev.pull_request_id
-      WHERE r.organization_id = ?
-      AND pr.created_at >= ?
-    `, [orgId, cutoffDate.toISOString()])
-
-    const reviewCoverage = Math.round((reviewCoverageQuery[0]?.coverage || 0) * 10) / 10
-
+    const totals = stats.reduce((sum, stat) => ({
+      prs: sum.prs + stat.prs_created, reviews: sum.reviews + stat.prs_reviewed,
+      merged: sum.merged + stat.merged_count, hours: sum.hours + stat.cycle_hours,
+      size: sum.size + stat.total_size, covered: sum.covered + stat.reviewed_prs
+    }), { prs: 0, reviews: 0, merged: 0, hours: 0, size: 0, covered: 0 })
     return {
       teamMembers,
-      totalContributors,
-      avgTeamCycleTime: Math.round(avgTeamCycleTime * 10) / 10,
-      avgTeamPRSize: Math.round(avgTeamPRSize),
-      collaborationIndex: Math.round(collaborationIndex * 100) / 100,
-      reviewCoverage
+      totalContributors: teamMembers.length,
+      avgTeamCycleTime: totals.merged ? Math.round(totals.hours / totals.merged * 10) / 10 : 0,
+      avgTeamPRSize: totals.prs ? Math.round(totals.size / totals.prs) : 0,
+      collaborationIndex: totals.prs ? Math.round(totals.reviews / totals.prs * 100) / 100 : 0,
+      reviewCoverage: totals.prs ? Math.round(totals.covered / totals.prs * 1000) / 10 : 0
     }
   }
 
-  async getRepositoryInsights(organizationId: string): Promise<RepositoryInsights> {
+  async getRepositoryInsights(organizationId: string, teamId?: number, timeRange = '14d', repositoryId?: string): Promise<RepositoryInsights> {
     const orgId = parseInt(organizationId)
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const cutoff = new Date(Date.now() - Number.parseInt(timeRange, 10) * 86400000);
+    const params: InValue[] = [cutoff.toISOString()];
+    if (teamId) params.push(teamId, orgId);
+    params.push(orgId);
+    if (repositoryId) params.push((Number(repositoryId) || -1));
 
     // Get repository insights with aggregated metrics
     const repositories = await query<{
@@ -595,17 +544,21 @@ export class OptimizedTursoMetricsService implements IMetricsService {
         AVG(COALESCE(pr.additions, 0) + COALESCE(pr.deletions, 0)) as avg_pr_size,
         SUM(CASE WHEN pr.category_id IS NOT NULL THEN 1 ELSE 0 END) as categorized_prs,
         COUNT(DISTINCT pr.author_id) as contributor_count,
-        COUNT(DISTINCT CASE WHEN rev.id IS NOT NULL THEN pr.id ELSE NULL END) as reviewed_prs
+        SUM(CASE WHEN EXISTS (
+          SELECT 1 FROM pr_reviews rev WHERE rev.pull_request_id = pr.id
+        ) THEN 1 ELSE 0 END) as reviewed_prs
       FROM repositories r
       LEFT JOIN pull_requests pr ON r.id = pr.repository_id 
         AND pr.created_at >= ?
-      LEFT JOIN pr_reviews rev ON pr.id = rev.pull_request_id
+        ${teamId ? `AND EXISTS (SELECT 1 FROM team_members tm JOIN teams t ON tm.team_id = t.id
+          WHERE tm.user_id = pr.author_id AND t.id = ? AND t.organization_id = ?)` : ''}
       WHERE r.organization_id = ?
       AND r.is_tracked = 1
+      ${repositoryId ? 'AND r.id = ?' : ''}
       GROUP BY r.id, r.name, r.full_name, r.is_tracked
       HAVING total_prs > 0
       ORDER BY total_prs DESC
-    `, [thirtyDaysAgo.toISOString(), orgId])
+    `, params)
 
     const repositoryInsights = repositories.map(repo => {
       const categorizationRate = repo.total_prs > 0 
@@ -693,21 +646,4 @@ export class OptimizedTursoMetricsService implements IMetricsService {
     }
   }
 
-  // Other methods stay the same
-  async getDeveloperMetrics(_organizationId: string, _userId?: string, _timeRange?: TimeRange) {
-    return []
-  }
-
-  async getCycleTimeTrends(_organizationId: string, _repositoryId?: string, _timeRange?: TimeRange) {
-    return []
-  }
-
-  async getReviewCoverage(_organizationId: string, _timeRange?: TimeRange) {
-    return {
-      totalPRs: 0,
-      reviewedPRs: 0,
-      coverage: 0,
-      trendDirection: 'stable' as const
-    }
-  }
 }

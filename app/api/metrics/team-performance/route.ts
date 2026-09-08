@@ -1,41 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServiceLocator, withAuth, ApplicationContext } from '@/lib/core';
+import { dashboardFiltersSchema } from '@/lib/core/domain/value-objects/dashboard-filters';
+import { z } from 'zod';
+
+const filtersSchema = dashboardFiltersSchema.extend({ repositoryIds: z.string().regex(/^[1-9]\d*(,[1-9]\d*)*$/).refine(value => value.split(',').length <= 100 && value.split(',').every(id => Number.isSafeInteger(Number(id)))).optional() });
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-// Pure business logic handler - no authentication concerns
-const teamPerformanceHandler = async (
-  context: ApplicationContext,
-  request: NextRequest
-): Promise<NextResponse> => {
+const handler = async (context: ApplicationContext, request: NextRequest): Promise<NextResponse> => {
+  const filters = filtersSchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
+  if (!filters.success) {
+    return NextResponse.json({ error: 'Invalid dashboard filters' }, { status: 400 });
+  }
+  const { teamId, timeRange, repositoryId } = filters.data;
   try {
-    // Parse query parameters including team filtering
-    const searchParams = request.nextUrl.searchParams;
-    const repositoryIdsParam = searchParams.get('repositoryIds');
-    const repositoryIds = repositoryIdsParam ? repositoryIdsParam.split(',') : undefined;
-    const teamId = searchParams.get('teamId');
-    const timeRange = searchParams.get('timeRange') || '14d';
-
-    // Get the metrics service via dependency injection
-    const metricsService = await ServiceLocator.getMetricsService();
-    
-    // Use organization ID from authenticated context with team filtering
-    const data = await metricsService.getTeamPerformance(
-      context.organizationId, 
-      repositoryIds,
-      teamId ? parseInt(teamId) : undefined,
-      timeRange
-    );
-    
-    return NextResponse.json(data);
+    const service = await ServiceLocator.getMetricsService();
+    const data = await service.getTeamPerformance(context.organizationId, repositoryId ? [repositoryId] : filters.data.repositoryIds?.split(','), teamId, timeRange);
+    return NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
-    console.error('Error getting team performance data:', error);
-    return NextResponse.json(
-      { error: 'Failed to get team performance data' }, 
-      { status: 500 }
-    );
+    console.error('Error getting team-performance:', error);
+    return NextResponse.json({ error: 'Failed to get team-performance' }, { status: 500 });
   }
 };
 
-// Authentication handled by middleware at application boundary
-export const GET = withAuth(teamPerformanceHandler);
+export const GET = withAuth(handler);

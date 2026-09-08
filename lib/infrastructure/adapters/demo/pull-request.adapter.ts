@@ -18,48 +18,53 @@ import {
   DemoDataGenerator
 } from './data/demo-data'
 
+function mapDemoPullRequest(summary: typeof DEMO_PULL_REQUESTS[number]): PullRequestSummary {
+  const createdAt = summary.createdAt
+  const mergedAt = summary.mergedAt
+  return {
+    id: summary.id,
+    number: summary.number,
+    title: summary.title,
+    developer: {
+      id: summary.author.login,
+      name: summary.author.login.replace('-', ' ').replace(/\b\w/g, letter => letter.toUpperCase())
+    },
+    repository: { id: summary.repository.id, name: summary.repository.name },
+    status: summary.state,
+    createdAt: createdAt.toISOString(),
+    mergedAt: mergedAt?.toISOString() || '',
+    cycleTime: mergedAt ? Math.round((mergedAt.getTime() - createdAt.getTime()) / 3600000 * 10) / 10 : 0,
+    investmentArea: summary.category?.name || 'Uncertain',
+    linesAdded: summary.additions,
+    linesRemoved: summary.deletions,
+    files: Math.floor((summary.additions + summary.deletions) / 50) + 1
+  }
+}
+
 export class DemoPullRequestRepository implements IPullRequestRepository {
   
   async getRecent(
     organizationId: string, 
     pagination?: Pagination,
-    _teamId?: number,
-    _timeRange?: string
+    teamId?: number,
+    timeRange?: string,
+    repositoryId?: string
   ): Promise<PaginatedResult<PullRequestSummary>> {
     const page = pagination || Pagination.create(1, 10)
     const startIndex = page.offset
     const endIndex = startIndex + page.limit
     
-    // Sort by creation date (newest first)
-    const sortedPRs = [...DEMO_PULL_REQUESTS].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
+    const now = Date.now()
+    const cutoff = timeRange ? now - Number.parseInt(timeRange, 10) * 86400000 : 0
+    const sortedPRs = DemoDataGenerator.getPullRequests(organizationId, teamId, repositoryId)
+      .filter(pr => pr.createdAt.getTime() >= cutoff && pr.createdAt.getTime() <= now)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     
     const paginatedData = sortedPRs.slice(startIndex, endIndex)
     const total = sortedPRs.length
     
     return {
-      data: paginatedData.map(summary => ({
-        id: summary.id,
-        number: summary.number,
-        title: summary.title,
-        developer: {
-          id: summary.author.login,
-          name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-        },
-        repository: {
-          id: summary.repository.name.replace(/[^a-zA-Z0-9]/g, ''),
-          name: summary.repository.name
-        },
-        status: summary.state,
-        createdAt: summary.createdAt.toISOString(),
-        mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
-        cycleTime: summary.mergedAt ? 
-          Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-        investmentArea: summary.category?.name || 'Uncertain',
-        linesAdded: summary.additions,
-        files: Math.floor((summary.additions + summary.deletions) / 50) + 1
-      })),
+      data: paginatedData.map(mapDemoPullRequest),
       pagination: {
         page: page.page,
         limit: page.limit,
@@ -73,32 +78,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
 
   async getById(pullRequestId: string): Promise<PullRequest | null> {
     const summary = DEMO_PULL_REQUESTS.find(pr => pr.id === pullRequestId)
-    if (!summary) return null
-
-    // Convert summary to full PR (mock additional data)
-    const fullPR: PullRequest = {
-      id: summary.id,
-      number: summary.number,
-      title: summary.title,
-      developer: {
-        id: `demo-user-${summary.author.login}`,
-        name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-      },
-      repository: {
-        id: `demo-repo-${summary.repository.name}`,
-        name: summary.repository.name
-      },
-      status: summary.state,
-      createdAt: summary.createdAt.toISOString(),
-      mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
-      cycleTime: summary.mergedAt ?
-        Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-      investmentArea: summary.category?.name || 'Feature Development',
-      linesAdded: summary.additions,
-      files: Math.floor((summary.additions + summary.deletions) / 50) + 1
-    }
-
-    return fullPR
+    return summary ? mapDemoPullRequest(summary) : null
   }
 
   async getByCategory(
@@ -106,7 +86,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     categoryId?: string,
     timeRange?: TimeRange
   ): Promise<PullRequest[]> {
-    let filteredPRs = DEMO_PULL_REQUESTS
+    let filteredPRs = DemoDataGenerator.getPullRequests(organizationId)
 
     // Filter by category if specified
     if (categoryId) {
@@ -134,11 +114,20 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
   }
 
   async getCategoryDistribution(
-    _organizationId: string,
-    _timeRange?: TimeRange
+    organizationId: string,
+    timeRange?: TimeRange,
+    teamId?: number,
+    repositoryId?: string
   ): Promise<CategoryDistribution[]> {
-    // For simplicity, return static data regardless of time range
-    return DEMO_CATEGORY_DISTRIBUTION
+    const prs = DemoDataGenerator.getPullRequests(organizationId, teamId, repositoryId)
+      .filter(pr => !timeRange || timeRange.contains(pr.createdAt))
+    const counts = new Map<string, number>()
+    for (const pr of prs) {
+      const category = pr.category?.name || 'Uncategorized'
+      counts.set(category, (counts.get(category) || 0) + 1)
+    }
+    return [...counts].map(([categoryName, count]) => ({ categoryName, count, percentage: count / prs.length * 100 }))
+      .sort((a, b) => b.count - a.count)
   }
 
   async getCategoryTimeSeries(
@@ -198,27 +187,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     const total = authorPRs.length
 
     return {
-      data: paginatedData.map(summary => ({
-        id: summary.id,
-        number: summary.number,
-        title: summary.title,
-        developer: {
-          id: summary.author.login,
-          name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-        },
-        repository: {
-          id: summary.repository.name.replace(/[^a-zA-Z0-9]/g, ''),
-          name: summary.repository.name
-        },
-        status: summary.state,
-        createdAt: summary.createdAt.toISOString(),
-        mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
-        cycleTime: summary.mergedAt ? 
-          Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-        investmentArea: summary.category?.name || 'Uncertain',
-        linesAdded: summary.additions,
-        files: Math.floor((summary.additions + summary.deletions) / 50) + 1
-      })),
+      data: paginatedData.map(mapDemoPullRequest),
       pagination: {
         page: page.page,
         limit: page.limit,
@@ -235,7 +204,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     pagination?: Pagination
   ): Promise<PaginatedResult<PullRequestSummary>> {
     const repoPRs = DEMO_PULL_REQUESTS.filter(pr => 
-      pr.repository.name === repositoryId || pr.id === repositoryId
+      pr.repository.id === repositoryId || pr.repository.name === repositoryId
     )
     
     const page = pagination || Pagination.create(1, 10)
@@ -245,27 +214,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     const total = repoPRs.length
 
     return {
-      data: paginatedData.map(summary => ({
-        id: summary.id,
-        number: summary.number,
-        title: summary.title,
-        developer: {
-          id: summary.author.login,
-          name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-        },
-        repository: {
-          id: summary.repository.name.replace(/[^a-zA-Z0-9]/g, ''),
-          name: summary.repository.name
-        },
-        status: summary.state,
-        createdAt: summary.createdAt.toISOString(),
-        mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
-        cycleTime: summary.mergedAt ? 
-          Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-        investmentArea: summary.category?.name || 'Uncertain',
-        linesAdded: summary.additions,
-        files: Math.floor((summary.additions + summary.deletions) / 50) + 1
-      })),
+      data: paginatedData.map(mapDemoPullRequest),
       pagination: {
         page: page.page,
         limit: page.limit,
@@ -296,27 +245,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
     const total = matchingPRs.length
 
     return {
-      data: paginatedData.map(summary => ({
-        id: summary.id,
-        number: summary.number,
-        title: summary.title,
-        developer: {
-          id: summary.author.login,
-          name: summary.author.login.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-        },
-        repository: {
-          id: summary.repository.name.replace(/[^a-zA-Z0-9]/g, ''),
-          name: summary.repository.name
-        },
-        status: summary.state,
-        createdAt: summary.createdAt.toISOString(),
-        mergedAt: summary.mergedAt ? summary.mergedAt.toISOString() : '',
-        cycleTime: summary.mergedAt ? 
-          Math.round((summary.mergedAt.getTime() - summary.createdAt.getTime()) / (1000 * 60 * 60) * 10) / 10 : 0,
-        investmentArea: summary.category?.name || 'Uncertain',
-        linesAdded: summary.additions,
-        files: Math.floor((summary.additions + summary.deletions) / 50) + 1
-      })),
+      data: paginatedData.map(mapDemoPullRequest),
       pagination: {
         page: page.page,
         limit: page.limit,
@@ -352,7 +281,7 @@ export class DemoPullRequestRepository implements IPullRequestRepository {
 
     if (filters?.repositoryId) {
       filteredPRs = filteredPRs.filter(pr => 
-        pr.repository.name === filters.repositoryId
+        pr.repository.id === filters.repositoryId || pr.repository.name === filters.repositoryId
       )
     }
 

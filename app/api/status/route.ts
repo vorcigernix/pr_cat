@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { CURRENT_SCHEMA_VERSION } from '@/lib/migrate';
 import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
@@ -41,7 +42,7 @@ export async function GET() {
       tablesExist = false;
     }
     
-    const migrationNeeded = dbVersion === 0 || !tablesExist;
+    const migrationNeeded = dbVersion < CURRENT_SCHEMA_VERSION || !tablesExist;
     
     return NextResponse.json({
       status: 'ok',
@@ -52,7 +53,7 @@ export async function GET() {
         migrationNeeded
       },
       tips: migrationNeeded ? [
-        "Database schema needs to be initialized. Visit /api/migrate to run migrations."
+        "Database schema needs to be updated. Send POST /api/migrate to run migrations."
       ] : []
     });
   } catch (error) {
@@ -66,7 +67,7 @@ export async function GET() {
       },
       tips: [
         "Check your database connection settings (TURSO_URL and TURSO_TOKEN)",
-        "Visit /api/migrate to initialize the database schema"
+        "Send POST /api/migrate to initialize the database schema"
       ]
     }, { status: 500 });
   }

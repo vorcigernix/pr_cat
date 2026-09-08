@@ -1,263 +1,156 @@
 "use client"
 
 import * as React from "react"
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import useSWR, { useSWRConfig } from "swr"
+import { DASHBOARD_TIME_RANGES, type DashboardTimeRange } from "@/lib/core/domain/value-objects/dashboard-filters"
 
-// Team and Organization types
 export type Team = {
-  id: number;
-  organization_id: number;
-  name: string;
-  description: string | null;
-  color: string | null;
-  created_at: string;
-  updated_at: string;
-  member_count?: number;
+  id: number; organization_id: number; name: string; description: string | null;
+  color: string | null; created_at: string; updated_at: string; member_count?: number;
 }
-
-export type Organization = {
-  id: number;
-  name: string;
-  role?: string;
-}
-
-// Time range options focused on retrospective intervals
-export type TimeRange = "7d" | "14d" | "30d" | "90d"
+export type Organization = { id: string | number; name: string; role?: string }
+export type DashboardRepository = { id: string; name: string; full_name?: string; last_synced_at?: string | null }
+export type TimeRange = DashboardTimeRange
 
 export interface TeamFilterContextType {
-  // Team and Organization state
-  organizations: Organization[];
-  teams: Team[];
-  selectedOrganization: Organization | null;
-  selectedTeam: Team | null;
-  
-  // Time filtering for retrospectives
-  timeRange: TimeRange;
-  
-  // Loading and error states
-  loading: boolean;
-  error: string | null;
-  
-  // Actions
+  organizations: Organization[]; teams: Team[]; repositories: DashboardRepository[];
+  selectedOrganization: Organization | null; selectedTeam: Team | null;
+  selectedRepositoryId: string; timeRange: TimeRange; loading: boolean; ready: boolean;
+  error: string | null; refreshing: boolean; lastRefreshed: string | null;
   setSelectedOrganization: (org: Organization | null) => void;
   setSelectedTeam: (team: Team | null) => void;
+  setSelectedRepositoryId: (id: string) => void;
   setTimeRange: (range: TimeRange) => void;
   refreshData: () => Promise<void>;
 }
-
 const TeamFilterContext = createContext<TeamFilterContextType | undefined>(undefined)
+const FILTER_KEYS = ['organizationId', 'teamId', 'repositoryId', 'timeRange'] as const
+const STORAGE_KEY = 'pr_cat_dashboard_filters'
+const EMPTY_ORGANIZATIONS: Organization[] = []
 
-interface TeamFilterProviderProps {
-  children: React.ReactNode;
+async function fetchFilters(url: string) {
+  const response = await fetch(url, { cache: 'no-store' })
+  if (!response.ok) throw new Error('Could not load dashboard filters. Please retry.')
+  return response.json()
 }
 
-// localStorage keys
-const STORAGE_KEYS = {
-  SELECTED_ORG_ID: 'pr_cat_selected_org_id',
-  SELECTED_TEAM_ID: 'pr_cat_selected_team_id',
-  TIME_RANGE: 'pr_cat_time_range'
-} as const;
+function updateFilters(values: Record<string, string | null>, replace = false) {
+  const url = new URL(window.location.href)
+  Object.entries(values).forEach(([key, value]) => {
+    if (value === null) url.searchParams.delete(key)
+    else url.searchParams.set(key, value)
+  })
+  window.history[replace ? 'replaceState' : 'pushState'](null, '', url.pathname + url.search + url.hash)
+}
 
-// Helper functions for localStorage with SSR safety
-const getStorageValue = <T,>(key: string, defaultValue: T): T => {
-  if (typeof window === 'undefined') return defaultValue;
-  try {
-    const item = localStorage.getItem(key);
-    return item ? (JSON.parse(item) as T) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-};
+export function TeamFilterProvider({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams()
+  const { mutate, cache } = useSWRConfig()
+  const [refresh, setRefresh] = useState<{
+    scope: string; pending: boolean; completedAt: string | null; error: string | null;
+  } | null>(null)
+  const orgQuery = useSWR<Organization[]>('/api/organizations', fetchFilters)
+  const organizations = orgQuery.data || EMPTY_ORGANIZATIONS
+  const organizationId = searchParams.get('organizationId')
+  const selectedOrganization = organizations.find(org => String(org.id) === organizationId) || null
+  const teamEndpoint = selectedOrganization ? `/api/organizations/${selectedOrganization.id}/teams` : null
+  const repoEndpoint = selectedOrganization ? `/api/repositories?organizationId=${selectedOrganization.id}` : null
+  const teamQuery = useSWR<Team[]>(teamEndpoint, fetchFilters)
+  const repoQuery = useSWR<{ repositories: DashboardRepository[] }>(repoEndpoint, fetchFilters)
+  const teams = teamQuery.data || []
+  const repositories = repoQuery.data?.repositories || []
+  const selectedTeam = teams.find(team => String(team.id) === searchParams.get('teamId')) || null
+  const selectedRepositoryId = repositories.find(repo => String(repo.id) === searchParams.get('repositoryId'))?.id.toString() || 'all'
+  const requestedRange = searchParams.get('timeRange')
+  const timeRange: TimeRange = DASHBOARD_TIME_RANGES.includes(requestedRange as TimeRange) ? requestedRange as TimeRange : '14d'
+  const filterScope = FILTER_KEYS.map(key => searchParams.get(key) || '').join('|')
 
-const setStorageValue = <T,>(key: string, value: T) => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // Fail silently if localStorage is not available
-  }
-};
+  const currentRefresh = refresh?.scope === filterScope ? refresh : null
+  const hasUrlFilters = FILTER_KEYS.some(key => searchParams.has(key))
+  const invalidTeam = !!searchParams.get('teamId') && !!teamQuery.data && !selectedTeam
+  const invalidRepository = !!searchParams.get('repositoryId') && !!repoQuery.data && selectedRepositoryId === 'all'
+  const ready = !!selectedOrganization && !!teamQuery.data && !!repoQuery.data && !invalidTeam && !invalidRepository && requestedRange === timeRange
 
-export function TeamFilterProvider({ children }: TeamFilterProviderProps) {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [timeRange, setTimeRange] = useState<TimeRange>(() => 
-    getStorageValue(STORAGE_KEYS.TIME_RANGE, "14d")
-  ); // Default to 2 weeks for retrospectives
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const selectedOrganizationRef = useRef<Organization | null>(null);
-
+  // The URL is the source of truth. Restore only when navigation provides no filters.
   useEffect(() => {
-    selectedOrganizationRef.current = selectedOrganization;
-  }, [selectedOrganization]);
-
-  // Fetch organizations on mount
-  const fetchOrganizations = useCallback(async () => {
-    try {
-      setError(null);
-      const response = await fetch('/api/organizations');
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch organizations');
-      }
-      
-      const data = await response.json();
-      setOrganizations(data);
-      
-      // Auto-select first organization if none selected, or restore from localStorage
-      setSelectedOrganization((current) => {
-        if (current || data.length === 0) {
-          return current;
+    if (!orgQuery.data) return
+    if (!hasUrlFilters) {
+      let saved: Record<string, string> = {}
+      try {
+        const value: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+        if (value && typeof value === 'object') {
+          saved = Object.fromEntries(Object.entries(value).filter(([key, item]) => FILTER_KEYS.includes(key as typeof FILTER_KEYS[number]) && typeof item === 'string'))
         }
-        const savedOrgId = getStorageValue<number | null>(STORAGE_KEYS.SELECTED_ORG_ID, null);
-        return savedOrgId
-          ? data.find((org: Organization) => org.id === savedOrgId) || data[0]
-          : data[0];
-      });
-      
-      return data;
-    } catch (error) {
-      console.error('Failed to fetch organizations:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load organizations');
-      return [];
+      } catch { /* Storage may be disabled. The URL still works. */ }
+      const org = organizations.find(org => String(org.id) === saved.organizationId) || organizations[0]
+      updateFilters({ ...saved, organizationId: org ? String(org.id) : null, timeRange: saved.timeRange || '14d' }, true)
+      return
     }
-  }, []);
+    const corrections: Record<string, string | null> = {}
+    if (!organizationId && organizations.length) corrections.organizationId = String(organizations[0].id)
+    if (invalidTeam) corrections.teamId = null
+    if (invalidRepository) corrections.repositoryId = null
+    if (requestedRange !== timeRange) corrections.timeRange = timeRange
+    if (Object.keys(corrections).length) {
+      updateFilters(corrections, true)
+    } else if (ready) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(FILTER_KEYS.flatMap(key => searchParams.has(key) ? [[key, searchParams.get(key)]] : []))))
+      } catch { /* Persistence is optional. */ }
+    }
+  }, [orgQuery.data, organizations, searchParams, hasUrlFilters, organizationId, invalidTeam, invalidRepository, requestedRange, timeRange, ready])
 
-  // Fetch teams for selected organization
-  const fetchTeams = useCallback(async (orgId: number) => {
+  const error = currentRefresh?.error || orgQuery.error?.message || teamQuery.error?.message || repoQuery.error?.message ||
+    (organizationId && orgQuery.data && !selectedOrganization ? 'This organization is unavailable. Select another organization.' : null)
+
+  const refreshData = async () => {
+    const request = { scope: filterScope, pending: true, completedAt: currentRefresh?.completedAt ?? null, error: null }
+    setRefresh(request)
+    let refreshError: string | null = null
     try {
-      setError(null);
-      const response = await fetch(`/api/organizations/${orgId}/teams`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch teams');
-      }
-      
-      const data = await response.json();
-      setTeams(data);
-      
-      // Restore selected team from localStorage if it exists in the fetched teams
-      const savedTeamId = getStorageValue<number | null>(STORAGE_KEYS.SELECTED_TEAM_ID, null);
-      if (savedTeamId && data.length > 0) {
-        setSelectedTeam((current) => {
-          if (current) {
-            return current;
-          }
-          return data.find((team: Team) => team.id === savedTeamId) || null;
-        });
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Failed to fetch teams:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load teams');
-      return [];
+      const refreshedKeys: string[] = []
+      await mutate(key => {
+        if (typeof key !== 'string' || !key.startsWith('/api/')) return false
+        const url = new URL(key, window.location.origin)
+        const isFilterList = ['/api/organizations', teamEndpoint, repoEndpoint].includes(key)
+        const isScopedMetric = (url.pathname.startsWith('/api/metrics/') || url.pathname.startsWith('/api/pull-requests/')) &&
+          FILTER_KEYS.every(filter => (url.searchParams.get(filter) || '') === (searchParams.get(filter) || ''))
+        if (isFilterList || isScopedMetric) refreshedKeys.push(key)
+        return isFilterList || isScopedMetric
+      })
+      // SWR revalidation records fetch errors in cache instead of rejecting mutate().
+      if (refreshedKeys.some(key => cache.get(key)?.error)) throw new Error('Dashboard refresh failed')
+    } catch {
+      refreshError = 'Some dashboard data could not be refreshed. Please retry.'
     }
-  }, []);
+    const completedAt = refreshError ? request.completedAt : new Date().toISOString()
+    setRefresh(current => current === request ? { ...request, pending: false, completedAt, error: refreshError } : current)
+  }
 
-  // Refresh all data
-  const refreshData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const orgs = await fetchOrganizations();
-      const currentSelectedOrgId = selectedOrganizationRef.current?.id;
-      const orgIdToLoad = currentSelectedOrgId || orgs[0]?.id;
-      if (orgIdToLoad) {
-        await fetchTeams(orgIdToLoad);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchOrganizations, fetchTeams]);
-
-  // Initial data load
-  useEffect(() => {
-    void refreshData();
-  }, [refreshData]);
-
-  // Fetch teams when organization changes
-  useEffect(() => {
-    if (selectedOrganization) {
-      void fetchTeams(selectedOrganization.id);
-      // Clear selected team when changing organizations
-      setSelectedTeam(null);
-    } else {
-      setTeams([]);
-      setSelectedTeam(null);
-    }
-  }, [fetchTeams, selectedOrganization]);
-
-  // Persist selections to localStorage
-  useEffect(() => {
-    if (selectedOrganization) {
-      setStorageValue(STORAGE_KEYS.SELECTED_ORG_ID, selectedOrganization.id);
-    }
-  }, [selectedOrganization]);
-
-  useEffect(() => {
-    if (selectedTeam) {
-      setStorageValue(STORAGE_KEYS.SELECTED_TEAM_ID, selectedTeam.id);
-    } else {
-      // Clear the stored team ID when no team is selected
-      setStorageValue(STORAGE_KEYS.SELECTED_TEAM_ID, null);
-    }
-  }, [selectedTeam]);
-
-  useEffect(() => {
-    setStorageValue(STORAGE_KEYS.TIME_RANGE, timeRange);
-  }, [timeRange]);
-
-  const contextValue: TeamFilterContextType = {
-    organizations,
-    teams,
-    selectedOrganization,
-    selectedTeam,
-    timeRange,
-    loading,
-    error,
-    setSelectedOrganization,
-    setSelectedTeam,
-    setTimeRange,
-    refreshData,
-  };
-
-  return (
-    <TeamFilterContext.Provider value={contextValue}>
-      {children}
-    </TeamFilterContext.Provider>
-  );
+  return <TeamFilterContext.Provider value={{
+    organizations, teams, repositories, selectedOrganization, selectedTeam, selectedRepositoryId,
+    timeRange, loading: orgQuery.isLoading || teamQuery.isLoading || repoQuery.isLoading,
+    ready, error, refreshing: currentRefresh?.pending ?? false, lastRefreshed: currentRefresh?.completedAt ?? null, refreshData,
+    setSelectedOrganization: org => updateFilters({ organizationId: org ? String(org.id) : null, teamId: null, repositoryId: null }),
+    setSelectedTeam: team => updateFilters({ teamId: team ? String(team.id) : null }),
+    setSelectedRepositoryId: id => updateFilters({ repositoryId: id === 'all' ? null : id }),
+    setTimeRange: range => updateFilters({ timeRange: range }),
+  }}>{children}</TeamFilterContext.Provider>
 }
 
 export function useTeamFilter() {
-  const context = useContext(TeamFilterContext);
-  if (!context) {
-    throw new Error('useTeamFilter must be used within a TeamFilterProvider');
-  }
-  return context;
+  const context = useContext(TeamFilterContext)
+  if (!context) throw new Error('useTeamFilter must be used within a TeamFilterProvider')
+  return context
 }
 
-// Helper hook for building API query parameters with team filtering
 export function useTeamFilterParams() {
-  const { selectedTeam, selectedOrganization, timeRange } = useTeamFilter();
-  
-  return React.useMemo(() => {
-    const params = new URLSearchParams();
-    
-    if (selectedOrganization) {
-      params.append('organizationId', selectedOrganization.id.toString());
-    }
-    
-    if (selectedTeam) {
-      params.append('teamId', selectedTeam.id.toString());
-    }
-    
-    params.append('timeRange', timeRange);
-    
-    return params.toString();
-  }, [selectedTeam, selectedOrganization, timeRange]);
+  const { selectedOrganization, selectedTeam, selectedRepositoryId, timeRange, ready } = useTeamFilter()
+  if (!ready || !selectedOrganization) return ''
+  const params = new URLSearchParams({ organizationId: String(selectedOrganization.id), timeRange })
+  if (selectedTeam) params.set('teamId', String(selectedTeam.id))
+  if (selectedRepositoryId !== 'all') params.set('repositoryId', selectedRepositoryId)
+  return params.toString()
 }

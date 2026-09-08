@@ -1,28 +1,24 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ServiceLocator, withAuth, ApplicationContext } from '@/lib/core';
+import { dashboardFiltersSchema } from '@/lib/core/domain/value-objects/dashboard-filters';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-// Pure business logic handler
-const repositoryInsightsHandler = async (
-  context: ApplicationContext
-): Promise<NextResponse> => {
+const handler = async (context: ApplicationContext, request: NextRequest): Promise<NextResponse> => {
+  const filters = dashboardFiltersSchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
+  if (!filters.success) {
+    return NextResponse.json({ error: 'Invalid dashboard filters' }, { status: 400 });
+  }
+  const { teamId, timeRange, repositoryId } = filters.data;
   try {
-    // Get the metrics service via dependency injection
-    const metricsService = await ServiceLocator.getMetricsService();
-    
-    // Use organization ID from authenticated context
-    const data = await metricsService.getRepositoryInsights(context.organizationId);
-    
-    return NextResponse.json(data);
+    const service = await ServiceLocator.getMetricsService();
+    const data = await service.getRepositoryInsights(context.organizationId, teamId, timeRange, repositoryId);
+    return NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
-    console.error('Error getting repository insights:', error);
-    return NextResponse.json(
-      { error: 'Failed to get repository insights' }, 
-      { status: 500 }
-    );
+    console.error('Error getting repository-insights:', error);
+    return NextResponse.json({ error: 'Failed to get repository-insights' }, { status: 500 });
   }
 };
 
-// Authentication handled by middleware
-export const GET = withAuth(repositoryInsightsHandler);
+export const GET = withAuth(handler);

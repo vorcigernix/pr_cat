@@ -46,27 +46,29 @@ We welcome pull requests for:
 
 ## 🔧 Development Setup
 
+Install Bun 1.4.2 and Node.js 24+ (or Node.js 22.13+ within the 22.x series). Bun manages dependencies and package scripts; the test script runs Jest.
+
 ```bash
 # Clone your fork
 git clone https://github.com/YOUR_USERNAME/pr_cat.git
 cd pr_cat
 
 # Install dependencies
-pnpm install
+bun install
 
 # Set up environment variables
-cp .env.example .env.local
+cp environment.example .env.local
 # Edit .env.local with your configuration
 
 # Run development server
-pnpm dev
+bun run dev
 ```
 
 ## 📋 Code Standards
 
 - **TypeScript**: All new code should be properly typed
 - **ESLint**: Follow the existing linting rules
-- **Prettier**: Code formatting is handled automatically
+- **Formatting**: Match the conventions in the surrounding code
 - **Tests**: Write tests for new functionality
 - **Documentation**: Update docs for user-facing changes
 

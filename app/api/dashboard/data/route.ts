@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pagination, ServiceLocator } from '@/lib/core';
+import { Pagination, ServiceLocator, withAuth, type ApplicationContext } from '@/lib/core';
 import type { MetricsSummary, PaginatedResult, PullRequestSummary } from '@/lib/core';
-import { getUserWithOrganizations } from '@/lib/auth-context';
+import { dashboardFiltersSchema } from '@/lib/core/domain/value-objects/dashboard-filters';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
 
@@ -53,31 +54,18 @@ function parseInclude(searchParams: URLSearchParams): Set<DashboardInclude> {
   );
 }
 
-function parseOptionalInt(value: string | null): number | undefined {
-  if (!value) {
-    return undefined;
-  }
+const filtersSchema = dashboardFiltersSchema.extend({
+  page: z.coerce.number().int().min(1).max(1000000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
 
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? undefined : parsed;
-}
-
-export async function GET(request: NextRequest) {
+async function handler(context: ApplicationContext, request: NextRequest) {
+  const filters = filtersSchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
+  if (!filters.success) return NextResponse.json({ error: 'Invalid dashboard filters' }, { status: 400 });
+  const { teamId, timeRange, repositoryId, page, limit } = filters.data;
+  const { user, organizations, primaryOrganization, organizationId } = context;
   try {
-    const { searchParams } = new URL(request.url);
-    const include = parseInclude(searchParams);
-    const teamId = parseOptionalInt(searchParams.get('teamId'));
-    const timeRange = searchParams.get('timeRange') ?? '14d';
-    const page = Math.max(1, parseOptionalInt(searchParams.get('page')) ?? 1);
-    const limit = Math.max(
-      1,
-      Math.min(100, parseOptionalInt(searchParams.get('limit')) ?? 10)
-    );
-    
-    // Use cached user context
-    const { user, organizations, primaryOrganization } = await getUserWithOrganizations(request);
-    const organizationId = String(primaryOrganization.id);
-    
+    const include = parseInclude(request.nextUrl.searchParams);
     const repositoriesPromise: Promise<DashboardRepository[] | undefined> = include.has('repositories')
       ? (async () => {
           const organizationRepository = await ServiceLocator.getOrganizationRepository();
@@ -100,7 +88,7 @@ export async function GET(request: NextRequest) {
     const metricsSummaryPromise: Promise<MetricsSummary | undefined> = include.has('metrics-summary')
       ? (async () => {
           const metricsService = await ServiceLocator.getMetricsService();
-          return metricsService.getSummary(organizationId, teamId, timeRange);
+          return metricsService.getSummary(organizationId, teamId, timeRange, repositoryId);
         })()
       : Promise.resolve(undefined);
 
@@ -111,7 +99,8 @@ export async function GET(request: NextRequest) {
             organizationId,
             Pagination.create(page, limit),
             teamId,
-            timeRange
+            timeRange,
+            repositoryId
           );
         })()
       : Promise.resolve(undefined);
@@ -131,7 +120,6 @@ export async function GET(request: NextRequest) {
       organizations: organizations.map(org => ({
         id: String(org.id),
         name: org.name,
-        role: org.role
       })),
       primaryOrganization: {
         id: organizationId,
@@ -151,7 +139,7 @@ export async function GET(request: NextRequest) {
       response.recentPRs = recentPRs;
     }
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     
@@ -165,3 +153,5 @@ export async function GET(request: NextRequest) {
     }, { status: 500 });
   }
 } 
+
+export const GET = withAuth(handler);

@@ -111,37 +111,32 @@ export class GitHubClient {
     });
   }
   
-  async getUserOrganizations(): Promise<GitHubOrganization[]> {
+  async getUserOrganizations(page = 1): Promise<GitHubOrganization[]> {
     return this.executeWithTokenRefresh(async () => {
-      try {
-        console.log('Fetching GitHub organizations for user...');
-        const { data } = await this.octokit.orgs.listForAuthenticatedUser();
-        console.log('GitHub API response for organizations:', JSON.stringify(data, null, 2));
-        return data as GitHubOrganization[];
-      } catch (error) {
-        console.error('Error fetching GitHub organizations:', error);
-        throw error;
-      }
+      const { data } = await this.octokit.orgs.listForAuthenticatedUser({ page, per_page: 100 });
+      return data as GitHubOrganization[];
     });
   }
   
-  async getOrganizationRepositories(org: string): Promise<GitHubRepository[]> {
+  async getOrganizationRepositories(org: string, page = 1): Promise<GitHubRepository[]> {
     return this.executeWithTokenRefresh(async () => {
       const { data } = await this.octokit.repos.listForOrg({
         org,
         type: 'all',
         sort: 'updated',
         direction: 'desc',
+        page,
         per_page: 100
       });
       return data as GitHubRepository[];
     });
   }
 
-  async getOrganizationMembers(org: string): Promise<GitHubUser[]> {
+  async getOrganizationMembers(org: string, page = 1): Promise<GitHubUser[]> {
     return this.executeWithTokenRefresh(async () => {
       const { data } = await this.octokit.orgs.listMembers({
         org,
+        page,
         per_page: 100
       });
       return data as GitHubUser[];
@@ -260,12 +255,14 @@ export class GitHubClient {
     });
   }
   
-  async getPullRequestReviews(owner: string, repo: string, pullNumber: number): Promise<PullRequestReview[]> {
+  async getPullRequestReviews(owner: string, repo: string, pullNumber: number, page = 1): Promise<PullRequestReview[]> {
     return this.executeWithTokenRefresh(async () => {
       const { data } = await this.octokit.pulls.listReviews({
         owner,
         repo,
-        pull_number: pullNumber
+        pull_number: pullNumber,
+        page,
+        per_page: 100
       });
       return data as unknown as PullRequestReview[];
     });

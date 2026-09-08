@@ -10,7 +10,6 @@ import {
   TeamPerformanceMetrics
 } from '../domain/entities/metrics'
 import { RepositoryInsights } from '../domain/entities/repository'
-import { TimeRange } from '../domain/value-objects/time-range'
 
 export interface IMetricsService {
   /**
@@ -19,7 +18,8 @@ export interface IMetricsService {
   getSummary(
     organizationId: string, 
     teamId?: number,
-    timeRange?: string
+    timeRange?: string,
+    repositoryId?: string
   ): Promise<MetricsSummary>
 
   /**
@@ -38,7 +38,8 @@ export interface IMetricsService {
   getRecommendations(
     organizationId: string, 
     teamId?: number, 
-    timeRange?: string
+    timeRange?: string,
+    repositoryId?: string
   ): Promise<RecommendationsResponse>
 
   /**
@@ -54,48 +55,6 @@ export interface IMetricsService {
   /**
    * Get repository insights and comparisons
    */
-  getRepositoryInsights(organizationId: string): Promise<RepositoryInsights>
+  getRepositoryInsights(organizationId: string, teamId?: number, timeRange?: string, repositoryId?: string): Promise<RepositoryInsights>
 
-  /**
-   * Get developer productivity metrics
-   */
-  getDeveloperMetrics(
-    organizationId: string,
-    userId?: string,
-    timeRange?: TimeRange
-  ): Promise<{
-    userId: string
-    name: string
-    prsCreated: number
-    prsReviewed: number
-    avgCycleTime: number
-    avgPRSize: number
-    contributionScore: number
-  }[]>
-
-  /**
-   * Get cycle time trends
-   */
-  getCycleTimeTrends(
-    organizationId: string,
-    repositoryId?: string,
-    timeRange?: TimeRange
-  ): Promise<{
-    date: string
-    avgCycleTime: number
-    prCount: number
-  }[]>
-
-  /**
-   * Get review coverage statistics
-   */
-  getReviewCoverage(
-    organizationId: string,
-    timeRange?: TimeRange
-  ): Promise<{
-    totalPRs: number
-    reviewedPRs: number
-    coverage: number
-    trendDirection: 'up' | 'down' | 'stable'
-  }>
 }

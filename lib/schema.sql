@@ -55,6 +55,13 @@ CREATE TABLE IF NOT EXISTS repositories (
   FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
 );
 
+-- Successful repository synchronization checkpoints (also applied by migration 007).
+CREATE TABLE IF NOT EXISTS repository_sync_state (
+  repository_id INTEGER PRIMARY KEY REFERENCES repositories(id) ON DELETE CASCADE,
+  updated_through TEXT NOT NULL,
+  last_synced_at TEXT NOT NULL
+);
+
 -- Categories for PR classification
 CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY,
@@ -95,6 +102,10 @@ CREATE TABLE IF NOT EXISTS pull_requests (
   UNIQUE (repository_id, number)
 );
 
+-- Dashboard date ranges and repository activity (also applied by migration 005).
+CREATE INDEX IF NOT EXISTS idx_pull_requests_repo_created_at ON pull_requests(repository_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_pull_requests_repo_state_merged_at ON pull_requests(repository_id, state, merged_at);
+
 -- PR Reviews table
 CREATE TABLE IF NOT EXISTS pr_reviews (
   id INTEGER PRIMARY KEY,
@@ -122,6 +133,25 @@ CREATE TABLE IF NOT EXISTS settings (
   CHECK ((user_id IS NULL) != (organization_id IS NULL)) -- Exactly one of user_id or organization_id must be NULL
 );
 
+-- Nullable scope columns require separate uniqueness constraints (migration 006).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_organization_key
+  ON settings(organization_id, key) WHERE user_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_user_key
+  ON settings(user_id, key) WHERE organization_id IS NULL;
+
+-- Original values displaced during the migration are retained without cascading deletes.
+CREATE TABLE IF NOT EXISTS settings_duplicates_v6_archive (
+  archive_id INTEGER PRIMARY KEY,
+  original_setting_id INTEGER NOT NULL,
+  user_id TEXT,
+  organization_id INTEGER,
+  key TEXT NOT NULL,
+  value TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  archived_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Recommendations table
 CREATE TABLE IF NOT EXISTS recommendations (
   id INTEGER PRIMARY KEY,
@@ -147,4 +177,4 @@ CREATE TABLE IF NOT EXISTS embeddings (
 );
 
 -- Create initial schema version
-INSERT INTO schema_migrations (version) VALUES (1); 
+INSERT INTO schema_migrations (version) VALUES (1);

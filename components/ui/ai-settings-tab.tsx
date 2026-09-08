@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useState, type FormEvent } from 'react';
+import useSWR, { useSWRConfig } from 'swr';
+import { fetchJson } from '@/lib/fetch-json';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -16,213 +18,74 @@ import { allModels } from '@/lib/ai-models';
 interface AiSettingsTabProps {
   organizations: OrganizationWithInstallation[];
   selectedOrganization: OrganizationWithInstallation | null;
+  onOrganizationSelected: (organization: OrganizationWithInstallation) => void;
 }
 
-export function AiSettingsTab({ organizations, selectedOrganization: parentSelectedOrg }: AiSettingsTabProps) {
-  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithInstallation | null>(null);
+const providerDetails = {
+  openai: { name: 'OpenAI', key: 'openaiApiKey', flag: 'isOpenAiKeySet', url: 'https://platform.openai.com/api-keys' },
+  google: { name: 'Google AI', key: 'googleApiKey', flag: 'isGoogleKeySet', url: 'https://ai.google.dev/' },
+  anthropic: { name: 'Anthropic', key: 'anthropicApiKey', flag: 'isAnthropicKeySet', url: 'https://console.anthropic.com/' },
+} as const;
 
-  const [fetchedSettings, setFetchedSettings] = useState<FetchedAiSettings | null>(null);
-  
-  const [selectedProvider, setSelectedProvider] = useState<AIProvider>(null);
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
-  const [openaiApiKeyInput, setOpenaiApiKeyInput] = useState('');
-  const [googleApiKeyInput, setGoogleApiKeyInput] = useState('');
-  const [anthropicApiKeyInput, setAnthropicApiKeyInput] = useState('');
-  const [categoryThreshold, setCategoryThreshold] = useState<number>(80);
-
-  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+export function AiSettingsTab({ organizations, selectedOrganization, onOrganizationSelected }: AiSettingsTabProps) {
+  const { mutate: mutateCache } = useSWRConfig();
+  const endpoint = selectedOrganization ? `/api/organizations/${selectedOrganization.id}/ai-settings` : null;
+  const { data: fetchedSettings, error, isLoading, mutate } = useSWR<FetchedAiSettings>(endpoint, fetchJson, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
+  const [draft, setDraft] = useState<{ organizationId: number; values: UpdateAiSettingsPayload } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const changes = draft && draft.organizationId === selectedOrganization?.id ? draft.values : {};
+  const selectedProvider = changes.provider !== undefined ? changes.provider : fetchedSettings?.provider ?? null;
+  const selectedModelId = changes.selectedModelId !== undefined ? changes.selectedModelId : fetchedSettings?.selectedModelId ?? null;
+  const categoryThreshold = changes.categoryThreshold ?? fetchedSettings?.categoryThreshold ?? 80;
+  const availableModels = allModels.filter(model => model.provider === selectedProvider);
+  const provider = selectedProvider ? providerDetails[selectedProvider] : null;
+  const keyValue = provider ? changes[provider.key] : undefined;
+  const keyIsSet = provider ? !!fetchedSettings?.[provider.flag] : false;
+  const keyPlaceholder = keyValue === null ? 'Key will be removed when you save'
+    : keyIsSet ? 'Leave blank to keep the saved key' : 'Enter API Key';
 
-  // Filter models by selected provider
-  const availableModels = useMemo(
-    () => (selectedProvider ? allModels.filter(model => model.provider === selectedProvider) : []),
-    [selectedProvider]
-  );
-
-  // Organizations are now passed as props from parent
-  // Set initial selection based on parent's selected organization
-  useEffect(() => {
-    if (parentSelectedOrg) {
-      setSelectedOrganization(parentSelectedOrg);
-    }
-  }, [parentSelectedOrg]);
-
-  useEffect(() => {
-    async function fetchSettings() {
-      if (!selectedOrganization) return;
-      setIsLoadingSettings(true);
-      setFetchedSettings(null);
-      setSelectedProvider(null);
-      setSelectedModelId(null);
-      setOpenaiApiKeyInput('');
-      setGoogleApiKeyInput('');
-      setAnthropicApiKeyInput('');
-      setCategoryThreshold(80);
-      try {
-        const response = await fetch(`/api/organizations/${selectedOrganization.id}/ai-settings`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch AI settings');
-        }
-        const data: FetchedAiSettings = await response.json();
-        console.log('Fetched AI settings:', data);
-        setFetchedSettings(data);
-        setSelectedProvider(data.provider);
-        setSelectedModelId(data.selectedModelId);
-        setCategoryThreshold(data.categoryThreshold);
-        console.log('Set provider to:', data.provider, 'and model to:', data.selectedModelId);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Could not load AI settings.');
-      } finally {
-        setIsLoadingSettings(false);
-      }
-    }
-    if (selectedOrganization?.id) {
-      fetchSettings();
-    } else {
-      setFetchedSettings(null);
-      setSelectedProvider(null);
-      setSelectedModelId(null);
-      setOpenaiApiKeyInput('');
-      setGoogleApiKeyInput('');
-      setAnthropicApiKeyInput('');
-      setCategoryThreshold(80);
-      setIsLoadingSettings(false);
-    }
-  }, [selectedOrganization]);
-
-  // When provider changes, reset model selection (but not when loading from server)
-  useEffect(() => {
-    if (selectedProvider && !isLoadingSettings) {
-      // Check if current selected model is from the new provider
-      const currentModelMatchesProvider = selectedModelId && 
-        allModels.some(m => m.id === selectedModelId && m.provider === selectedProvider);
-      
-      // If not, clear the model selection
-      if (!currentModelMatchesProvider) {
-        setSelectedModelId(null);
-      }
-    }
-  }, [selectedProvider, selectedModelId, isLoadingSettings]);
-
-  // Debug state changes
-  useEffect(() => {
-    console.log('State changed - Provider:', selectedProvider, 'Model:', selectedModelId, 'Loading:', isLoadingSettings, 'Available models:', availableModels.length);
-  }, [selectedProvider, selectedModelId, isLoadingSettings, availableModels]);
-
-  const handleSave = async () => {
+  function updateDraft(values: UpdateAiSettingsPayload) {
     if (!selectedOrganization) return;
+    setDraft(current => ({
+      organizationId: selectedOrganization.id,
+      values: { ...(current?.organizationId === selectedOrganization.id ? current.values : {}), ...values },
+    }));
+  }
+
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedOrganization || !fetchedSettings || !endpoint || isSaving) return;
     setIsSaving(true);
-
-    console.log('Save started with state - Provider:', selectedProvider, 'Model:', selectedModelId);
-
-    const payload: UpdateAiSettingsPayload = {
-      provider: selectedProvider,
-      selectedModelId: selectedModelId,
-      categoryThreshold: categoryThreshold,
-    };
-
-    // Handle API key changes based on provider
-    if (selectedProvider) {
-      let currentInput = '';
-      let apiKeyCurrentlySet = false;
-      let apiKeyPayloadKey: keyof UpdateAiSettingsPayload | null = null;
-
-      switch (selectedProvider) {
-        case 'openai':
-          currentInput = openaiApiKeyInput;
-          apiKeyCurrentlySet = !!fetchedSettings?.isOpenAiKeySet;
-          apiKeyPayloadKey = 'openaiApiKey';
-          break;
-        case 'google':
-          currentInput = googleApiKeyInput;
-          apiKeyCurrentlySet = !!fetchedSettings?.isGoogleKeySet;
-          apiKeyPayloadKey = 'googleApiKey';
-          break;
-        case 'anthropic':
-          currentInput = anthropicApiKeyInput;
-          apiKeyCurrentlySet = !!fetchedSettings?.isAnthropicKeySet;
-          apiKeyPayloadKey = 'anthropicApiKey';
-          break;
-      }
-
-      if (apiKeyPayloadKey) {
-        let keyForPayload: string | null | undefined = undefined;
-
-        if (currentInput) { // User typed something
-          keyForPayload = currentInput;
-        } else { // Input is blank
-          if (apiKeyCurrentlySet) { // Key was set, and input is now blank
-            keyForPayload = null; // Send null to clear
-          }
-          // If input is blank AND key was NOT set, keyForPayload remains undefined
-        }
-
-        // Only add to payload if keyForPayload is a string or null (but not undefined)
-        if (keyForPayload !== undefined) {
-          payload[apiKeyPayloadKey] = keyForPayload;
-        }
-      }
-    }
-
-    console.log('Save payload being sent:', JSON.stringify(payload, null, 2));
+    const submittedDraft = draft;
+    const payload: UpdateAiSettingsPayload = { provider: selectedProvider, selectedModelId, categoryThreshold };
+    if (provider && keyValue !== undefined && keyValue !== '') payload[provider.key] = keyValue;
+    let saved = false;
 
     try {
-      const response = await fetch(`/api/organizations/${selectedOrganization.id}/ai-settings`, {
+      const response = await fetch(endpoint, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save AI settings');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to save AI settings');
       }
-      toast.success('AI settings saved successfully!');
-      const fetchResponse = await fetch(`/api/organizations/${selectedOrganization.id}/ai-settings`);
-      const data: FetchedAiSettings = await fetchResponse.json();
-      console.log('After save, fetched AI settings:', data);
-      setFetchedSettings(data);
-      setSelectedProvider(data.provider);
-      setSelectedModelId(data.selectedModelId);
-      setCategoryThreshold(data.categoryThreshold);
-      console.log('After save, set provider to:', data.provider, 'and model to:', data.selectedModelId);
-      setOpenaiApiKeyInput(''); 
-      setGoogleApiKeyInput('');
-      setAnthropicApiKeyInput('');
-
+      saved = true;
+      await mutateCache(endpoint, fetchJson<FetchedAiSettings>(endpoint), { revalidate: false });
+      setDraft(current => current === submittedDraft ? null : current);
+      toast.success(`AI settings saved for ${selectedOrganization.name}.`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not save AI settings.');
+      toast.error(saved
+        ? `Settings saved for ${selectedOrganization.name}, but reloading failed. Your edits are still shown.`
+        : error instanceof Error ? error.message : 'Could not save AI settings.');
     } finally {
       setIsSaving(false);
     }
-  };
-  
-  const getApiKeyInputProps = (provider: 'openai' | 'google' | 'anthropic') => {
-    let value = '';
-    let onChange: (e: ChangeEvent<HTMLInputElement>) => void = () => {};
-    let isSet = false;
-    let placeholder = 'Enter API Key';
-
-    if (provider === 'openai') {
-      value = openaiApiKeyInput;
-      onChange = (e) => setOpenaiApiKeyInput(e.target.value);
-      isSet = !!fetchedSettings?.isOpenAiKeySet;
-    } else if (provider === 'google') {
-      value = googleApiKeyInput;
-      onChange = (e) => setGoogleApiKeyInput(e.target.value);
-      isSet = !!fetchedSettings?.isGoogleKeySet;
-    } else if (provider === 'anthropic') {
-      value = anthropicApiKeyInput;
-      onChange = (e) => setAnthropicApiKeyInput(e.target.value);
-      isSet = !!fetchedSettings?.isAnthropicKeySet;
-    }
-    if (isSet && !value) placeholder = 'API Key is set. Enter new key to update or clear.';
-    else if (isSet && value) placeholder = 'Update API Key';
-
-    return { value, onChange, placeholder, isSet };
-  };
-
-  // Debug current state
-  console.log('Current state - Provider:', selectedProvider, 'Model:', selectedModelId, 'Fetched:', fetchedSettings);
+  }
 
   if (organizations.length === 0) {
     return (
@@ -246,14 +109,13 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
             <CardDescription>Select an organization to configure its AI settings.</CardDescription>
           </CardHeader>
           <CardContent>
-            {organizations.length === 0 && <p>No organizations linked.</p>}
             <ul className="space-y-2">
               {organizations.map((org) => (
-                <li key={org.id || org.github_id}>
+                <li key={org.id}>
                   <Button
                     variant={selectedOrganization?.id === org.id ? 'secondary' : 'ghost'}
                     className="w-full justify-start text-left h-auto py-2"
-                    onClick={() => setSelectedOrganization(org)}
+                    onClick={() => onOrganizationSelected(org)}
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="size-8">
@@ -271,7 +133,7 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
       </div>
 
       <div className="md:col-span-2">
-        {!selectedOrganization ? (
+        {!selectedOrganization && (
           <Card>
             <CardHeader>
               <CardTitle>AI Categorization Settings</CardTitle>
@@ -282,14 +144,21 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
               </p>
             </CardContent>
           </Card>
-        ) : isLoadingSettings ? (
+        )}
+        {selectedOrganization && (isLoading ? (
             <p>Loading AI settings for {selectedOrganization.name}...</p>
-        ) : (
+        ) : error ? (
+          <div role="alert" className="space-y-3">
+            <p>Could not load AI settings for {selectedOrganization.name}.</p>
+            <Button variant="outline" onClick={() => void mutate()}>Retry</Button>
+          </div>
+        ) : fetchedSettings ? (
           <Card>
+            <form onSubmit={handleSave} className="space-y-6">
             <CardHeader>
               <CardTitle>AI Settings for {selectedOrganization.name}</CardTitle>
               <CardDescription>
-                Select an AI model and provide the necessary API key for automatic pull request categorization. API keys are stored securely per organization.
+                Select an AI model and provide its API key for automatic pull request categorization. These settings apply to the selected organization.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -300,12 +169,7 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
                   key={`provider-${selectedOrganization.id}`}
                   value={selectedProvider || 'none'}
                   onValueChange={(value) => {
-                    console.log('Provider changed to:', value);
-                    if (value === 'none') {
-                      setSelectedProvider(null);
-                    } else {
-                      setSelectedProvider(value as AIProvider);
-                    }
+                    updateDraft({ provider: value === 'none' ? null : value as AIProvider, selectedModelId: null });
                   }}
                 >
                   <SelectTrigger id="provider-select">
@@ -328,8 +192,7 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
                     key={`model-${selectedOrganization.id}-${selectedProvider}`}
                     value={selectedModelId || 'none'} 
                     onValueChange={(value) => {
-                      console.log('Model changed to:', value);
-                      setSelectedModelId(value === 'none' ? null : value);
+                      updateDraft({ selectedModelId: value === 'none' ? null : value });
                     }}
                   >
                     <SelectTrigger id="model-select">
@@ -347,55 +210,29 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
                 </div>
               )}
 
-              {/* API key input - show based on selected provider */}
-              {selectedProvider === 'openai' && (
+              {provider && (
                 <div className="space-y-2">
-                  <Label htmlFor="openai-key">
-                    OpenAI API Key
-                    {fetchedSettings?.isOpenAiKeySet && <span className="ml-2 text-xs text-muted-foreground">(Already set)</span>}
+                  <Label htmlFor="provider-key">
+                    {provider.name} API Key
+                    {keyIsSet && <span className="ml-2 text-xs text-muted-foreground">(Already set)</span>}
                   </Label>
                   <Input
-                    id="openai-key"
+                    id="provider-key"
+                    name={provider.key}
                     type="password"
-                    placeholder={getApiKeyInputProps('openai').placeholder}
-                    value={openaiApiKeyInput}
-                    onChange={getApiKeyInputProps('openai').onChange}
+                    autoComplete="off"
+                    aria-describedby="provider-key-help"
+                    placeholder={keyPlaceholder}
+                    value={keyValue ?? ''}
+                    onChange={event => updateDraft({ [provider.key]: event.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI dashboard</a>.</p>
-                </div>
-              )}
-              
-              {selectedProvider === 'google' && (
-                <div className="space-y-2">
-                  <Label htmlFor="google-key">
-                    Google AI API Key
-                    {fetchedSettings?.isGoogleKeySet && <span className="ml-2 text-xs text-muted-foreground">(Already set)</span>}
-                  </Label>
-                  <Input
-                    id="google-key"
-                    type="password"
-                    placeholder={getApiKeyInputProps('google').placeholder}
-                    value={googleApiKeyInput}
-                    onChange={getApiKeyInputProps('google').onChange}
-                  />
-                  <p className="text-xs text-muted-foreground">Get your API key from <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="underline">Google AI Studio</a>.</p>
-                </div>
-              )}
-
-              {selectedProvider === 'anthropic' && (
-                <div className="space-y-2">
-                  <Label htmlFor="anthropic-key">
-                    Anthropic API Key
-                    {fetchedSettings?.isAnthropicKeySet && <span className="ml-2 text-xs text-muted-foreground">(Already set)</span>}
-                  </Label>
-                  <Input
-                    id="anthropic-key"
-                    type="password"
-                    placeholder={getApiKeyInputProps('anthropic').placeholder}
-                    value={anthropicApiKeyInput}
-                    onChange={getApiKeyInputProps('anthropic').onChange}
-                  />
-                  <p className="text-xs text-muted-foreground">Get your API key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="underline">Anthropic Console</a>.</p>
+                  <p id="provider-key-help" className="text-xs text-muted-foreground">Get your API key from the <a href={provider.url} target="_blank" rel="noopener noreferrer" className="underline">{provider.name} dashboard</a>.</p>
+                  {keyIsSet && (
+                    <Button type="button" variant="outline" onClick={() => updateDraft({ [provider.key]: null })} disabled={keyValue === null}>
+                      Remove saved API key
+                    </Button>
+                  )}
+                  {keyValue === null && <p role="status" className="text-sm text-muted-foreground">The saved key will be removed when you save. Enter a new key to replace it instead.</p>}
                 </div>
               )}
 
@@ -413,7 +250,7 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
                         max={100}
                         step={5}
                         value={[categoryThreshold]}
-                        onValueChange={(value) => setCategoryThreshold(value[0])}
+                        onValueChange={(value) => updateDraft({ categoryThreshold: value[0] })}
                         className="w-full"
                       />
                       <div className="flex justify-between text-xs text-muted-foreground">
@@ -431,12 +268,13 @@ export function AiSettingsTab({ organizations, selectedOrganization: parentSelec
               )}
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSave} disabled={isSaving}>
+              <Button type="submit" disabled={isSaving}>
                 {isSaving ? 'Saving...' : 'Save AI Settings'}
               </Button>
             </CardFooter>
+            </form>
           </Card>
-        )}
+        ) : null)}
       </div>
     </div>
   );

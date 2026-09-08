@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { Category } from '@/lib/types'; // Assuming Category type is available
+import React, { useState } from 'react';
+import useSWR from 'swr';
+import { fetchJson } from '@/lib/fetch-json';
+import { Category } from '@/lib/types';
 import { Button } from './button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
 import { Input } from './input';
@@ -19,9 +21,9 @@ export function OrganizationCategoryManager({
   organizationId,
   organizationName,
 }: OrganizationCategoryManagerProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: categories = [], isLoading, error, mutate } = useSWR<Category[], Error>(
+    `/api/organizations/${organizationId}/categories`, fetchJson
+  );
 
   // States for Add Category Dialog
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -45,29 +47,6 @@ export function OrganizationCategoryManager({
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [isDeletingCategory, setIsDeletingCategory] = useState(false);
   const [deleteCategoryError, setDeleteCategoryError] = useState<string | null>(null);
-
-  const fetchCategories = useCallback(async () => {
-    if (!organizationId) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/organizations/${organizationId}/categories`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch categories: ${response.statusText}`);
-      }
-      const data: Category[] = await response.json();
-      setCategories(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching categories');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [organizationId]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
 
   const handleAddCategory = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -93,8 +72,7 @@ export function OrganizationCategoryManager({
         const errorData = await response.json();
         throw new Error(errorData.error || `Failed to add category: ${response.statusText}`);
       }
-      const newCategoryData: Category = await response.json();
-      setCategories(prev => [...prev, newCategoryData].sort((a, b) => a.name.localeCompare(b.name)));
+      await mutate();
       setShowAddDialog(false);
       setNewCategoryName('');
       setNewCategoryDescription('');
@@ -140,11 +118,7 @@ export function OrganizationCategoryManager({
         const errorData = await response.json();
         throw new Error(errorData.error || `Failed to update category: ${response.statusText}`);
       }
-      const updatedCategoryData: Category = await response.json();
-      setCategories(prev => 
-        prev.map(cat => (cat.id === updatedCategoryData.id ? updatedCategoryData : cat))
-          .sort((a, b) => a.name.localeCompare(b.name))
-      );
+      await mutate();
       setShowEditDialog(false);
       setEditingCategory(null);
     } catch (err) {
@@ -173,7 +147,7 @@ export function OrganizationCategoryManager({
         const errorData = await response.json();
         throw new Error(errorData.error || `Failed to delete category: ${response.statusText}`);
       }
-      setCategories(prev => prev.filter(cat => cat.id !== deletingCategory.id));
+      await mutate();
       setShowDeleteConfirmDialog(false);
       setDeletingCategory(null);
     } catch (err) {
@@ -186,20 +160,23 @@ export function OrganizationCategoryManager({
   const defaultCategories = categories.filter(cat => cat.is_default);
   const customCategories = categories.filter(cat => !cat.is_default && cat.organization_id === organizationId);
 
-  // TODO: Implement update, delete handlers
-  // const handleUpdateCategory = async (categoryId: number, data: Partial<Category>) => { /* ... */ };
-  // const handleDeleteCategory = async (categoryId: number) => { /* ... */ };
-
   if (isLoading && categories.length === 0) { // Show loading only on initial load
     return <p>Loading categories...</p>;
   }
 
-  if (error && categories.length === 0) { // Show error only if loading failed and no categories are displayed
-    return <p className="text-red-500">Error loading categories: {error}</p>;
+  if (error && categories.length === 0) {
+    return <div role="alert" className="space-y-2">
+      <p className="text-destructive">Error loading categories: {error.message}</p>
+      <Button variant="outline" onClick={() => mutate()}>Retry</Button>
+    </div>;
   }
 
   return (
     <div className="space-y-6">
+      {error && <div role="alert" className="space-y-2">
+        <p className="text-destructive">Could not refresh categories: {error.message}</p>
+        <Button variant="outline" onClick={() => mutate()}>Retry</Button>
+      </div>}
       <Card>
         <CardHeader>
           <CardTitle>Default Categories</CardTitle>
@@ -271,7 +248,6 @@ export function OrganizationCategoryManager({
         <CardContent>
           {(isLoading && customCategories.length === 0) && <p className="text-sm text-muted-foreground">Loading custom categories...</p>}
           {(!isLoading && customCategories.length === 0 && !error) && <p>No custom categories defined for this organization yet.</p>}
-          {error && customCategories.length === 0 && <p className="text-red-500">Could not load custom categories: {error.startsWith('Failed to fetch categories') ? 'Network error' : error}</p>}
           <ul className="space-y-2 mt-4">
             {customCategories.map(cat => (
               <li key={cat.id} className="flex justify-between items-center p-2 border rounded-md">

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { type Icon } from "@tabler/icons-react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 import {
   SidebarGroup,
@@ -24,6 +25,12 @@ export function NavSecondary({
   }[]
   currentPath?: string
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+  const searchParams = useSearchParams()
+  const filterParams = new URLSearchParams()
+  for (const key of ['organizationId', 'teamId', 'repositoryId', 'timeRange']) {
+    const value = searchParams.get(key)
+    if (value) filterParams.set(key, value)
+  }
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
@@ -37,7 +44,7 @@ export function NavSecondary({
                 isActive={isItemActive}
                 asChild
               >
-                <Link href={item.url}>
+                <Link href={item.url.startsWith('/dashboard') && filterParams.size ? `${item.url}?${filterParams}` : item.url} aria-current={isItemActive ? "page" : undefined}>
                   <item.icon />
                   <span>{item.title}</span>
                 </Link>

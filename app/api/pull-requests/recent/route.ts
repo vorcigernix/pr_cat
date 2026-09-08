@@ -1,44 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServiceLocator, withAuth, ApplicationContext, Pagination } from '@/lib/core';
+import { dashboardFiltersSchema } from '@/lib/core/domain/value-objects/dashboard-filters';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
+const filtersSchema = dashboardFiltersSchema.extend({
+  page: z.coerce.number().int().min(1).max(1000000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
 
-// Pure business logic handler
-const recentPullRequestsHandler = async (
-  context: ApplicationContext,
-  request: NextRequest
-): Promise<NextResponse> => {
+const handler = async (context: ApplicationContext, request: NextRequest): Promise<NextResponse> => {
+  const filters = filtersSchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
+  if (!filters.success) return NextResponse.json({ error: 'Invalid dashboard filters' }, { status: 400 });
+  const { page, limit, teamId, timeRange, repositoryId } = filters.data;
   try {
-    // Parse query parameters for pagination and team filtering
-    const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const teamId = searchParams.get('teamId');
-    const timeRange = searchParams.get('timeRange') || '14d';
-    
-    // Create pagination object
-    const pagination = Pagination.create(page, limit);
-
-    // Get pull request repository via dependency injection
-    const prRepository = await ServiceLocator.getPullRequestRepository();
-    
-    // Use organization ID from authenticated context with team filtering
-    const result = await prRepository.getRecent(
-      context.organizationId, 
-      pagination,
-      teamId ? parseInt(teamId) : undefined,
-      timeRange
-    );
-    
-    return NextResponse.json(result);
+    const repository = await ServiceLocator.getPullRequestRepository();
+    const data = await repository.getRecent(context.organizationId, Pagination.create(page, limit), teamId, timeRange, repositoryId);
+    return NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     console.error('Error getting recent pull requests:', error);
-    return NextResponse.json(
-      { error: 'Failed to get recent pull requests' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to get recent pull requests' }, { status: 500 });
   }
 };
 
-// Authentication handled by middleware
-export const GET = withAuth(recentPullRequestsHandler);
+export const GET = withAuth(handler);

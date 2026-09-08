@@ -23,6 +23,9 @@ const config = {
     'lib/**/*.{ts,tsx}',
     'app/**/*.{ts,tsx}',
     'components/**/*.{ts,tsx}',
+    'hooks/**/*.{ts,tsx}',
+    'auth.ts',
+    'proxy.ts',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',
@@ -39,10 +42,6 @@ const config = {
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   moduleDirectories: ['node_modules', '<rootDir>'],
   testTimeout: 30000,
-  // Transform TypeScript files
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['@swc/jest'],
-  },
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

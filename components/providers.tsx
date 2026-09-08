@@ -2,7 +2,8 @@
 
 import { SessionProvider } from "next-auth/react"
 
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "next-themes"
+import { Toaster } from "@/components/ui/sonner"
 
 type ProvidersProps = {
   children: React.ReactNode
@@ -20,6 +21,7 @@ export function Providers({ children }: ProvidersProps) {
         enableColorScheme
       >
         {children}
+        <Toaster />
       </ThemeProvider>
     </SessionProvider>
   )
