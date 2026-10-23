@@ -1,12 +1,13 @@
-/** @jest-environment node */
+import { createClient as createNativeClient } from '@libsql/client/sqlite3';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock, spyOn, type Mock } from 'bun:test';
+import type { Client } from '@libsql/client';
 
-import { createClient, type Client } from '@libsql/client';
-import { batch, execute, query, transaction } from '@/lib/db';
-
-jest.mock('@libsql/client', () => ({
-  ...jest.requireActual('@libsql/client'),
-  createClient: jest.fn(),
+mock.module('@libsql/client', () => ({
+  createClient: mock(),
 }));
+
+const { createClient } = await import('@libsql/client');
+const { batch, execute, query, transaction } = await import('@/lib/db');
 
 describe('Native database write transactions', () => {
   let client: Client;
@@ -14,16 +15,15 @@ describe('Native database write transactions', () => {
   const originalPoolSize = process.env.TURSO_POOL_SIZE;
 
   beforeAll(async () => {
-    const native = jest.requireActual<typeof import('@libsql/client')>('@libsql/client');
-    client = native.createClient({ url: 'file::memory:' });
-    jest.mocked(createClient).mockReturnValue(client);
+    client = createNativeClient({ url: 'file::memory:' });
+    (createClient as Mock<typeof createClient>).mockReturnValue(client);
     process.env.TURSO_URL = 'file::memory:';
     process.env.TURSO_POOL_SIZE = '1';
     await client.execute('CREATE TABLE transaction_test (id INTEGER PRIMARY KEY, value TEXT)');
   });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    mock.clearAllMocks();
     await client.execute('DELETE FROM transaction_test');
   });
 
@@ -36,7 +36,7 @@ describe('Native database write transactions', () => {
   });
 
   it('uses a native write transaction, preserves callback results and closes the handle', async () => {
-    const nativeTransaction = jest.spyOn(client, 'transaction');
+    const nativeTransaction = spyOn(client, 'transaction');
 
     const result = await transaction(async tx => {
       const inserted = await tx.execute('INSERT INTO transaction_test (id, value) VALUES (?, ?)', [0, 'saved']);
@@ -48,7 +48,8 @@ describe('Native database write transactions', () => {
     expect(result).toBe('saved');
     expect((await query('SELECT * FROM transaction_test'))).toEqual([expect.objectContaining({ id: 0, value: 'saved' })]);
     expect(nativeTransaction).toHaveBeenCalledWith('write');
-    expect((await nativeTransaction.mock.results[0].value).closed).toBe(true);
+    const nativeHandle = await nativeTransaction.mock.results[0].value as Awaited<ReturnType<Client['transaction']>>;
+    expect(nativeHandle.closed).toBe(true);
     nativeTransaction.mockRestore();
   });
 
@@ -66,7 +67,7 @@ describe('Native database write transactions', () => {
   });
 
   it('sends one native write batch and rolls back all statements on a constraint failure', async () => {
-    const nativeBatch = jest.spyOn(client, 'batch');
+    const nativeBatch = spyOn(client, 'batch');
     const statements = [
       { sql: 'INSERT INTO transaction_test (id, value) VALUES (?, ?)', args: [1, 'first'] },
       { sql: 'INSERT INTO transaction_test (id, value) VALUES (?, ?)', args: [1, 'second'] },
@@ -85,7 +86,7 @@ describe('Native database write transactions', () => {
     await expect(execute('INSERT INTO transaction_test (missing) VALUES (?)', ['test-secret-sentinel']))
       .rejects.toThrow('Execute failed');
 
-    const logs = JSON.stringify((console.error as jest.Mock).mock.calls);
+    const logs = JSON.stringify((console.error as ReturnType<typeof mock>).mock.calls);
     expect(logs).not.toContain('test-secret-sentinel');
     expect(logs).toContain('parameterCount');
   });

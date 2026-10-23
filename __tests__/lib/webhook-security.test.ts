@@ -1,12 +1,6 @@
-/** @jest-environment node */
+import { describe, expect, it } from 'bun:test';
 
-import {
-  verifyGitHubSignature,
-  checkWebhookReplay,
-  validatePayloadSize,
-  validateEventType,
-  validateWebhook,
-} from '@/lib/webhook-security';
+const { verifyGitHubSignature, checkWebhookReplay, validatePayloadSize, validateEventType, validateWebhook } = await import('@/lib/webhook-security');
 
 const secret = 'test-webhook-secret-123';
 const payload = '{"action":"opened","pull_request":{"number":42}}';

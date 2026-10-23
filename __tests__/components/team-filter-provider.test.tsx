@@ -1,10 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as React from 'react';
+import { afterAll, afterEach, beforeEach, expect, it, mock, spyOn } from 'bun:test';
+import '../setup-dom';
+const { act, fireEvent, render, screen, waitFor } = await import('@testing-library/react');
 import { SWRConfig } from 'swr';
-import { TeamFilterProvider, useTeamFilter, useTeamFilterParams } from '@/hooks/use-team-filter';
-import { useDashboardQuery } from '@/hooks/use-metrics';
 
-jest.mock('next/navigation', () => {
-  const React = jest.requireActual('react');
+mock.module('next/navigation', () => {
   return {
     useSearchParams: () => {
       const search = React.useSyncExternalStore(
@@ -20,10 +20,13 @@ jest.mock('next/navigation', () => {
   };
 });
 
+const { TeamFilterProvider, useTeamFilter, useTeamFilterParams } = await import('@/hooks/use-team-filter');
+const { useDashboardQuery } = await import('@/hooks/use-metrics');
+
 const originalFetch = global.fetch;
 const originalPush = window.history.pushState;
 const originalReplace = window.history.replaceState;
-const mockFetch = jest.fn();
+const mockFetch = Object.assign(mock(), { preconnect: mock() });
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status });
 const organizations = [{ id: 1, name: 'First org' }, { id: '2', name: 'Second org' }];
 const teams = {
@@ -71,11 +74,11 @@ function renderDashboard() {
 beforeEach(() => {
   localStorage.clear();
   originalReplace.call(window.history, null, '', '/dashboard');
-  jest.spyOn(window.history, 'pushState').mockImplementation((...args) => {
+  spyOn(window.history, 'pushState').mockImplementation((...args) => {
     originalPush.apply(window.history, args);
     window.dispatchEvent(new Event('test-url-change'));
   });
-  jest.spyOn(window.history, 'replaceState').mockImplementation((...args) => {
+  spyOn(window.history, 'replaceState').mockImplementation((...args) => {
     originalReplace.apply(window.history, args);
     window.dispatchEvent(new Event('test-url-change'));
   });
@@ -83,7 +86,7 @@ beforeEach(() => {
   mockFetch.mockReset().mockImplementation(defaultResponse);
 });
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => mock.restore());
 afterAll(() => { global.fetch = originalFetch; });
 
 it('restores valid saved filters before saving or fetching scoped metrics', async () => {

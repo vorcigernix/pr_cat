@@ -1,10 +1,10 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 const fs = require('fs');
 
 // Check if a file was provided
 if (process.argv.length < 3) {
-  console.log('Usage: node convert-pem.js <path-to-pem-file>');
+  console.log('Usage: bun scripts/convert-pem.js <path-to-pem-file>');
   process.exit(1);
 }
 
@@ -23,4 +23,4 @@ try {
 } catch (error) {
   console.error('Error reading the PEM file:', error.message);
   process.exit(1);
-} 
+}

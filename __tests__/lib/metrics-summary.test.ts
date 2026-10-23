@@ -1,17 +1,17 @@
-/** @jest-environment node */
-
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock, setSystemTime } from 'bun:test';
 import { createClient, type Client } from '@libsql/client';
-import { query } from '@/lib/db';
-import { OptimizedTursoMetricsService } from '@/lib/infrastructure/adapters/turso/optimized-metrics.adapter';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock() }));
+
+const { query } = await import('@/lib/db');
+const { OptimizedTursoMetricsService } = await import('@/lib/infrastructure/adapters/turso/optimized-metrics.adapter');
 
 describe('Dashboard summary database queries', () => {
   let client: Client;
   const service = new OptimizedTursoMetricsService();
 
   beforeAll(async () => {
-    jest.useFakeTimers({ now: new Date('2026-09-07T12:00:00.000Z'), doNotFake: ['nextTick', 'setImmediate'] });
+    setSystemTime(new Date('2026-09-07T12:00:00.000Z'));
     client = createClient({ url: 'file::memory:' });
     await client.executeMultiple(`
       CREATE TABLE repositories (id INTEGER PRIMARY KEY, organization_id INTEGER, is_tracked INTEGER);
@@ -40,13 +40,13 @@ describe('Dashboard summary database queries', () => {
         (13, 4, 'bob', 'open', '2026-09-02T12:00:00.000Z', NULL, NULL, NULL, NULL),
         (14, 4, 'bob', 'open', '2026-09-02T12:00:00.000Z', NULL, 0, 0, NULL);
     `);
-    (query as jest.Mock).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (query as ReturnType<typeof mock>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
   });
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => mock.clearAllMocks());
   afterAll(() => {
     client.close();
-    jest.useRealTimers();
+    setSystemTime();
   });
 
   it('loads current and previous periods in three queries, preserving distinct creation and merge dates', async () => {

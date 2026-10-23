@@ -44,8 +44,6 @@ const eslintConfig = [
     files: [
       "__tests__/**/*.{ts,tsx,js,jsx}",
       "scripts/**/*.{ts,tsx,js,jsx,mjs,cjs}",
-      "jest.config.js",
-      "jest.setup.ts",
     ],
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",

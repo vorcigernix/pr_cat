@@ -1,25 +1,25 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, describe, expect, it, mock, type Mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createClient, type Client } from '@libsql/client';
-import { batch, query, execute } from '@/lib/db';
-import { CURRENT_SCHEMA_VERSION, runMigrations } from '@/lib/migrate';
-import { GET as getStatus } from '@/app/api/status/route';
 
-jest.mock('@/lib/db', () => ({ batch: jest.fn(), query: jest.fn(), execute: jest.fn() }));
-jest.mock('@/auth', () => ({ auth: jest.fn(async () => ({ user: { id: 'migration-test' } })) }));
+mock.module('@/lib/db', () => ({ batch: mock(), query: mock(), execute: mock() }));
+mock.module('@/auth', () => ({ auth: mock(async () => ({ user: { id: 'migration-test' } })) }));
+
+const { batch, query, execute } = await import('@/lib/db');
+const { CURRENT_SCHEMA_VERSION, runMigrations } = await import('@/lib/migrate');
+const { GET: getStatus } = await import('@/app/api/status/route');
 
 describe('Database migration compatibility', () => {
   let client: Client;
 
   beforeEach(() => {
     client = createClient({ url: 'file::memory:' });
-    jest.mocked(batch).mockImplementation(statements => client.batch(statements, 'write'));
-    jest.mocked(query).mockImplementation(async (sql, args) => {
+    (batch as Mock<typeof batch>).mockImplementation(statements => client.batch(statements, 'write'));
+    (query as Mock<(...args: Parameters<typeof query>) => Promise<unknown[]>>).mockImplementation(async (sql, args) => {
       return (await client.execute({ sql, args })).rows;
     });
-    jest.mocked(execute).mockImplementation(async (sql, args) => {
+    (execute as Mock<typeof execute>).mockImplementation(async (sql, args) => {
       const result = await client.execute({ sql, args });
       return { rowsAffected: result.rowsAffected };
     });
@@ -52,7 +52,7 @@ describe('Database migration compatibility', () => {
     { columns: ['ai_status'] },
     { columns: ['error_message'] },
     { columns: ['ai_status', 'error_message'] },
-  ])('upgrades version 1 with existing columns $columns without losing values', async ({ columns }) => {
+  ])('upgrades version 1 with existing columns $columns without losing values', async ({ columns }: { columns: readonly string[] }) => {
     await client.executeMultiple(readFileSync(join(process.cwd(), 'lib/schema.sql'), 'utf8'));
     await client.executeMultiple(`
       DROP INDEX idx_pull_requests_repo_created_at;

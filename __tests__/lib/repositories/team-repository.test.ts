@@ -1,27 +1,24 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, describe, expect, it, mock, type Mock } from 'bun:test';
 import { createClient, type Client } from '@libsql/client';
-import { batch, query, execute } from '@/lib/db';
-import { runMigrations } from '@/lib/migrate';
-import {
-  findTeamById, createTeam, updateTeam, deleteTeam, addTeamMember,
-  removeTeamMember, updateTeamMember, getTeamWithMembers, searchUsers,
-} from '@/lib/repositories/team-repository';
-import { updateCategory } from '@/lib/repositories/category-repository';
-import { updateUser } from '@/lib/repositories/user-repository';
-import { updateOrganization } from '@/lib/repositories/organization-repository';
-import { updateRepository, setRepositoryTracking } from '@/lib/repositories/repository-repository';
 
-jest.mock('@/lib/db', () => ({ batch: jest.fn(), query: jest.fn(), execute: jest.fn() }));
+mock.module('@/lib/db', () => ({ batch: mock(), query: mock(), execute: mock() }));
+
+const { batch, query, execute } = await import('@/lib/db');
+const { runMigrations } = await import('@/lib/migrate');
+const { findTeamById, createTeam, updateTeam, deleteTeam, addTeamMember, removeTeamMember, updateTeamMember, getTeamWithMembers, searchUsers } = await import('@/lib/repositories/team-repository');
+const { updateCategory } = await import('@/lib/repositories/category-repository');
+const { updateUser } = await import('@/lib/repositories/user-repository');
+const { updateOrganization } = await import('@/lib/repositories/organization-repository');
+const { updateRepository, setRepositoryTracking } = await import('@/lib/repositories/repository-repository');
 
 describe('Repository write persistence', () => {
   let client: Client;
 
   beforeEach(async () => {
     client = createClient({ url: 'file::memory:' });
-    jest.mocked(batch).mockImplementation(statements => client.batch(statements, 'write'));
-    jest.mocked(query).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
-    jest.mocked(execute).mockImplementation(async (sql, args) => {
+    (batch as Mock<typeof batch>).mockImplementation(statements => client.batch(statements, 'write'));
+    (query as Mock<(...args: Parameters<typeof query>) => Promise<unknown[]>>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (execute as Mock<typeof execute>).mockImplementation(async (sql, args) => {
       const result = await client.execute({ sql, args });
       return { rowsAffected: result.rowsAffected, lastInsertId: Number(result.lastInsertRowid) };
     });
@@ -33,7 +30,7 @@ describe('Repository write persistence', () => {
       INSERT INTO teams (id, organization_id, name, description, color) VALUES
         (1, 1, 'Engineering', 'Keep this', '#123456'), (2, 2, 'Other team', NULL, NULL);
     `);
-    jest.clearAllMocks();
+    mock.clearAllMocks();
   });
 
   afterEach(() => client.close());
@@ -57,7 +54,7 @@ describe('Repository write persistence', () => {
 
     expect(result).toMatchObject({ id, ...expected, created_at: before.created_at });
     expect(Date.parse(`${result?.updated_at}Z`)).toBeGreaterThan(Date.parse('2000-01-01T00:00:00Z'));
-    expect((await client.execute({ sql: `SELECT * FROM ${table} WHERE id = ?`, args: [id] })).rows[0]).toEqual(result);
+    expect((await client.execute({ sql: `SELECT * FROM ${table} WHERE id = ?`, args: [id] })).rows[0]).toEqual<unknown>(result);
     expect((await client.execute({ sql: `SELECT * FROM ${table} WHERE id != ?`, args: [id] })).rows).toEqual(untouched);
   });
 

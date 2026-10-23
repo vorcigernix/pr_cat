@@ -117,9 +117,11 @@ The next phases will implement:
 All interfaces are designed to be easily mockable for unit testing:
 
 ```typescript
+import { mock } from 'bun:test'
+
 const mockPRRepo: IPullRequestRepository = {
-  getRecent: jest.fn(),
-  getById: jest.fn(),
+  getRecent: mock(),
+  getById: mock(),
   // ... other methods
 }
 

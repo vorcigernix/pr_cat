@@ -1,12 +1,17 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterAll, beforeEach, expect, it, mock, spyOn } from 'bun:test';
+import '../setup-dom';
+const { act, fireEvent, render, screen } = await import('@testing-library/react');
 import { renderToString } from 'react-dom/server';
-import { ChartAreaEngineering } from '@/components/chart-area-engineering';
-import { useIsMobile } from '@/hooks/use-mobile';
 
-jest.mock('recharts', () => ({
-  ...jest.requireActual('recharts'),
+const actualRecharts = { ...await import('recharts') };
+
+mock.module('recharts', () => ({
+  ...actualRecharts,
   ResponsiveContainer: () => null,
 }));
+
+const { ChartAreaEngineering } = await import('@/components/chart-area-engineering');
+const { useIsMobile } = await import('@/hooks/use-mobile');
 
 const originalMatchMedia = window.matchMedia;
 let mediaQuery: MediaQueryList;
@@ -14,9 +19,9 @@ let mediaQuery: MediaQueryList;
 beforeEach(() => {
   mediaQuery = Object.assign(new EventTarget(), {
     matches: false, media: '(max-width: 767px)', onchange: null,
-    addListener: jest.fn(), removeListener: jest.fn(),
+    addListener: mock(), removeListener: mock(),
   });
-  window.matchMedia = jest.fn(() => mediaQuery);
+  window.matchMedia = mock(() => mediaQuery);
 });
 
 afterAll(() => { window.matchMedia = originalMatchMedia; });
@@ -29,7 +34,7 @@ function setMobile(matches: boolean) {
 }
 
 it('updates responsive chart defaults in both directions and releases the media subscription', () => {
-  const removeListener = jest.spyOn(mediaQuery, 'removeEventListener');
+  const removeListener = spyOn(mediaQuery, 'removeEventListener');
   const view = render(<ChartAreaEngineering chartData={[]} />);
   const codingHours = screen.getByRole('button', { name: 'Estimated coding hours' });
   expect(codingHours).toHaveAttribute('aria-pressed', 'true');

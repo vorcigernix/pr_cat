@@ -1,4 +1,6 @@
-import { EnvironmentConfig } from '@/lib/infrastructure/config/environment';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+
+const { EnvironmentConfig } = await import('@/lib/infrastructure/config/environment');
 
 describe('Environment configuration', () => {
   const originalEnv = process.env;

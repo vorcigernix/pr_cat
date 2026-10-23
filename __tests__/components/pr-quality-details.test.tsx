@@ -1,18 +1,23 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { PRQualityDetails } from '@/components/pr-quality-details';
-import { usePullRequestsRecent } from '@/hooks/use-metrics';
+import { beforeEach, expect, it, mock, type Mock } from 'bun:test';
+import '../setup-dom';
+const { fireEvent, render, screen, within } = await import('@testing-library/react');
 
-jest.mock('@/hooks/use-team-filter', () => ({
+mock.module('@/hooks/use-team-filter', () => ({
   useTeamFilterParams: () => 'organizationId=1&teamId=2&repositoryId=3&timeRange=14d',
 }));
-jest.mock('@/hooks/use-metrics', () => ({ usePullRequestsRecent: jest.fn() }));
-jest.mock('recharts', () => ({
-  ...jest.requireActual('recharts'),
+mock.module('@/hooks/use-metrics', () => ({ usePullRequestsRecent: mock() }));
+const actualRecharts = { ...await import('recharts') };
+
+mock.module('recharts', () => ({
+  ...actualRecharts,
   ResponsiveContainer: () => null,
 }));
 
-const mockRecent = jest.mocked(usePullRequestsRecent);
-const refresh = jest.fn();
+const { PRQualityDetails } = await import('@/components/pr-quality-details');
+const { usePullRequestsRecent } = await import('@/hooks/use-metrics');
+
+const mockRecent = (usePullRequestsRecent as Mock<typeof usePullRequestsRecent>);
+const refresh = mock();
 const queryResult: ReturnType<typeof usePullRequestsRecent> = {
   data: [], error: undefined, isLoading: false, isValidating: false,
   refresh,

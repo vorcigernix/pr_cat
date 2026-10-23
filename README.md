@@ -51,7 +51,7 @@ PR Cat is an AI-powered GitHub PR categorization and analytics tool. It helps en
 
 ### Prerequisites
 
-- Bun 1.4.2 (required package manager) and Node.js 24+ (or Node.js 22.13+ within the 22.x series)
+- Bun 1.4.4 (package manager and runtime)
 - GitHub account with access to repositories you want to track
 - Turso database account (for development and production)
 
@@ -101,7 +101,9 @@ PORT=3000
 bun install
 ```
 
-`bun.lock` is the authoritative lockfile. Use `bun install --frozen-lockfile` for reproducible CI installs and `bun run test` to run the Jest suite.
+`bun.lock` is the authoritative lockfile. Use `bun install --frozen-lockfile` for reproducible CI installs and `bun run test` (or `bun test --isolate`) to run the native Bun suite. File isolation keeps module mocks and environment changes local to each test file; CI uses `bun test --parallel=2`. React tests use Happy DOM and Testing Library. `bunfig.toml` runs Next.js and other package scripts on Bun; a separate Node.js installation is not required. To upgrade an existing Bun installation, run `bun upgrade`.
+
+`bun run test:coverage` writes text and LCOV reports. Bun measures imported source files and enforces 60% line and function coverage per file; its metrics, scope, and threshold behavior differ from the previous Jest report, which used global thresholds and included unimported files and branch/statement coverage.
 
 4. Run the development server:
 

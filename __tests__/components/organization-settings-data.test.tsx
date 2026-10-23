@@ -1,14 +1,18 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, mock, type Mock } from 'bun:test';
+import '../setup-dom';
+const { act, fireEvent, render, screen, waitFor } = await import('@testing-library/react');
 import { SWRConfig } from 'swr';
-import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
-import { OrganizationCategoryManager } from '@/components/ui/organization-category-manager';
-import { OrganizationSettingsTab } from '@/components/ui/organization-settings-tab';
-import { GitHubOrganizationRepositories } from '@/components/ui/github-organization-repositories';
+
 import type { Category } from '@/lib/types';
 
-jest.mock('next-auth/react', () => ({ useSession: jest.fn() }));
-jest.mock('sonner', () => ({ toast: { info: jest.fn(), success: jest.fn(), warning: jest.fn(), error: jest.fn() } }));
+mock.module('next-auth/react', () => ({ useSession: mock() }));
+mock.module('sonner', () => ({ toast: { info: mock(), success: mock(), warning: mock(), error: mock() } }));
+
+const { useSession } = await import('next-auth/react');
+const { toast } = await import('sonner');
+const { OrganizationCategoryManager } = await import('@/components/ui/organization-category-manager');
+const { OrganizationSettingsTab } = await import('@/components/ui/organization-settings-tab');
+const { GitHubOrganizationRepositories } = await import('@/components/ui/github-organization-repositories');
 
 const originalFetch = global.fetch;
 const organizations = [
@@ -26,20 +30,20 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  jest.mocked(useSession).mockReturnValue({ status: 'authenticated', data: { user: { id: 'alice' }, expires: '2099-01-01' }, update: jest.fn() });
+  mock.clearAllMocks();
+  (useSession as Mock<typeof useSession>).mockReturnValue({ status: 'authenticated', data: { user: { id: 'alice' }, expires: '2099-01-01' }, update: mock() });
 });
 
 afterEach(() => { global.fetch = originalFetch; });
 
 it('loads organization zero and refreshes categories after create, update and delete', async () => {
   let categories: Category[] = [];
-  global.fetch = jest.fn(async (_url, options) => {
+  global.fetch = Object.assign(mock(async (_url, options) => {
     if (options?.method === 'POST') categories = [{ ...category, ...JSON.parse(String(options.body)) }];
     if (options?.method === 'PUT') categories = [{ ...categories[0], ...JSON.parse(String(options.body)) }];
     if (options?.method === 'DELETE') categories = [];
     return new Response(JSON.stringify(categories));
-  });
+  }), { preconnect: mock() });
   render(<OrganizationCategoryManager organizationId={0} organizationName="Alpha" />, { wrapper: Wrapper });
   fireEvent.click(await screen.findByRole('button', { name: /Add New/ }));
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: '  Operations  ' } });
@@ -56,10 +60,10 @@ it('loads organization zero and refreshes categories after create, update and de
 
 it('offers retry for category fetch failures and preserves a rejected category draft', async () => {
   let failRead = true;
-  global.fetch = jest.fn(async (_url, options) => {
+  global.fetch = Object.assign(mock(async (_url, options) => {
     if (options?.method === 'POST') return new Response(JSON.stringify({ error: 'Category already exists' }), { status: 409 });
     return failRead ? new Response('{}', { status: 503 }) : new Response('[]');
-  });
+  }), { preconnect: mock() });
   render(<OrganizationCategoryManager organizationId={0} organizationName="Alpha" />, { wrapper: Wrapper });
   expect(await screen.findByRole('alert')).toHaveTextContent('503');
   failRead = false;
@@ -74,7 +78,7 @@ it('offers retry for category fetch failures and preserves a rejected category d
 it('resets category drafts by organization and ignores a previous organizationâ€™s late save', async () => {
   let completeSave!: (response: Response) => void;
   const pendingSave = new Promise<Response>(resolve => { completeSave = resolve; });
-  global.fetch = jest.fn(async (_url, options) => options?.method === 'POST' ? pendingSave : new Response('[]'));
+  global.fetch = Object.assign(mock(async (_url, options) => options?.method === 'POST' ? pendingSave : new Response('[]')), { preconnect: mock() });
   render(<OrganizationSettingsTab organizations={organizations} selectedOrganization={organizations[0]} />, { wrapper: Wrapper });
   fireEvent.click(await screen.findByRole('button', { name: /Add New/ }));
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Alpha draft' } });
@@ -91,8 +95,8 @@ it('resets category drafts by organization and ignores a previous organizationâ€
 });
 
 it.each(['loading', 'unauthenticated'] as const)('does not fetch repository data while the session is %s', status => {
-  jest.mocked(useSession).mockReturnValue({ status, data: null, update: jest.fn() });
-  global.fetch = jest.fn();
+  (useSession as Mock<typeof useSession>).mockReturnValue({ status, data: null, update: mock() });
+  global.fetch = Object.assign(mock(), { preconnect: mock() });
   render(<GitHubOrganizationRepositories organizationId={100} organizationName="Alpha" />, { wrapper: Wrapper });
   expect(screen.getByText(status === 'loading' ? 'Loading repositories...' : 'Sign in to manage repository webhooks.')).toBeInTheDocument();
   expect(global.fetch).not.toHaveBeenCalled();
@@ -100,7 +104,7 @@ it.each(['loading', 'unauthenticated'] as const)('does not fetch repository data
 
 it.each(['array', 'repositories', 'grouped'])('reads the %s response and refreshes webhook tracking after an authorized toggle', async shape => {
   let tracked = false;
-  global.fetch = jest.fn(async (url, options) => {
+  global.fetch = Object.assign(mock(async (url, options) => {
     if (options?.method === 'POST') { tracked = true; return new Response('{}'); }
     if (String(url).endsWith('/accessible-repositories')) return new Response(JSON.stringify({ accessibleRepositories: ['Alpha/app'] }));
     const rows = [{ ...repository, is_tracked: tracked }];
@@ -111,7 +115,7 @@ it.each(['array', 'repositories', 'grouped'])('reads the %s response and refresh
       ],
     };
     return new Response(JSON.stringify(data));
-  });
+  }), { preconnect: mock() });
   render(<GitHubOrganizationRepositories organizationId={100} organizationName="Alpha" />, { wrapper: Wrapper });
   fireEvent.click(await screen.findByRole('button', { name: 'Enable webhook tracking for app' }));
   expect(await screen.findByRole('button', { name: 'Disable webhook tracking for app' })).toBeEnabled();
@@ -122,14 +126,14 @@ it.each(['array', 'repositories', 'grouped'])('reads the %s response and refresh
 it('refreshes changed tracking and reports a partial initial-sync failure without a success toast', async () => {
   let tracked = false;
   const message = 'Tracking enabled, but initial PR sync failed. Retry synchronization.';
-  global.fetch = jest.fn(async (url, options) => {
+  global.fetch = Object.assign(mock(async (url, options) => {
     if (options?.method === 'POST') {
       tracked = true;
       return new Response(JSON.stringify({ success: false, message }));
     }
     if (String(url).endsWith('/accessible-repositories')) return new Response(JSON.stringify({ accessibleRepositories: ['Alpha/app'] }));
     return new Response(JSON.stringify({ repositories: [{ ...repository, is_tracked: tracked }] }));
-  });
+  }), { preconnect: mock() });
   render(<GitHubOrganizationRepositories organizationId={100} organizationName="Alpha" />, { wrapper: Wrapper });
   fireEvent.click(await screen.findByRole('button', { name: 'Enable webhook tracking for app' }));
   expect(await screen.findByRole('button', { name: 'Disable webhook tracking for app' })).toBeEnabled();
@@ -139,9 +143,9 @@ it('refreshes changed tracking and reports a partial initial-sync failure withou
 
 it('retries access checks and disables cached access when a later refresh fails', async () => {
   let failAccess = true;
-  global.fetch = jest.fn(async url => String(url).endsWith('/accessible-repositories')
+  global.fetch = Object.assign(mock(async url => String(url).endsWith('/accessible-repositories')
     ? failAccess ? new Response('{}', { status: 503 }) : new Response(JSON.stringify({ accessibleRepositories: ['Alpha/app'] }))
-    : new Response(JSON.stringify({ repositories: [repository] })));
+    : new Response(JSON.stringify({ repositories: [repository] }))), { preconnect: mock() });
   render(<GitHubOrganizationRepositories organizationId={100} organizationName="Alpha" />, { wrapper: Wrapper });
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not check repository access');
   expect(screen.getByRole('button', { name: 'No access to app' })).toBeDisabled();
@@ -160,11 +164,11 @@ it('retries access checks and disables cached access when a later refresh fails'
 it('retries repository errors and refreshes repository/access data after organization sync', async () => {
   let failed = true;
   let synced = false;
-  global.fetch = jest.fn(async (url, options) => {
+  global.fetch = Object.assign(mock(async (url, options) => {
     if (options?.method === 'POST') { synced = true; return new Response('{}'); }
     if (String(url).endsWith('/accessible-repositories')) return new Response(JSON.stringify({ accessibleRepositories: synced ? ['Alpha/app'] : [] }));
     return failed ? new Response('{}', { status: 503 }) : new Response(JSON.stringify({ repositories: synced ? [repository] : [] }));
-  });
+  }), { preconnect: mock() });
   render(<GitHubOrganizationRepositories organizationId={100} organizationName="Alpha" />, { wrapper: Wrapper });
   const retry = await screen.findByRole('button', { name: 'Retry Fetch' });
   failed = false;
@@ -177,10 +181,10 @@ it('retries repository errors and refreshes repository/access data after organiz
 it('keeps repository results scoped when an old organization request completes late', async () => {
   let completeAlpha!: (response: Response) => void;
   const alpha = new Promise<Response>(resolve => { completeAlpha = resolve; });
-  global.fetch = jest.fn(async url => {
+  global.fetch = Object.assign(mock(async url => {
     if (String(url).endsWith('/accessible-repositories')) return new Response(JSON.stringify({ accessibleRepositories: [] }));
     return String(url).includes('orgId=100') ? alpha : new Response(JSON.stringify({ repositories: [{ ...repository, name: 'beta-app', full_name: 'Beta/app' }] }));
-  });
+  }), { preconnect: mock() });
   const { rerender } = render(<GitHubOrganizationRepositories organizationId={100} organizationName="Alpha" />, { wrapper: Wrapper });
   await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/github/organizations/repositories?orgId=100', expect.anything()));
   rerender(<GitHubOrganizationRepositories organizationId={101} organizationName="Beta" />);

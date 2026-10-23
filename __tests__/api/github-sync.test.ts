@@ -1,30 +1,32 @@
-/** @jest-environment node */
-
+import { beforeEach, expect, it, mock } from 'bun:test';
 import { NextRequest } from 'next/server';
-import { auth } from '@/auth';
-import { GitHubService } from '@/lib/services';
-import { findRepositoryById } from '@/lib/repositories';
-import { getOrganizationRole } from '@/lib/repositories/user-repository';
-import { POST } from '@/app/api/github/repositories/[repositoryId]/sync/route';
 
-jest.mock('@/lib/services', () => ({ GitHubService: jest.fn() }));
-jest.mock('@/lib/repositories', () => ({ findRepositoryById: jest.fn() }));
-jest.mock('@/lib/repositories/user-repository', () => ({ getOrganizationRole: jest.fn() }));
+mock.module('@/lib/services', () => ({ GitHubService: mock() }));
+mock.module('@/lib/repositories', () => ({ findRepositoryById: mock() }));
+mock.module('@/lib/repositories/user-repository', () => ({ getOrganizationRole: mock() }));
 
-const syncRepositoryPullRequests = jest.fn();
+mock.module('@/auth', () => ({ auth: mock() }));
+
+const { auth } = await import('@/auth');
+const { GitHubService } = await import('@/lib/services');
+const { findRepositoryById } = await import('@/lib/repositories');
+const { getOrganizationRole } = await import('@/lib/repositories/user-repository');
+const { POST } = await import('@/app/api/github/repositories/[repositoryId]/sync/route');
+
+const syncRepositoryPullRequests = mock();
 const request = new NextRequest('http://localhost/api/github/repositories/1/sync', { method: 'POST' });
 const params = Promise.resolve({ repositoryId: '1' });
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  (auth as jest.Mock).mockResolvedValue({ user: { id: '7' }, accessToken: 'test-token' });
-  (findRepositoryById as jest.Mock).mockResolvedValue({ id: 1, organization_id: 9, full_name: 'Org/repo' });
-  (getOrganizationRole as jest.Mock).mockResolvedValue('member');
-  (GitHubService as jest.Mock).mockReturnValue({ syncRepositoryPullRequests });
+  mock.clearAllMocks();
+  (auth as ReturnType<typeof mock>).mockResolvedValue({ user: { id: '7' }, accessToken: 'test-token' });
+  (findRepositoryById as ReturnType<typeof mock>).mockResolvedValue({ id: 1, organization_id: 9, full_name: 'Org/repo' });
+  (getOrganizationRole as ReturnType<typeof mock>).mockResolvedValue('member');
+  (GitHubService as unknown as ReturnType<typeof mock>).mockReturnValue({ syncRepositoryPullRequests });
 });
 
 it('rejects synchronization outside the signed-in user organization', async () => {
-  (getOrganizationRole as jest.Mock).mockResolvedValue(null);
+  (getOrganizationRole as ReturnType<typeof mock>).mockResolvedValue(null);
   expect((await POST(request, { params })).status).toBe(403);
   expect(syncRepositoryPullRequests).not.toHaveBeenCalled();
 });

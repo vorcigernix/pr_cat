@@ -1,24 +1,24 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, expect, it, mock, type Mock } from 'bun:test';
 import { NextRequest } from 'next/server';
-import { POST } from '@/app/api/migrate/route';
-import { runMigrations } from '@/lib/migrate';
 
-jest.mock('@/lib/migrate', () => ({ runMigrations: jest.fn() }));
+mock.module('@/lib/migrate', () => ({ runMigrations: mock() }));
+
+const { POST } = await import('@/app/api/migrate/route');
+const { runMigrations } = await import('@/lib/migrate');
 
 const secret = 'test-migration-secret-long-enough';
 const originalEnv = process.env.NODE_ENV;
 const originalSecret = process.env.MIGRATION_SECRET;
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  jest.mocked(runMigrations).mockResolvedValue({ success: true });
-  Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+  mock.clearAllMocks();
+  (runMigrations as Mock<typeof runMigrations>).mockResolvedValue({ success: true });
+  Object.assign(process.env, { NODE_ENV: 'production' });
   delete process.env.MIGRATION_SECRET;
 });
 
 afterEach(() => {
-  Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, writable: true });
+  Object.assign(process.env, { NODE_ENV: originalEnv });
   if (originalSecret === undefined) delete process.env.MIGRATION_SECRET;
   else process.env.MIGRATION_SECRET = originalSecret;
 });
@@ -54,8 +54,8 @@ it('runs migrations when the correct production secret is provided', async () =>
 
 it.each(['returned', 'thrown'])('reports a %s migration failure', async kind => {
   process.env.MIGRATION_SECRET = secret;
-  if (kind === 'returned') jest.mocked(runMigrations).mockResolvedValue({ success: false, error: 'schema conflict' });
-  else jest.mocked(runMigrations).mockRejectedValue(new Error('connection refused'));
+  if (kind === 'returned') (runMigrations as Mock<typeof runMigrations>).mockResolvedValue({ success: false, error: 'schema conflict' });
+  else (runMigrations as Mock<typeof runMigrations>).mockRejectedValue(new Error('connection refused'));
 
   const response = await POST(new NextRequest('http://localhost/api/migrate', {
     headers: { authorization: `Bearer ${secret}` },
@@ -66,7 +66,7 @@ it.each(['returned', 'thrown'])('reports a %s migration failure', async kind => 
 });
 
 it.each(['development', 'test'])('allows local bootstrap in %s mode', async mode => {
-  Object.defineProperty(process.env, 'NODE_ENV', { value: mode, writable: true });
+  Object.assign(process.env, { NODE_ENV: mode });
   const response = await POST(new NextRequest('http://localhost/api/migrate'));
 
   expect(response.status).toBe(200);

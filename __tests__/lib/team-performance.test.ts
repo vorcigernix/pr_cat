@@ -1,17 +1,17 @@
-/** @jest-environment node */
-
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock, setSystemTime, type Mock } from 'bun:test';
 import { createClient, type Client } from '@libsql/client';
-import { query } from '@/lib/db';
-import { OptimizedTursoMetricsService } from '@/lib/infrastructure/adapters/turso/optimized-metrics.adapter';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock() }));
+
+const { query } = await import('@/lib/db');
+const { OptimizedTursoMetricsService } = await import('@/lib/infrastructure/adapters/turso/optimized-metrics.adapter');
 
 describe('Scoped team performance aggregation', () => {
   let client: Client;
   const service = new OptimizedTursoMetricsService();
 
   beforeAll(async () => {
-    jest.useFakeTimers({ now: new Date('2026-09-07T12:00:00.000Z'), doNotFake: ['nextTick', 'setImmediate'] });
+    setSystemTime(new Date('2026-09-07T12:00:00.000Z'));
     client = createClient({ url: 'file::memory:' });
     await client.executeMultiple(`
       CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT);
@@ -55,13 +55,13 @@ describe('Scoped team performance aggregation', () => {
         (13, 10, 'eve', '2026-08-24T12:00:00Z'),
         (14, 2, NULL, '2026-09-05T12:00:00Z');
     `);
-    jest.mocked(query).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (query as Mock<(...args: Parameters<typeof query>) => Promise<unknown[]>>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
   });
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => mock.clearAllMocks());
   afterAll(() => {
     client.close();
-    jest.useRealTimers();
+    setSystemTime();
   });
 
   it('counts distinct reviewed PRs by submission date and includes reviewer-only contributors', async () => {

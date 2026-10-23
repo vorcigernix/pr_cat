@@ -1,11 +1,13 @@
-/** @jest-environment node */
-
+import { afterAll, beforeAll, beforeEach, expect, it, mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import type { Client } from '@libsql/client';
 import { NextRequest } from 'next/server';
-import { auth } from '@/auth';
-import { getDbClient } from '@/lib/db';
-import { GET, PUT } from '@/app/api/organizations/[orgId]/ai-settings/route';
+
+mock.module('@/auth', () => ({ auth: mock() }));
+
+const { auth } = await import('@/auth');
+const { getDbClient } = await import('@/lib/db');
+const { GET, PUT } = await import('@/app/api/organizations/[orgId]/ai-settings/route');
 
 const environment = { ...process.env };
 let db: Client;
@@ -19,7 +21,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  jest.clearAllMocks();
+  mock.clearAllMocks();
   await db.executeMultiple(`
     DROP TRIGGER IF EXISTS reject_key;
     DELETE FROM settings;
@@ -32,7 +34,7 @@ beforeEach(async () => {
     INSERT INTO settings (organization_id, key, value) VALUES
       (0, 'ai_google_api_key', 'saved-secret-sentinel'), (3, 'ai_google_api_key', 'foreign-secret');
   `);
-  (auth as jest.Mock).mockResolvedValue({ user: { id: 'alice' } });
+  (auth as ReturnType<typeof mock>).mockResolvedValue({ user: { id: 'alice' } });
 });
 
 afterAll(() => {
@@ -41,7 +43,7 @@ afterAll(() => {
 });
 
 it.each([['GET', GET], ['PUT', PUT]] as const)('%s rejects unauthenticated requests before accessing settings', async (method, handler) => {
-  (auth as jest.Mock).mockResolvedValue(null);
+  (auth as ReturnType<typeof mock>).mockResolvedValue(null);
   const response = await handler(new NextRequest(url, { method, ...(method === 'PUT' && { body: '{}' }) }), params);
   expect(response.status).toBe(401);
   expect((await db.execute('SELECT COUNT(*) AS count FROM settings')).rows[0].count).toBe(2);
@@ -82,7 +84,7 @@ it('distinguishes omitted credentials from explicit null and empty strings', asy
   }), params);
   expect(response.status).toBe(200);
   expect(await (await GET(new NextRequest(url), params)).json()).toMatchObject({ isGoogleKeySet: false, isOpenAiKeySet: false });
-  expect((await db.execute('SELECT key, value FROM settings WHERE organization_id = 0 ORDER BY key')).rows).toEqual([
+  expect((await db.execute('SELECT key, value FROM settings WHERE organization_id = 0 ORDER BY key')).rows).toEqual<unknown>([
     { key: 'ai_google_api_key', value: null }, { key: 'ai_openai_api_key', value: '' },
   ]);
 });
@@ -122,7 +124,7 @@ it('rolls back a failed multi-field save and keeps database diagnostics private'
   expect(response.status).toBe(500);
   expect(await response.json()).toEqual({ error: 'Failed to update AI settings' });
   expect((await db.execute('SELECT * FROM settings ORDER BY id')).rows).toEqual(before);
-  const logs = JSON.stringify((console.error as jest.Mock).mock.calls);
+  const logs = JSON.stringify((console.error as ReturnType<typeof mock>).mock.calls);
   expect(logs).not.toMatch(/private-database-diagnostic|new-secret-sentinel|saved-secret-sentinel/);
 });
 

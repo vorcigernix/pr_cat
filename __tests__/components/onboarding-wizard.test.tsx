@@ -1,28 +1,32 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { OnboardingWizard } from '@/components/onboarding-wizard';
+import { afterAll, beforeEach, expect, it, mock, type Mock } from 'bun:test';
+import '../setup-dom';
+const { act, fireEvent, render, screen, waitFor } = await import('@testing-library/react');
+
 import { SWRConfig } from 'swr';
 
-jest.mock('next-auth/react', () => ({ useSession: jest.fn(), signIn: jest.fn() }));
-jest.mock('next/navigation', () => ({ useRouter: jest.fn() }));
-jest.mock('@/components/ui/install-github-app', () => ({
+mock.module('next-auth/react', () => ({ useSession: mock(), signIn: mock() }));
+mock.module('next/navigation', () => ({ useRouter: mock() }));
+mock.module('@/components/ui/install-github-app', () => ({
   InstallGitHubAppButton: () => <button>Install GitHub App</button>,
 }));
 
+const { signIn, useSession } = await import('next-auth/react');
+const { useRouter } = await import('next/navigation');
+const { OnboardingWizard } = await import('@/components/onboarding-wizard');
+
 const originalFetch = global.fetch;
-const mockFetch = jest.fn();
-const push = jest.fn();
+const mockFetch = Object.assign(mock(), { preconnect: mock() });
+const push = mock();
 const organizations = [{ id: 1, login: 'acme' }];
 const repositories = [{ id: 10, name: 'production-app', full_name: 'acme/production-app', private: true }];
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  mock.clearAllMocks();
   mockFetch.mockReset();
   global.fetch = mockFetch;
-  jest.mocked(useSession).mockReturnValue({ data: { user: { id: 'user-1' }, accessToken: 'test-token', expires: '2099-01-01' }, status: 'authenticated', update: jest.fn() });
-  jest.mocked(useRouter).mockReturnValue({ push, back: jest.fn(), forward: jest.fn(), refresh: jest.fn(), replace: jest.fn(), prefetch: jest.fn(), bfcacheId: 'test-route' });
+  (useSession as Mock<typeof useSession>).mockReturnValue({ data: { user: { id: 'user-1' }, accessToken: 'test-token', expires: '2099-01-01' }, status: 'authenticated', update: mock() });
+  (useRouter as Mock<typeof useRouter>).mockReturnValue({ push, back: mock(), forward: mock(), refresh: mock(), replace: mock(), prefetch: mock(), bfcacheId: 'test-route' });
 });
 
 afterAll(() => { global.fetch = originalFetch; });
@@ -102,7 +106,7 @@ it('stops when organization synchronization fails and verifies again on retry', 
 });
 
 it('offers reconnection without issuing requests when the session token is missing', async () => {
-  jest.mocked(useSession).mockReturnValue({ data: null, status: 'unauthenticated', update: jest.fn() });
+  (useSession as Mock<typeof useSession>).mockReturnValue({ data: null, status: 'unauthenticated', update: mock() });
   startGitHubCheck();
   expect(await screen.findByRole('alert')).toHaveTextContent('GitHub authorization is missing');
   expect(mockFetch).not.toHaveBeenCalled();
@@ -147,7 +151,7 @@ it('reloads GitHub access for a changed session instead of showing the previous 
   let resolveOrganizations!: (response: Response) => void;
   mockFetch.mockImplementationOnce(() => new Promise<Response>(resolve => { resolveOrganizations = resolve; }));
   mockFetch.mockResolvedValueOnce(json([{ ...repositories[0], name: 'new-account-app' }]));
-  jest.mocked(useSession).mockReturnValue({ data: { user: { id: 'user-2' }, accessToken: 'new-token', expires: '2099-01-01' }, status: 'authenticated', update: jest.fn() });
+  (useSession as Mock<typeof useSession>).mockReturnValue({ data: { user: { id: 'user-2' }, accessToken: 'new-token', expires: '2099-01-01' }, status: 'authenticated', update: mock() });
   view.rerender(<SWRConfig value={{ provider: () => new Map() }}><OnboardingWizard /></SWRConfig>);
   expect(screen.queryByText('production-app')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();

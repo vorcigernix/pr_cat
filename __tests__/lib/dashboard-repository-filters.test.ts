@@ -1,14 +1,15 @@
-/** @jest-environment node */
-
+import { afterAll, beforeAll, describe, expect, it, mock, setSystemTime, type Mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createClient, type Client } from '@libsql/client';
-import { query } from '@/lib/db';
-import { OptimizedTursoMetricsService } from '@/lib/infrastructure/adapters/turso/optimized-metrics.adapter';
-import { OptimizedTursoPullRequestRepository } from '@/lib/infrastructure/adapters/turso/optimized-pull-request.adapter';
+
 import { TimeRange } from '@/lib/core/domain/value-objects/time-range';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock() }));
+
+const { query } = await import('@/lib/db');
+const { OptimizedTursoMetricsService } = await import('@/lib/infrastructure/adapters/turso/optimized-metrics.adapter');
+const { OptimizedTursoPullRequestRepository } = await import('@/lib/infrastructure/adapters/turso/optimized-pull-request.adapter');
 
 describe('Consistent dashboard repository filters', () => {
   let client: Client;
@@ -17,7 +18,7 @@ describe('Consistent dashboard repository filters', () => {
   const range = TimeRange.create(new Date('2026-08-24T12:00:00.000Z'), new Date('2026-09-07T12:00:00.000Z'));
 
   beforeAll(async () => {
-    jest.useFakeTimers({ now: new Date('2026-09-07T12:00:00.000Z'), doNotFake: ['nextTick', 'setImmediate'] });
+    setSystemTime(new Date('2026-09-07T12:00:00.000Z'));
     client = createClient({ url: 'file::memory:' });
     await client.executeMultiple(readFileSync(join(process.cwd(), 'lib/schema.sql'), 'utf8'));
     await client.executeMultiple(`
@@ -39,12 +40,12 @@ describe('Consistent dashboard repository filters', () => {
       INSERT INTO pr_reviews (id, github_id, pull_request_id, reviewer_id, state, submitted_at) VALUES
         (1, 201, 1, 'bob', 'approved', '2026-09-02T12:00:00.000Z');
     `);
-    jest.mocked(query).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (query as Mock<(...args: Parameters<typeof query>) => Promise<unknown[]>>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
   });
 
   afterAll(() => {
     client.close();
-    jest.useRealTimers();
+    setSystemTime();
   });
 
   it('applies one repository selection to summary, recent PRs, category distribution and insights', async () => {

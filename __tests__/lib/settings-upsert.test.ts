@@ -1,23 +1,23 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, describe, expect, it, mock, type Mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createClient, type Client } from '@libsql/client';
-import { batch, query } from '@/lib/db';
-import { getOrganizationAiSettings, getOrganizationApiKey, updateOrganizationAiSettings } from '@/lib/repositories/settings-repository';
 
-jest.mock('@/lib/db', () => ({ batch: jest.fn(), query: jest.fn() }));
+mock.module('@/lib/db', () => ({ batch: mock(), query: mock() }));
+
+const { batch, query } = await import('@/lib/db');
+const { getOrganizationAiSettings, getOrganizationApiKey, updateOrganizationAiSettings } = await import('@/lib/repositories/settings-repository');
 
 describe('Atomic organization settings saves', () => {
   let client: Client;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    mock.clearAllMocks();
     client = createClient({ url: 'file::memory:' });
     await client.executeMultiple(readFileSync(join(process.cwd(), 'lib/schema.sql'), 'utf8'));
     await client.execute("INSERT INTO organizations (id, name) VALUES (0, 'zero'), (1, 'one')");
-    jest.mocked(batch).mockImplementation(statements => client.batch(statements, 'write'));
-    jest.mocked(query).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (batch as Mock<typeof batch>).mockImplementation(statements => client.batch(statements, 'write'));
+    (query as Mock<(...args: Parameters<typeof query>) => Promise<unknown[]>>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
   });
 
   afterEach(() => client.close());
@@ -54,7 +54,7 @@ describe('Atomic organization settings saves', () => {
     expect(await getOrganizationAiSettings(0)).toMatchObject({ provider: null, selectedModelId: null, isGoogleKeySet: false });
     expect((await client.execute('SELECT COUNT(*) AS count FROM settings WHERE organization_id = 0')).rows[0].count).toBe(6);
     expect(await getOrganizationAiSettings(1)).toMatchObject({ provider: null, categoryThreshold: 80 });
-    const logs = JSON.stringify([(console.log as jest.Mock).mock.calls, (console.error as jest.Mock).mock.calls]);
+    const logs = JSON.stringify([(console.log as ReturnType<typeof mock>).mock.calls, (console.error as ReturnType<typeof mock>).mock.calls]);
     expect(logs).not.toContain('test-secret-sentinel');
   });
 

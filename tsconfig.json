@@ -9,6 +9,7 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    "types": ["bun", "node"],
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",

@@ -1,11 +1,12 @@
-/** @jest-environment node */
-
+import { afterAll, beforeAll, describe, expect, it, mock } from 'bun:test';
 import { createClient, type Client } from '@libsql/client';
-import { query } from '@/lib/db';
-import { OptimizedTursoPullRequestRepository } from '@/lib/infrastructure/adapters/turso/optimized-pull-request.adapter';
+
 import { TimeRange } from '@/lib/core/domain/value-objects/time-range';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock() }));
+
+const { query } = await import('@/lib/db');
+const { OptimizedTursoPullRequestRepository } = await import('@/lib/infrastructure/adapters/turso/optimized-pull-request.adapter');
 
 describe('Category distribution database filtering', () => {
   let client: Client;
@@ -32,7 +33,7 @@ describe('Category distribution database filtering', () => {
         (5, 1, 'alice', 2, '2026-08-01T00:00:00.000Z'),
         (6, 1, 'bob', NULL, '2026-09-02T00:00:00.000Z');
     `);
-    (query as jest.Mock).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (query as ReturnType<typeof mock>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
   });
 
   afterAll(() => client.close());

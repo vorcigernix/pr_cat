@@ -1,4 +1,6 @@
-import { allModels } from '@/lib/ai-models';
+import { describe, expect, it } from 'bun:test';
+
+const { allModels } = await import('@/lib/ai-models');
 
 describe('AI model registry', () => {
   it('recommends Gemini 3.8 Flash while keeping supported saved Google models available', () => {

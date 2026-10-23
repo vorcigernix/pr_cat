@@ -1,31 +1,32 @@
-/** @jest-environment node */
-
+import * as actualTimeRange from '@/lib/core/domain/value-objects/time-range';
+import { afterEach, beforeEach, describe, expect, it, mock, setSystemTime } from 'bun:test';
 import { NextRequest } from 'next/server';
-import { GET } from '@/app/api/pull-requests/category-distribution/route';
-import { ServiceLocator } from '@/lib/core';
 
-jest.mock('@/lib/core', () => ({
-  ...jest.requireActual('@/lib/core/domain/value-objects/time-range'),
-  ServiceLocator: { getPullRequestRepository: jest.fn() },
+mock.module('@/lib/core', () => ({
+  ...actualTimeRange,
+  ServiceLocator: { getPullRequestRepository: mock() },
   withAuth: (handler: (context: { organizationId: string }, request: NextRequest) => Promise<Response>) =>
     (request: NextRequest) => handler({ organizationId: '1' }, request),
 }));
 
+const { GET } = await import('@/app/api/pull-requests/category-distribution/route');
+const { ServiceLocator } = await import('@/lib/core');
+
 const repository = {
-  getCategoryDistribution: jest.fn(),
-  getCategoryTimeSeries: jest.fn(),
+  getCategoryDistribution: mock(),
+  getCategoryTimeSeries: mock(),
 };
 
 describe('Category distribution filters', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers().setSystemTime(new Date('2026-09-07T12:00:00Z'));
-    (ServiceLocator.getPullRequestRepository as jest.Mock).mockResolvedValue(repository);
+    mock.clearAllMocks();
+    setSystemTime(new Date('2026-09-07T12:00:00Z'));
+    (ServiceLocator.getPullRequestRepository as ReturnType<typeof mock>).mockResolvedValue(repository);
     repository.getCategoryDistribution.mockResolvedValue([]);
     repository.getCategoryTimeSeries.mockResolvedValue({ data: [], categories: [] });
   });
 
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => setSystemTime());
 
   it('uses the selected 14 days and team for category totals', async () => {
     const response = await GET(new NextRequest('http://localhost/api/pull-requests/category-distribution?timeRange=14d&teamId=10'));

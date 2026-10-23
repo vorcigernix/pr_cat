@@ -1,16 +1,18 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { createClient, type Client, type InStatement } from '@libsql/client';
-import { batch, query } from '@/lib/db';
-import { GitHubClient } from '@/lib/github';
-import { GitHubService } from '@/lib/services/github-service';
-import type { GitHubRepository } from '@/lib/types';
-import { syncOrganizationRepositories, syncOrganizationMembers } from '@/lib/infrastructure/adapters/github/organization-sync';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn(), batch: jest.fn() }));
-jest.mock('@/lib/github', () => ({ GitHubClient: jest.fn() }));
-jest.mock('@/lib/github-app', () => ({ createInstallationClient: jest.fn() }));
+import type { GitHubRepository } from '@/lib/types';
+
+mock.module('@/lib/db', () => ({ query: mock(), execute: mock(), batch: mock() }));
+mock.module('@/lib/github', () => ({ GitHubClient: mock() }));
+mock.module('@/lib/github-app', () => ({ createInstallationClient: mock() }));
+
+type GitHubClient = import('@/lib/github').GitHubClient;
+const { batch, query } = await import('@/lib/db');
+const { GitHubClient } = await import('@/lib/github');
+const { GitHubService } = await import('@/lib/services/github-service');
+const { syncOrganizationRepositories, syncOrganizationMembers } = await import('@/lib/infrastructure/adapters/github/organization-sync');
 
 function repository(id: number): GitHubRepository {
   return {
@@ -22,15 +24,15 @@ function repository(id: number): GitHubRepository {
 
 describe('Paged organization synchronization', () => {
   let db: Client;
-  const api = { getUserOrganizations: jest.fn(), getOrganizationRepositories: jest.fn(), getOrganizationMembers: jest.fn() };
+  const api = { getUserOrganizations: mock(), getOrganizationRepositories: mock(), getOrganizationMembers: mock() };
   const client = api as unknown as GitHubClient;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    mock.clearAllMocks();
     api.getUserOrganizations.mockReset().mockResolvedValue([]);
     api.getOrganizationRepositories.mockReset().mockResolvedValue([]);
     api.getOrganizationMembers.mockReset().mockResolvedValue([]);
-    (GitHubClient as jest.Mock).mockReturnValue(client);
+    (GitHubClient as unknown as ReturnType<typeof mock>).mockReturnValue(client);
     db = createClient({ url: 'file::memory:' });
     await db.executeMultiple(readFileSync('lib/schema.sql', 'utf8'));
     await db.executeMultiple(`
@@ -38,8 +40,8 @@ describe('Paged organization synchronization', () => {
       INSERT INTO organizations (id, github_id, name, installation_id) VALUES (1, 100, 'Org', 42);
       INSERT INTO user_organizations (user_id, organization_id, role) VALUES ('7', 1, 'owner');
     `);
-    (query as jest.Mock).mockImplementation(async (sql, args) => (await db.execute({ sql, args })).rows);
-    (batch as jest.Mock).mockImplementation((statements: InStatement[]) => db.batch(statements, 'write'));
+    (query as ReturnType<typeof mock>).mockImplementation(async (sql, args) => (await db.execute({ sql, args })).rows);
+    (batch as ReturnType<typeof mock>).mockImplementation((statements: InStatement[]) => db.batch(statements, 'write'));
   });
 
   afterEach(() => db.close());
@@ -68,7 +70,7 @@ describe('Paged organization synchronization', () => {
     expect(query).toHaveBeenCalledTimes(2);
     expect(batch).toHaveBeenCalledTimes(2);
     await db.execute('UPDATE repositories SET is_tracked = 1 WHERE github_id = 1');
-    (batch as jest.Mock).mockClear();
+    (batch as ReturnType<typeof mock>).mockClear();
     expect(await syncOrganizationRepositories(client, 'Org', 1)).toEqual({ processed: 101, created: 0, updated: 0, unchanged: 101, errors: [] });
     expect(batch).not.toHaveBeenCalled();
     repositories[0].description = 'Changed description';

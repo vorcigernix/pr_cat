@@ -1,24 +1,30 @@
-/** @jest-environment node */
-
+import { createClient as createNativeClient } from '@libsql/client/sqlite3';
+import { afterAll, beforeAll, beforeEach, expect, it, mock, type Mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { generateKeyPairSync } from 'node:crypto';
-import { createClient, type Client } from '@libsql/client';
-import { Octokit } from '@octokit/rest';
-import { NextRequest } from 'next/server';
-import { auth } from '@/auth';
-import type { Session } from 'next-auth';
-import { GET as list, POST as syncAll } from '@/app/api/github-app/installations/route';
-import { GET, POST, DELETE } from '@/app/api/github-app/installations/[installationId]/route';
+import type { Client } from '@libsql/client';
 
-jest.mock('@libsql/client', () => ({ ...jest.requireActual('@libsql/client'), createClient: jest.fn() }));
-jest.mock('@octokit/rest', () => ({ Octokit: jest.fn() }));
-jest.mock('ai', () => ({ generateText: jest.fn() }));
-jest.mock('@ai-sdk/google', () => ({ createGoogle: jest.fn() }));
-jest.mock('@ai-sdk/openai', () => ({ createOpenAI: jest.fn() }));
-jest.mock('@ai-sdk/anthropic', () => ({ createAnthropic: jest.fn() }));
+import { NextRequest } from 'next/server';
+
+import type { Session } from 'next-auth';
+
+mock.module('@libsql/client', () => ({ createClient: mock() }));
+mock.module('@octokit/rest', () => ({ Octokit: mock() }));
+mock.module('ai', () => ({ generateText: mock() }));
+mock.module('@ai-sdk/google', () => ({ createGoogle: mock() }));
+mock.module('@ai-sdk/openai', () => ({ createOpenAI: mock() }));
+mock.module('@ai-sdk/anthropic', () => ({ createAnthropic: mock() }));
+
+mock.module('@/auth', () => ({ auth: mock() }));
+
+const { createClient } = await import('@libsql/client');
+const { Octokit } = await import('@octokit/rest');
+const { auth } = await import('@/auth');
+const { GET: list, POST: syncAll } = await import('@/app/api/github-app/installations/route');
+const { GET, POST, DELETE } = await import('@/app/api/github-app/installations/[installationId]/route');
 
 let db: Client;
-const mockAuth = auth as unknown as jest.MockedFunction<() => Promise<Session | null>>;
+const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 const originalEnvironment = { GITHUB_APP_PRIVATE_KEY: process.env.GITHUB_APP_PRIVATE_KEY, DEMO_MODE: process.env.DEMO_MODE };
 const installation = (id: number, organizationId: number, login: string) => ({
   id, account: { id: organizationId, login, type: 'Organization', avatar_url: '' },
@@ -29,24 +35,24 @@ const foreign = installation(99, 200, 'Other');
 const newlyInstalled = installation(88, 300, 'NewOrg');
 const repository = { id: 500, name: 'repo', full_name: 'Org/repo', description: 'Private repository', private: true, owner: { id: 100 }, html_url: '', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-09-08T00:00:00Z' };
 const api = {
-  listInstallations: jest.fn(), getInstallation: jest.fn(), createInstallationAccessToken: jest.fn(),
-  listReposAccessibleToInstallation: jest.fn(), listInstallationsForAuthenticatedUser: jest.fn(), listForAuthenticatedUser: jest.fn(),
+  listInstallations: mock(), getInstallation: mock(), createInstallationAccessToken: mock(),
+  listReposAccessibleToInstallation: mock(), listInstallationsForAuthenticatedUser: mock(), listForAuthenticatedUser: mock(),
 };
 const params = (id = '42') => ({ params: Promise.resolve({ installationId: id }) });
 const request = (method = 'GET', search = '') => new NextRequest(`http://localhost/api/github-app/installations/42${search}`, { method });
 
 beforeAll(async () => {
-  db = jest.requireActual<typeof import('@libsql/client')>('@libsql/client').createClient({ url: 'file::memory:' });
-  jest.mocked(createClient).mockReturnValue(db);
+  db = createNativeClient({ url: 'file::memory:' });
+  (createClient as Mock<typeof createClient>).mockReturnValue(db);
   await db.executeMultiple(readFileSync('lib/schema.sql', 'utf8'));
   process.env.GITHUB_APP_PRIVATE_KEY = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ type: 'pkcs1', format: 'pem' }).toString();
   process.env.DEMO_MODE = 'false';
 });
 
 beforeEach(async () => {
-  jest.clearAllMocks();
+  mock.clearAllMocks();
   mockAuth.mockResolvedValue({ user: { id: 'viewer' }, expires: '2099-01-01' });
-  (Octokit as unknown as jest.Mock).mockImplementation(() => ({ apps: api, request: api.createInstallationAccessToken, orgs: { listForAuthenticatedUser: api.listForAuthenticatedUser } }));
+  (Octokit as unknown as ReturnType<typeof mock>).mockImplementation(() => ({ apps: api, request: api.createInstallationAccessToken, orgs: { listForAuthenticatedUser: api.listForAuthenticatedUser } }));
   api.listInstallations.mockReset().mockResolvedValue({ data: [own, foreign] });
   api.getInstallation.mockReset().mockImplementation(async ({ installation_id }) => ({ data: [own, foreign, newlyInstalled].find(item => item.id === installation_id) }));
   api.createInstallationAccessToken.mockReset().mockResolvedValue({ data: { token: 'installation-token', expires_at: '2099-01-01T00:00:00Z' } });
@@ -100,12 +106,12 @@ it('synchronizes authorized repositories through the actual adapter and preserve
   const response = await POST(request('POST'), params());
   expect(response.status).toBe(200);
   expect(await response.json()).toMatchObject({ success: true, repositories: { count: 1 } });
-  expect((await db.execute('SELECT organization_id, full_name, private, is_tracked FROM repositories')).rows).toEqual([
+  expect((await db.execute('SELECT organization_id, full_name, private, is_tracked FROM repositories')).rows).toEqual<unknown>([
     { organization_id: 1, full_name: 'Org/repo', private: 1, is_tracked: 0 },
   ]);
   await db.execute('UPDATE repositories SET is_tracked = 1');
   expect((await POST(request('POST'), params())).status).toBe(200);
-  expect((await db.execute('SELECT COUNT(*) AS count, MAX(is_tracked) AS tracked FROM repositories')).rows[0]).toEqual({ count: 1, tracked: 1 });
+  expect((await db.execute('SELECT COUNT(*) AS count, MAX(is_tracked) AS tracked FROM repositories')).rows[0]).toEqual<unknown>({ count: 1, tracked: 1 });
 });
 
 it('bulk synchronization excludes foreign installations from both persistence and counts', async () => {
@@ -114,7 +120,7 @@ it('bulk synchronization excludes foreign installations from both persistence an
   const body = await response.json();
   expect(body.totalInstallations).toBe(1);
   expect(body.synced.map((item: { installationId: number }) => item.installationId)).toEqual([42]);
-  expect((await db.execute('SELECT organization_id FROM repositories')).rows).toEqual([{ organization_id: 1 }]);
+  expect((await db.execute('SELECT organization_id FROM repositories')).rows).toEqual<unknown>([{ organization_id: 1 }]);
 });
 
 it('reports partial repository synchronization as failure and allows retry', async () => {
@@ -138,8 +144,8 @@ it('supports a new installation only after GitHub confirms both organization mem
   api.listReposAccessibleToInstallation.mockResolvedValue({ data: { repositories: [] } });
   const response = await POST(request('POST'), params('88'));
   expect(response.status).toBe(200);
-  expect((await db.execute('SELECT github_id, installation_id FROM organizations WHERE github_id = 300')).rows).toEqual([{ github_id: 300, installation_id: 88 }]);
-  expect((await db.execute("SELECT uo.role FROM user_organizations uo JOIN organizations o ON o.id = uo.organization_id WHERE uo.user_id = 'viewer' AND o.github_id = 300")).rows).toEqual([{ role: 'member' }]);
+  expect((await db.execute('SELECT github_id, installation_id FROM organizations WHERE github_id = 300')).rows).toEqual<unknown>([{ github_id: 300, installation_id: 88 }]);
+  expect((await db.execute("SELECT uo.role FROM user_organizations uo JOIN organizations o ON o.id = uo.organization_id WHERE uo.user_id = 'viewer' AND o.github_id = 300")).rows).toEqual<unknown>([{ role: 'member' }]);
 });
 
 it('does not turn outside-collaborator installation access into organization-wide access', async () => {

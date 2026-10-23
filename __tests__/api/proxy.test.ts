@@ -1,17 +1,16 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, expect, it, setSystemTime } from 'bun:test';
 import { NextRequest } from 'next/server';
 
 let proxy: typeof import('@/proxy').proxy;
+let testIndex = 0;
 
 beforeEach(async () => {
-  jest.resetModules();
-  jest.useFakeTimers();
-  jest.setSystemTime(new Date('2026-09-08T12:00:00Z'));
+  // Expire every limiter window between cases without replacing the module cache.
+  setSystemTime(new Date('2026-09-08T12:00:00Z').getTime() + testIndex++ * 600000);
   ({ proxy } = await import('@/proxy'));
 });
 
-afterEach(() => jest.useRealTimers());
+afterEach(() => setSystemTime());
 
 it.each(['/dashboard', '/api/status', '/api/webhook/github'])('passes %s through without applying an API rate limit', pathname => {
   const response = proxy(new NextRequest(`http://localhost${pathname}`, {
@@ -40,7 +39,7 @@ it.each([
   expect(blocked.headers.get('x-ratelimit-remaining')).toBe('0');
   expect(blocked.headers.get('retry-after')).toBe(String(windowMs / 1000));
 
-  jest.advanceTimersByTime(windowMs);
+  setSystemTime(Date.now() + windowMs);
   const reset = proxy(request);
   expect(reset.status).toBe(200);
   expect(reset.headers.get('x-ratelimit-remaining')).toBe(String(limit - 1));

@@ -1,36 +1,38 @@
-/** @jest-environment node */
-
+import * as actualTimeRange from '@/lib/core/domain/value-objects/time-range';
+import * as actualPagination from '@/lib/core/domain/value-objects/pagination';
+import { beforeEach, expect, it, mock } from 'bun:test';
 import { NextRequest } from 'next/server';
-import { GET as summary } from '@/app/api/metrics/summary/route';
-import { GET as series } from '@/app/api/metrics/time-series/route';
-import { GET as team } from '@/app/api/metrics/team-performance/route';
-import { GET as recommendations } from '@/app/api/metrics/recommendations/route';
-import { GET as insights } from '@/app/api/metrics/repository-insights/route';
-import { GET as recent } from '@/app/api/pull-requests/recent/route';
-import { GET as categories } from '@/app/api/pull-requests/category-distribution/route';
-import { ServiceLocator } from '@/lib/core';
 
-jest.mock('@/lib/core', () => ({
-  ...jest.requireActual('@/lib/core/domain/value-objects/pagination'),
-  ...jest.requireActual('@/lib/core/domain/value-objects/time-range'),
-  ServiceLocator: { getMetricsService: jest.fn(), getPullRequestRepository: jest.fn() },
+mock.module('@/lib/core', () => ({
+  ...actualPagination,
+  ...actualTimeRange,
+  ServiceLocator: { getMetricsService: mock(), getPullRequestRepository: mock() },
   withAuth: (handler: (context: { organizationId: string }, request: NextRequest) => Promise<Response>) =>
     (request: NextRequest) => handler({ organizationId: '2' }, request),
 }));
 
+const { GET: summary } = await import('@/app/api/metrics/summary/route');
+const { GET: series } = await import('@/app/api/metrics/time-series/route');
+const { GET: team } = await import('@/app/api/metrics/team-performance/route');
+const { GET: recommendations } = await import('@/app/api/metrics/recommendations/route');
+const { GET: insights } = await import('@/app/api/metrics/repository-insights/route');
+const { GET: recent } = await import('@/app/api/pull-requests/recent/route');
+const { GET: categories } = await import('@/app/api/pull-requests/category-distribution/route');
+const { ServiceLocator } = await import('@/lib/core');
+
 const services = {
-  getSummary: jest.fn(), getTimeSeries: jest.fn(), getTeamPerformance: jest.fn(),
-  getRecommendations: jest.fn(), getRepositoryInsights: jest.fn(), getRecent: jest.fn(),
-  getCategoryDistribution: jest.fn(), getCategoryTimeSeries: jest.fn(),
+  getSummary: mock(), getTimeSeries: mock(), getTeamPerformance: mock(),
+  getRecommendations: mock(), getRepositoryInsights: mock(), getRecent: mock(),
+  getCategoryDistribution: mock(), getCategoryTimeSeries: mock(),
 };
 const routes = [summary, series, team, recommendations, insights, recent, categories];
 const request = (params = '') => new NextRequest(`http://localhost/api/test?${params}`);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  mock.clearAllMocks();
   Object.values(services).forEach(mock => mock.mockResolvedValue([]));
-  (ServiceLocator.getMetricsService as jest.Mock).mockResolvedValue(services);
-  (ServiceLocator.getPullRequestRepository as jest.Mock).mockResolvedValue(services);
+  (ServiceLocator.getMetricsService as ReturnType<typeof mock>).mockResolvedValue(services);
+  (ServiceLocator.getPullRequestRepository as ReturnType<typeof mock>).mockResolvedValue(services);
 });
 
 it.each([

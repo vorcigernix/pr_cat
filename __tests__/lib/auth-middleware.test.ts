@@ -1,23 +1,24 @@
-/** @jest-environment node */
-
+import { beforeEach, describe, expect, it, mock, type Mock } from 'bun:test';
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth, withOptionalAuth } from '@/lib/core/application/auth-middleware';
-import { ServiceLocator } from '@/lib/core/container';
+
 import type { IAuthService } from '@/lib/core/ports';
 
-jest.mock('@/lib/core/container', () => ({
-  ServiceLocator: { getAuthService: jest.fn() },
+mock.module('@/lib/core/container', () => ({
+  ServiceLocator: { getAuthService: mock() },
 }));
 
+const { withAuth, withOptionalAuth } = await import('@/lib/core/application/auth-middleware');
+const { ServiceLocator } = await import('@/lib/core/container');
+
 const authService = {
-  getSession: jest.fn(),
-  getUserPermissions: jest.fn(),
+  getSession: mock(),
+  getUserPermissions: mock(),
 };
 
 describe('Authentication context permissions', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.mocked(ServiceLocator.getAuthService).mockResolvedValue(authService as unknown as IAuthService);
+    mock.clearAllMocks();
+    (ServiceLocator.getAuthService as Mock<typeof ServiceLocator.getAuthService>).mockResolvedValue(authService as unknown as IAuthService);
     authService.getSession.mockResolvedValue({
       user: { id: 'user-1' },
       organizations: [{ id: '1' }],
@@ -29,7 +30,7 @@ describe('Authentication context permissions', () => {
   });
 
   it('does not run a protected handler when organization access is denied', async () => {
-    const handler = jest.fn(async () => NextResponse.json({ private: true }));
+    const handler = mock(async () => NextResponse.json({ private: true }));
     const response = await withAuth(handler)(new NextRequest('http://localhost/api/metrics/summary'));
 
     expect(response.status).toBe(401);
@@ -37,7 +38,7 @@ describe('Authentication context permissions', () => {
   });
 
   it('uses anonymous context for optional auth when organization access is denied', async () => {
-    const handler = jest.fn(async () => NextResponse.json({ ok: true }));
+    const handler = mock(async () => NextResponse.json({ ok: true }));
     const request = new NextRequest('http://localhost/api/public');
     await withOptionalAuth(handler)(request);
 
@@ -48,7 +49,7 @@ describe('Authentication context permissions', () => {
     authService.getUserPermissions.mockResolvedValue({
       canRead: true, canWrite: false, canAdmin: false, role: 'viewer',
     });
-    const handler = jest.fn(async () => NextResponse.json({ ok: true }));
+    const handler = mock(async () => NextResponse.json({ ok: true }));
     const request = new NextRequest('http://localhost/api/metrics/summary');
     const response = await withAuth(handler)(request);
 
@@ -63,7 +64,7 @@ describe('Authentication context permissions', () => {
     });
     const permissions = { canRead: true, canWrite: true, canAdmin: false, role: 'member' };
     authService.getUserPermissions.mockResolvedValue(permissions);
-    const handler = jest.fn(async () => NextResponse.json({ ok: true }));
+    const handler = mock(async () => NextResponse.json({ ok: true }));
     const request = new NextRequest('http://localhost/api/metrics/summary?organizationId=2');
 
     expect((await withAuth(handler)(request)).status).toBe(200);
@@ -82,7 +83,7 @@ describe('Authentication context permissions', () => {
     authService.getUserPermissions.mockImplementation(async (_userId, organizationId) => ({
       canRead: organizationId === '1', canWrite: organizationId === '1', canAdmin: organizationId === '1', role: 'admin',
     }));
-    const handler = jest.fn(async () => NextResponse.json({ private: true }));
+    const handler = mock(async () => NextResponse.json({ private: true }));
 
     const response = await withAuth(handler)(new NextRequest('http://localhost/api/metrics/summary?organizationId=2'));
 
@@ -93,7 +94,7 @@ describe('Authentication context permissions', () => {
 
   it.each(['', '999', 'invalid', '-1', '1.5', '01'])('rejects foreign or invalid selected organization %s before requesting permissions', async organizationId => {
     authService.getUserPermissions.mockResolvedValue({ canRead: true, canWrite: true, canAdmin: true, role: 'admin' });
-    const handler = jest.fn(async () => NextResponse.json({ private: true }));
+    const handler = mock(async () => NextResponse.json({ private: true }));
 
     const response = await withAuth(handler)(new NextRequest(`http://localhost/api/metrics/summary?organizationId=${organizationId}`));
 
@@ -105,7 +106,7 @@ describe('Authentication context permissions', () => {
   it('falls back to the first member organization only when no selection or primary organization exists', async () => {
     authService.getSession.mockResolvedValue({ user: { id: 'user-1' }, organizations: [{ id: '2' }] });
     authService.getUserPermissions.mockResolvedValue({ canRead: true, canWrite: false, canAdmin: false, role: 'viewer' });
-    const handler = jest.fn(async () => NextResponse.json({ ok: true }));
+    const handler = mock(async () => NextResponse.json({ ok: true }));
     const request = new NextRequest('http://localhost/api/metrics/summary');
 
     expect((await withAuth(handler)(request)).status).toBe(200);

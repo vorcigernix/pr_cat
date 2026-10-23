@@ -1,33 +1,36 @@
-/** @jest-environment node */
-
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it, mock, spyOn } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { generateKeyPairSync } from 'node:crypto';
 import type { Client } from '@libsql/client';
-import { auth } from '@/auth';
-import { getDbClient } from '@/lib/db';
-import { DIContainer, ServiceLocator } from '@/lib/core/container';
+
 import type { IRepository, IGitHubService, IGitHubAppService } from '@/lib/core/ports';
-import { EnvironmentConfig } from '@/lib/infrastructure/config/environment';
-import { DemoAuthService, DemoGitHubService } from '@/lib/infrastructure/adapters/demo';
-import { TursoAuthService } from '@/lib/infrastructure/adapters/turso/auth.adapter';
-import { OptimizedTursoMetricsService } from '@/lib/infrastructure/adapters/turso/optimized-metrics.adapter';
-import { OptimizedTursoPullRequestRepository } from '@/lib/infrastructure/adapters/turso/optimized-pull-request.adapter';
-import { RealGitHubAPIService } from '@/lib/infrastructure/adapters/github/real-github.adapter';
-import { GitHubAppService } from '@/lib/infrastructure/adapters/github/github-app.adapter';
 
 // Only external SDK calls are replaced; the container, adapters and database are real.
-jest.mock('ai', () => ({ generateText: jest.fn() }));
-jest.mock('@ai-sdk/google', () => ({ createGoogle: jest.fn() }));
-jest.mock('@ai-sdk/openai', () => ({ createOpenAI: jest.fn() }));
-jest.mock('@ai-sdk/anthropic', () => ({ createAnthropic: jest.fn() }));
-jest.mock('@octokit/rest', () => ({
-  Octokit: jest.fn().mockImplementation(() => ({
-    users: { getAuthenticated: jest.fn().mockResolvedValue({ data: {
+mock.module('ai', () => ({ generateText: mock() }));
+mock.module('@ai-sdk/google', () => ({ createGoogle: mock() }));
+mock.module('@ai-sdk/openai', () => ({ createOpenAI: mock() }));
+mock.module('@ai-sdk/anthropic', () => ({ createAnthropic: mock() }));
+mock.module('@octokit/rest', () => ({
+  Octokit: mock().mockImplementation(() => ({
+    users: { getAuthenticated: mock().mockResolvedValue({ data: {
       id: 42, login: 'github-alice', name: 'Alice from GitHub', avatar_url: 'https://example.com/avatar',
       html_url: 'https://github.com/github-alice', created_at: '2020-01-01', updated_at: '2026-01-01',
     } }) },
   })),
 }));
+
+mock.module('@/auth', () => ({ auth: mock() }));
+
+const { auth } = await import('@/auth');
+const { getDbClient } = await import('@/lib/db');
+const { DIContainer, ServiceLocator } = await import('@/lib/core/container');
+const { EnvironmentConfig } = await import('@/lib/infrastructure/config/environment');
+const { DemoAuthService, DemoGitHubService } = await import('@/lib/infrastructure/adapters/demo');
+const { TursoAuthService } = await import('@/lib/infrastructure/adapters/turso/auth.adapter');
+const { OptimizedTursoMetricsService } = await import('@/lib/infrastructure/adapters/turso/optimized-metrics.adapter');
+const { OptimizedTursoPullRequestRepository } = await import('@/lib/infrastructure/adapters/turso/optimized-pull-request.adapter');
+const { RealGitHubAPIService } = await import('@/lib/infrastructure/adapters/github/real-github.adapter');
+const { GitHubAppService } = await import('@/lib/infrastructure/adapters/github/github-app.adapter');
 
 const environment = { ...process.env };
 let db: Client;
@@ -49,14 +52,14 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  mock.clearAllMocks();
   process.env = { ...environment, TURSO_URL: 'file::memory:', TURSO_POOL_SIZE: '1', DEMO_MODE: 'false' };
   DIContainer.reset();
-  (auth as jest.Mock).mockResolvedValue({ user: { id: 'alice' }, expires: '2099-01-01', accessToken: 'session-token' });
-  jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected external request'));
+  (auth as ReturnType<typeof mock>).mockResolvedValue({ user: { id: 'alice' }, expires: '2099-01-01', accessToken: 'session-token' });
+  spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected external request'));
 });
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => mock.restore());
 
 afterAll(() => {
   DIContainer.reset();
@@ -70,7 +73,7 @@ it.each(['forced demo', 'missing database', 'missing GitHub App'])('resolves a w
   if (mode === 'missing database') delete process.env.TURSO_URL;
   if (mode === 'missing GitHub App') delete process.env.GITHUB_APP_ID;
   EnvironmentConfig.getInstance().refresh();
-  const databaseExecute = jest.spyOn(db, 'execute');
+  const databaseExecute = spyOn(db, 'execute');
   const authService = await ServiceLocator.getAuthService();
   expect(authService).toBeInstanceOf(DemoAuthService);
   const session = await authService.getSession();

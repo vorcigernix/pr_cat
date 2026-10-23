@@ -1,0 +1,10 @@
+[run]
+bun = true
+
+[test]
+root = "__tests__"
+preload = ["./__tests__/setup.ts"]
+timeout = 30000
+coverageReporter = ["text", "lcov"]
+coverageThreshold = { lines = 0.6, functions = 0.6 }
+coveragePathIgnorePatterns = ["__tests__/**", "**/*.d.ts"]

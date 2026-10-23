@@ -1,13 +1,14 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, describe, expect, it, mock, setSystemTime } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { createClient, type Client, type InStatement } from '@libsql/client';
-import { batch, query } from '@/lib/db';
+
 import type { GitHubClient } from '@/lib/github';
 import type { GitHubPullRequest } from '@/lib/types';
-import { syncRepositoryPullRequests } from '@/lib/infrastructure/adapters/github/pull-request-sync';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn(), batch: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock(), batch: mock() }));
+
+const { batch, query } = await import('@/lib/db');
+const { syncRepositoryPullRequests } = await import('@/lib/infrastructure/adapters/github/pull-request-sync');
 
 function pullRequest(number: number, overrides: Partial<GitHubPullRequest> = {}): GitHubPullRequest {
   return {
@@ -22,12 +23,12 @@ function pullRequest(number: number, overrides: Partial<GitHubPullRequest> = {})
 
 describe('Paged PR synchronization', () => {
   let db: Client;
-  const api = { getPullRequests: jest.fn(), getPullRequestReviews: jest.fn() };
+  const api = { getPullRequests: mock(), getPullRequestReviews: mock() };
   const client = api as unknown as GitHubClient;
 
   beforeEach(async () => {
-    jest.useFakeTimers().setSystemTime(new Date('2026-09-07T12:00:00Z'));
-    jest.clearAllMocks();
+    setSystemTime(new Date('2026-09-07T12:00:00Z'));
+    mock.clearAllMocks();
     api.getPullRequests.mockReset().mockResolvedValue([]);
     api.getPullRequestReviews.mockReset().mockResolvedValue([]);
     db = createClient({ url: 'file::memory:' });
@@ -36,13 +37,13 @@ describe('Paged PR synchronization', () => {
       INSERT INTO organizations (id, github_id, name) VALUES (1, 100, 'Org');
       INSERT INTO repositories (id, github_id, organization_id, name, full_name) VALUES (1, 200, 1, 'repo', 'Org/repo');
     `);
-    (query as jest.Mock).mockImplementation(async (sql, args) => (await db.execute({ sql, args })).rows);
-    (batch as jest.Mock).mockImplementation((statements: InStatement[]) => db.batch(statements, 'write'));
+    (query as ReturnType<typeof mock>).mockImplementation(async (sql, args) => (await db.execute({ sql, args })).rows);
+    (batch as ReturnType<typeof mock>).mockImplementation((statements: InStatement[]) => db.batch(statements, 'write'));
   });
 
   afterEach(() => {
     db.close();
-    jest.useRealTimers();
+    setSystemTime();
   });
 
   it('pages PRs, deduplicates author lookups per page, and bounds review concurrency', async () => {
@@ -64,8 +65,8 @@ describe('Paged PR synchronization', () => {
     expect(maximum).toBe(4);
     expect(active).toBe(0);
     expect(api.getPullRequests.mock.calls.map(call => call[3])).toEqual([1, 2]);
-    expect((query as jest.Mock).mock.calls.filter(call => call[0].includes('SELECT id FROM users'))).toHaveLength(2);
-    expect((query as jest.Mock).mock.calls.filter(call => call[0].includes('SELECT * FROM pull_requests'))).toHaveLength(2);
+    expect((query as ReturnType<typeof mock>).mock.calls.filter(call => call[0].includes('SELECT id FROM users'))).toHaveLength(2);
+    expect((query as ReturnType<typeof mock>).mock.calls.filter(call => call[0].includes('SELECT * FROM pull_requests'))).toHaveLength(2);
     expect((await db.execute('SELECT COUNT(*) AS count FROM users')).rows[0].count).toBe(1);
     expect(result.lastSyncedAt).toBe('2026-09-07T12:00:00.000Z');
   });
@@ -81,7 +82,7 @@ describe('Paged PR synchronization', () => {
 
     expect(result).toMatchObject({ processed: 1, created: 1, errors: [] });
     expect(api.getPullRequests).toHaveBeenCalledTimes(1);
-    expect((await db.execute('SELECT number FROM pull_requests')).rows).toEqual([{ number: 1 }]);
+    expect((await db.execute('SELECT number FROM pull_requests')).rows).toEqual<unknown>([{ number: 1 }]);
   });
 
   it('retries failed reviews without duplicate PR writes and preserves categorization', async () => {
@@ -92,13 +93,13 @@ describe('Paged PR synchronization', () => {
     expect((await db.execute('SELECT * FROM repository_sync_state')).rows).toEqual([]);
     await db.executeMultiple("INSERT INTO categories (id, name) VALUES (9, 'Feature'); UPDATE pull_requests SET category_id = 9, category_confidence = 0.9");
     api.getPullRequestReviews.mockResolvedValue([{ id: 99, user: pullRequest(1).user, state: 'APPROVED', submitted_at: '2026-09-07T11:00:00Z' }]);
-    (batch as jest.Mock).mockClear();
+    (batch as ReturnType<typeof mock>).mockClear();
 
     const retried = await syncRepositoryPullRequests(client, 1, 'Org', 'repo');
 
     expect(retried).toMatchObject({ processed: 1, created: 0, updated: 0, unchanged: 1, errors: [] });
-    expect((batch as jest.Mock).mock.calls.flatMap(call => call[0]).some(statement => statement.sql.includes('INSERT INTO pull_requests'))).toBe(false);
-    expect((await db.execute('SELECT category_id, category_confidence FROM pull_requests')).rows[0]).toEqual({ category_id: 9, category_confidence: 0.9 });
+    expect((batch as ReturnType<typeof mock>).mock.calls.flatMap(call => call[0]).some(statement => statement.sql.includes('INSERT INTO pull_requests'))).toBe(false);
+    expect((await db.execute('SELECT category_id, category_confidence FROM pull_requests')).rows[0]).toEqual<unknown>({ category_id: 9, category_confidence: 0.9 });
     expect((await db.execute('SELECT COUNT(*) AS count FROM pr_reviews')).rows[0].count).toBe(1);
     expect((await db.execute('SELECT updated_through FROM repository_sync_state')).rows[0].updated_through).toBe('2026-09-07T12:00:00.000Z');
   });
@@ -123,7 +124,7 @@ describe('Paged PR synchronization', () => {
   it('does not advance the previous checkpoint after a failed write batch', async () => {
     await db.execute("INSERT INTO repository_sync_state VALUES (1, '2026-09-07T10:00:00.000Z', '2026-09-07T10:01:00.000Z')");
     api.getPullRequests.mockResolvedValue([pullRequest(1)]);
-    (batch as jest.Mock).mockImplementation(async (statements: Array<{ sql: string }>) => {
+    (batch as ReturnType<typeof mock>).mockImplementation(async (statements: Array<{ sql: string }>) => {
       if (statements.some(statement => statement.sql.includes('INSERT INTO pull_requests'))) throw new Error('Write failed');
       return db.batch(statements, 'write');
     });
@@ -137,14 +138,14 @@ describe('Paged PR synchronization', () => {
     const prs = Array.from({ length: 100 }, (_, index) => pullRequest(index + 1));
     api.getPullRequests.mockImplementation(async (_owner, _repo, _state, page) => page === 1 ? prs : []);
     await syncRepositoryPullRequests(client, 1, 'Org', 'repo');
-    (query as jest.Mock).mockClear();
-    (batch as jest.Mock).mockClear();
+    (query as ReturnType<typeof mock>).mockClear();
+    (batch as ReturnType<typeof mock>).mockClear();
 
     expect(await syncRepositoryPullRequests(client, 1, 'Org', 'repo')).toMatchObject({ processed: 100, created: 0, updated: 0, unchanged: 100, errors: [] });
     expect(query).toHaveBeenCalledTimes(2); // Checkpoint + one existing-PR page.
     expect(batch).toHaveBeenCalledTimes(1);
-    expect((batch as jest.Mock).mock.calls[0][0]).toHaveLength(1);
-    expect((batch as jest.Mock).mock.calls[0][0][0].sql).toContain('repository_sync_state');
+    expect((batch as ReturnType<typeof mock>).mock.calls[0][0]).toHaveLength(1);
+    expect((batch as ReturnType<typeof mock>).mock.calls[0][0][0].sql).toContain('repository_sync_state');
   });
 
   it('does not advance a checkpoint when a later PR page fails', async () => {

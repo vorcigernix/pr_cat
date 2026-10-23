@@ -1,10 +1,12 @@
-import { batch, query } from '@/lib/db';
-import { getOrganizationAiSettings } from '@/lib/repositories/settings-repository';
+import { beforeEach, expect, it, mock } from 'bun:test';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn(), batch: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock(), batch: mock() }));
+
+const { batch, query } = await import('@/lib/db');
+const { getOrganizationAiSettings } = await import('@/lib/repositories/settings-repository');
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  mock.clearAllMocks();
 });
 
 it.each([
@@ -21,7 +23,7 @@ it.each([
     ai_provider: provider,
     ai_selected_model_id: model,
   };
-  (query as jest.Mock).mockResolvedValue(Object.entries(settings).map(([key, value]) => ({ key, value })));
+  (query as ReturnType<typeof mock>).mockResolvedValue(Object.entries(settings).map(([key, value]) => ({ key, value })));
 
   const result = await getOrganizationAiSettings(1);
 
@@ -31,7 +33,7 @@ it.each([
 });
 
 it('loads only the six organization settings in one query and keeps missing defaults', async () => {
-  (query as jest.Mock).mockResolvedValue([]);
+  (query as ReturnType<typeof mock>).mockResolvedValue([]);
 
   expect(await getOrganizationAiSettings(42)).toEqual({
     provider: null,
@@ -46,7 +48,7 @@ it('loads only the six organization settings in one query and keeps missing defa
 });
 
 it.each([['0', 0], ['42.5', 42.5], ['', 80]])('preserves threshold %s and exposes key presence without secret values', async (storedThreshold, expectedThreshold) => {
-  (query as jest.Mock).mockResolvedValue([
+  (query as ReturnType<typeof mock>).mockResolvedValue([
     { key: 'ai_openai_api_key', value: '' },
     { key: 'ai_google_api_key', value: 'test-secret-sentinel' },
     { key: 'ai_anthropic_api_key', value: null },

@@ -1,10 +1,10 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { createClient, type Client } from '@libsql/client';
-import { query } from '@/lib/db';
-import { getTeamsByOrganizationWithMembers } from '@/lib/repositories/team-repository';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock(), execute: mock(), batch: mock() }));
+
+const { query } = await import('@/lib/db');
+const { getTeamsByOrganizationWithMembers } = await import('@/lib/repositories/team-repository');
 
 describe('Team loading through the canonical repository', () => {
   let client: Client;
@@ -37,8 +37,8 @@ describe('Team loading through the canonical repository', () => {
         (4, 1, 'alice', 'member'), (5, 3, 'missing-user', 'member'),
         (6, 4, 'outsider', 'member');
     `);
-    (query as jest.Mock).mockReset();
-    (query as jest.Mock).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (query as ReturnType<typeof mock>).mockReset();
+    (query as ReturnType<typeof mock>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
   });
 
   afterEach(() => client.close());

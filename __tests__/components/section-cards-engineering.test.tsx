@@ -1,18 +1,21 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { SectionCardsEngineering } from '@/components/section-cards-engineering';
-import { useMetricsSummary } from '@/hooks/use-metrics';
+import { beforeEach, expect, it, mock, type Mock } from 'bun:test';
+import '../setup-dom';
+const { fireEvent, render, screen } = await import('@testing-library/react');
 
-jest.mock('@/hooks/use-team-filter', () => ({ useTeamFilterParams: () => 'organizationId=2&repositoryId=20&timeRange=7d' }));
-jest.mock('@/hooks/use-metrics', () => ({ useMetricsSummary: jest.fn() }));
-const mockSummary = jest.mocked(useMetricsSummary);
-const refresh = jest.fn();
+mock.module('@/hooks/use-team-filter', () => ({ useTeamFilterParams: () => 'organizationId=2&repositoryId=20&timeRange=7d' }));
+mock.module('@/hooks/use-metrics', () => ({ useMetricsSummary: mock() }));
+
+const { SectionCardsEngineering } = await import('@/components/section-cards-engineering');
+const { useMetricsSummary } = await import('@/hooks/use-metrics');
+const mockSummary = (useMetricsSummary as Mock<typeof useMetricsSummary>);
+const refresh = mock();
 const summary = {
   trackedRepositories: 1, prsMergedThisWeek: 8, prsMergedLastWeek: 5,
   weeklyPRVolumeChange: 60, averagePRSize: 137, sizedPRCount: 4, openPRCount: 2,
   categorizationRate: 75, dataUpToDate: '', lastUpdated: '', cacheStrategy: '', nextUpdateDue: '',
 };
 const result: ReturnType<typeof useMetricsSummary> = { data: summary, error: undefined, isLoading: false, isValidating: false, refresh };
-beforeEach(() => { jest.clearAllMocks(); mockSummary.mockReturnValue(result); });
+beforeEach(() => { mock.clearAllMocks(); mockSummary.mockReturnValue(result); });
 
 it('displays recorded metrics instead of invented delivery or focus hours', () => {
   render(<SectionCardsEngineering />);

@@ -1,16 +1,16 @@
-/** @jest-environment node */
-
+import { afterAll, beforeAll, describe, expect, it, mock, spyOn } from 'bun:test';
 import { createClient, type Client } from '@libsql/client';
-import { query } from '@/lib/db';
-import { OptimizedTursoMetricsService } from '@/lib/infrastructure/adapters/turso/optimized-metrics.adapter';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock() }));
+
+const { query } = await import('@/lib/db');
+const { OptimizedTursoMetricsService } = await import('@/lib/infrastructure/adapters/turso/optimized-metrics.adapter');
 
 describe('Repository insights aggregation', () => {
   let client: Client;
 
   beforeAll(async () => {
-    jest.spyOn(Date, 'now').mockReturnValue(new Date('2026-09-07T12:00:00.000Z').getTime());
+    spyOn(Date, 'now').mockReturnValue(new Date('2026-09-07T12:00:00.000Z').getTime());
     client = createClient({ url: 'file::memory:' });
     await client.executeMultiple(`
       CREATE TABLE repositories (id INTEGER PRIMARY KEY, organization_id INTEGER, name TEXT, full_name TEXT, is_tracked INTEGER);
@@ -31,12 +31,12 @@ describe('Repository insights aggregation', () => {
         (5, 3, 'alice', 'open', '2026-09-01T12:00:00.000Z', NULL, 1000, 0, 1);
       INSERT INTO pr_reviews VALUES (1, 1), (2, 1), (3, 1);
     `);
-    (query as jest.Mock).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (query as ReturnType<typeof mock>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
   });
 
   afterAll(() => {
     client.close();
-    jest.restoreAllMocks();
+    mock.restore();
   });
 
   it('counts each PR once and keeps metrics unchanged when a reviewed PR receives more reviews', async () => {
@@ -58,7 +58,7 @@ describe('Repository insights aggregation', () => {
         SELECT 4 UNION ALL SELECT id + 1 FROM review_ids WHERE id < 103
       ) INSERT INTO pr_reviews SELECT id, 1 FROM review_ids
     `);
-    jest.clearAllMocks();
+    mock.clearAllMocks();
     expect(await service.getRepositoryInsights('1')).toEqual(result);
     expect(query).toHaveBeenCalledTimes(1);
   });

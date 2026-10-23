@@ -1,10 +1,10 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, describe, expect, it, mock, type Mock } from 'bun:test';
 import { createClient, type Client } from '@libsql/client';
-import { query } from '@/lib/db';
-import { RepositoryService } from '@/lib/services/repository-service';
 
-jest.mock('@/lib/db', () => ({ query: jest.fn() }));
+mock.module('@/lib/db', () => ({ query: mock(), execute: mock(), batch: mock() }));
+
+const { query } = await import('@/lib/db');
+const { RepositoryService } = await import('@/lib/services/repository-service');
 
 describe('Repository loading for user organizations', () => {
   let client: Client;
@@ -30,8 +30,8 @@ describe('Repository loading for user organizations', () => {
         (4, 1004, 4, 'Foreign', 'Foreign/Foreign', 1, '2026-01-01'),
         (5, 1005, NULL, 'Unassigned', 'Unassigned/Repo', 1, '2026-01-01');
     `);
-    (query as jest.Mock).mockReset();
-    (query as jest.Mock).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
+    (query as ReturnType<typeof mock>).mockReset();
+    (query as ReturnType<typeof mock>).mockImplementation(async (sql, args) => (await client.execute({ sql, args })).rows);
   });
 
   afterEach(() => client.close());
@@ -40,7 +40,7 @@ describe('Repository loading for user organizations', () => {
     const groups = await RepositoryService.getRepositoriesForUserOrganizations('viewer');
 
     expect(groups.map(group => group.organization.name)).toEqual(['Alpha', 'Empty', 'Zulu']);
-    expect(groups[2].organization).toEqual({ id: 1, name: 'Zulu', github_id: 101, avatar_url: 'zulu.png' });
+    expect(groups[2].organization).toEqual<unknown>({ id: 1, name: 'Zulu', github_id: 101, avatar_url: 'zulu.png' });
     expect(groups.map(group => group.repositories.map(repository => repository.id))).toEqual([[3], [], [2, 1]]);
   });
 
@@ -82,7 +82,7 @@ describe('Repository loading for user organizations', () => {
 
     const tracked = await RepositoryService.getRepositoriesForSingleOrganization('zero-viewer', 100, { includeTrackedOnly: true, orderDir: 'DESC' });
     expect(tracked?.repositories.map(repository => repository.id)).toEqual([0, 7]);
-    jest.mocked(query).mockClear();
+    (query as Mock<(...args: Parameters<typeof query>) => Promise<unknown[]>>).mockClear();
     expect(await RepositoryService.getRepositoriesForSingleOrganization('zero-viewer', 104)).toBeNull();
     expect(query).toHaveBeenCalledTimes(1);
   });

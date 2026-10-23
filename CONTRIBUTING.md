@@ -46,7 +46,7 @@ We welcome pull requests for:
 
 ## 🔧 Development Setup
 
-Install Bun 1.4.2 and Node.js 24+ (or Node.js 22.13+ within the 22.x series). Bun manages dependencies and package scripts; the test script runs Jest.
+Install Bun 1.4.4 (`bun upgrade` updates an existing installation). Bun manages dependencies and runs development, builds, tooling, and the native test suite. `bunfig.toml` selects Bun's runtime for package scripts, so a separate Node.js installation is not required. Run tests with `bun run test` or `bun test --isolate`; CI uses `bun test --parallel=2`. Import test APIs from `bun:test`, register module mocks before importing the modules under test, and import `__tests__/setup-dom.ts` in React tests.
 
 ```bash
 # Clone your fork

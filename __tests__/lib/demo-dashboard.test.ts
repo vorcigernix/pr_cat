@@ -1,17 +1,17 @@
-/** @jest-environment node */
+import { afterAll, beforeAll, describe, expect, it, setSystemTime } from 'bun:test';
 
-import { DemoMetricsService } from '@/lib/infrastructure/adapters/demo/metrics.adapter';
-import { DemoPullRequestRepository } from '@/lib/infrastructure/adapters/demo/pull-request.adapter';
-import { Pagination, TimeRange } from '@/lib/core/domain/value-objects';
+const { DemoMetricsService } = await import('@/lib/infrastructure/adapters/demo/metrics.adapter');
+const { DemoPullRequestRepository } = await import('@/lib/infrastructure/adapters/demo/pull-request.adapter');
+const { Pagination, TimeRange } = await import('@/lib/core/domain/value-objects');
 
 describe('Demo dashboard filter compatibility', () => {
   const repository = new DemoPullRequestRepository();
   const metrics = new DemoMetricsService();
 
   beforeAll(() => {
-    jest.useFakeTimers({ now: new Date('2040-06-20T12:00:00.000Z') });
+    setSystemTime(new Date('2040-06-20T12:00:00.000Z'));
   });
-  afterAll(() => jest.useRealTimers());
+  afterAll(() => setSystemTime());
 
   it('returns only the chosen repository with canonical IDs and both changed-line counts', async () => {
     const result = await repository.getRecent('demo-org-1', undefined, undefined, '14d', 'demo-repo-1');

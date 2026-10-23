@@ -1,22 +1,22 @@
-/** @jest-environment node */
-
+import { afterEach, beforeEach, expect, it, mock, type Mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { createClient, type Client } from '@libsql/client';
 import NextAuth, { type NextAuthOptions } from 'next-auth';
-import { execute } from '@/lib/db';
-import { GitHubService } from '@/lib/services';
 
-jest.mock('@/lib/db', () => ({ execute: jest.fn() }));
-jest.mock('@/lib/services', () => ({ GitHubService: jest.fn() }));
-jest.mock('next-auth/next', () => ({ getServerSession: jest.fn() }));
-jest.mock('next-auth/providers/github', () => ({ __esModule: true, default: jest.fn().mockReturnValue({ id: 'github' }) }));
+mock.module('@/lib/db', () => ({ query: mock(), execute: mock(), batch: mock() }));
+mock.module('@/lib/services', () => ({ GitHubService: mock() }));
+mock.module('next-auth/next', () => ({ getServerSession: mock() }));
+mock.module('next-auth/providers/github', () => ({ __esModule: true, default: mock().mockReturnValue({ id: 'github' }) }));
+
+const { execute } = await import('@/lib/db');
+const { GitHubService } = await import('@/lib/services');
 
 let db: Client;
 
 beforeEach(async () => {
   db = createClient({ url: 'file::memory:' });
   await db.executeMultiple(readFileSync('lib/schema.sql', 'utf8'));
-  jest.mocked(execute).mockImplementation(async (sql, args) => {
+  (execute as Mock<typeof execute>).mockImplementation(async (sql, args) => {
     const result = await db.execute({ sql, args });
     return { rowsAffected: result.rowsAffected, lastInsertId: Number(result.lastInsertRowid) };
   });
@@ -29,13 +29,13 @@ it('inserts and updates the signed-in user while awaiting lightweight organizati
   let notifyBootstrap!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
   const bootstrapStarted = new Promise<void>(resolve => { notifyBootstrap = resolve; });
-  const syncUserOrganizations = jest.fn().mockImplementation(() => {
+  const syncUserOrganizations = mock().mockImplementation(() => {
     notifyBootstrap();
     return pending;
   });
-  (GitHubService as jest.Mock).mockReturnValue({ syncUserOrganizations });
-  jest.requireActual('@/auth');
-  const config = jest.mocked(NextAuth).mock.calls[0][0] as unknown as NextAuthOptions;
+  (GitHubService as unknown as ReturnType<typeof mock>).mockReturnValue({ syncUserOrganizations });
+  await import('@/auth');
+  const config = (NextAuth as unknown as Mock<typeof NextAuth>).mock.calls[0][0] as unknown as NextAuthOptions;
   const signIn = config.callbacks!.signIn!;
   const account = { provider: 'github', type: 'oauth' as const, providerAccountId: '7', access_token: 'test-token' };
   const profile = { id: 7, login: 'user' } as Parameters<typeof signIn>[0]['profile'];

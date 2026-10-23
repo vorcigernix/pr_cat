@@ -6,7 +6,7 @@
 - `components/`: Shared React components (design-system primitives in `components/ui/`).
 - `lib/`: Core application logic (DB access, GitHub integrations, services, shared utilities).
 - `hooks/`: Reusable React hooks (naming pattern: `use-*.ts(x)`).
-- `__tests__/`: Jest tests (`__tests__/lib` for unit-ish logic, `__tests__/api` for route-handler coverage).
+- `__tests__/`: Bun tests (`__tests__/lib` for unit-ish logic, `__tests__/api` for route-handler coverage, `__tests__/components` for React tests).
 - `migrations/`: SQL migration files (ordered `00x_*.sql`).
 - `scripts/`: Maintenance scripts, including architecture checks and database benchmarks.
 - `public/`: Static assets served by Next.js.
@@ -23,7 +23,7 @@
 
 ## Build, Test, and Development Commands
 
-Use Bun 1.4.2 for dependency management and package scripts. Keep Node.js 24+ installed (Node.js 22.13+ is also supported within the 22.x series) for the Next.js and Jest commands launched through `bun run`.
+Use Bun 1.4.4 for dependency management and as the runtime for development, builds, tooling, and tests. `bunfig.toml` makes `bun run` use Bun even for commands with Node.js shebangs. A separate Node.js installation is not required.
 
 - `bun install`: Install dependencies; use `bun install --frozen-lockfile` in CI.
 - `bun run dev`: Run local dev server (Next.js with Turbopack).
@@ -31,7 +31,7 @@ Use Bun 1.4.2 for dependency management and package scripts. Keep Node.js 24+ in
 - `bun run lint`: Run ESLint and architecture harness checks across the repo.
 - `bun run typecheck`: Generate Next.js route types and run TypeScript checks.
 - `bun run architecture:check`: Validate architecture manifest and dependency boundaries.
-- `bun run test`: Run the full Jest suite.
+- `bun run test`: Run the full native Bun suite with isolated test files (`bun test --isolate`).
 - `bun run test:watch`: Watch mode for local iteration.
 - `bun run test:unit` / `bun run test:integration`: Narrow runs for `__tests__/lib` and `__tests__/api`.
 - `bun run test:ci`: CI-style run with coverage enabled.
@@ -45,8 +45,10 @@ Use Bun 1.4.2 for dependency management and package scripts. Keep Node.js 24+ in
 
 ## Testing Guidelines
 
-- Jest + `next/jest` with `jsdom`; tests live under `__tests__/` and use `*.test.ts(x)`.
-- Global coverage thresholds are enforced (see `jest.config.js`); include tests for new logic and bug fixes.
+- Import test APIs and mocks from `bun:test`; tests live under `__tests__/` and use `*.test.ts(x)`.
+- Use `bun run test` or `bun test --isolate`; CI uses `bun test --parallel=2`, which also isolates files. Module mocks must be registered before importing the modules under test.
+- React tests import `__tests__/setup-dom.ts` for Happy DOM and Testing Library matchers. Server tests retain Bun's native web APIs.
+- Coverage runs enforce 60% line and function coverage per imported source file (see `bunfig.toml`). Bun does not report branch or statement coverage; include tests for new logic and bug fixes.
 
 ## Commit & Pull Request Guidelines
 

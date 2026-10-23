@@ -1,18 +1,14 @@
-/**
- * @jest-environment node
- */
-
+import { beforeEach, describe, expect, it, mock } from 'bun:test';
 // Integration tests for team API routes
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Mock auth module
-jest.mock('@/auth', () => ({
-  auth: jest.fn(),
+mock.module('@/auth', () => ({
+  auth: mock(),
 }));
 
 // Mock DDD auth boundary used by the team list/detail routes
-jest.mock('@/lib/core', () => {
-  const { NextResponse } = jest.requireActual('next/server') as typeof import('next/server');
+mock.module('@/lib/core', () => {
 
   return {
     withAuth:
@@ -23,7 +19,7 @@ jest.mock('@/lib/core', () => {
         ) => Promise<Response>
       ) =>
       async (request: unknown) => {
-        const { auth } = jest.requireMock('@/auth') as { auth: jest.Mock };
+        const { auth } = require('@/auth') as { auth: ReturnType<typeof mock> };
         const session = await auth();
 
         if (!session?.user?.id) {
@@ -52,42 +48,43 @@ jest.mock('@/lib/core', () => {
   };
 });
 
-jest.mock('@/lib/services', () => ({
+mock.module('@/lib/services', () => ({
   TeamService: {
-    getOrganizationTeams: jest.fn(),
-    createTeam: jest.fn(),
-    getTeamWithMembers: jest.fn(),
-    updateTeam: jest.fn(),
-    addTeamMember: jest.fn(),
+    getOrganizationTeams: mock(),
+    createTeam: mock(),
+    getTeamWithMembers: mock(),
+    updateTeam: mock(),
+    addTeamMember: mock(),
   },
 }));
 
-jest.mock('@/lib/repositories/team-repository', () => ({
-  deleteTeam: jest.fn(),
-  getTeamMembers: jest.fn(),
-  updateTeamMember: jest.fn(),
-  removeTeamMember: jest.fn(),
+mock.module('@/lib/repositories/team-repository', () => ({
+  deleteTeam: mock(),
+  getTeamMembers: mock(),
+  updateTeamMember: mock(),
+  removeTeamMember: mock(),
 }));
 
 // Mock database module
-jest.mock('@/lib/db', () => ({
-  query: jest.fn(),
-  execute: jest.fn(),
-  transaction: jest.fn(),
-  getDbClient: jest.fn(),
-  checkDbHealth: jest.fn(),
-  getConnectionStatus: jest.fn(() => ({ isConnected: true, hasClient: true })),
+mock.module('@/lib/db', () => ({
+  query: mock(),
+  execute: mock(),
+  transaction: mock(),
+  getDbClient: mock(),
+  checkDbHealth: mock(),
+  getConnectionStatus: mock(() => ({ isConnected: true, hasClient: true })),
 }));
 
-import { TeamService } from '@/lib/services';
-import * as TeamRepository from '@/lib/repositories/team-repository';
-import { GET as getTeams, POST as createTeam } from '@/app/api/organizations/[orgId]/teams/route';
-import { PUT as updateTeam, DELETE as deleteTeam } from '@/app/api/organizations/[orgId]/teams/[teamId]/route';
-import { POST as addMember, DELETE as removeMember } from '@/app/api/organizations/[orgId]/teams/[teamId]/members/route';
+const { TeamService } = await import('@/lib/services');
+const TeamRepository = await import('@/lib/repositories/team-repository');
+const { GET: getTeams, POST: createTeam } = await import('@/app/api/organizations/[orgId]/teams/route');
+const { PUT: updateTeam, DELETE: deleteTeam } = await import('@/app/api/organizations/[orgId]/teams/[teamId]/route');
+const { POST: addMember, DELETE: removeMember } = await import('@/app/api/organizations/[orgId]/teams/[teamId]/members/route');
+
 import { mockTeam, createMockTeams, mockOrganization, mockTeamMember, mockUser } from '../fixtures';
 
-const mockTeamService = jest.mocked(TeamService);
-const mockTeamRepository = jest.mocked(TeamRepository);
+const mockTeamService = (TeamService as unknown as { [K in keyof Omit<typeof TeamService, 'prototype'>]: ReturnType<typeof mock> });
+const mockTeamRepository = (TeamRepository as { [K in keyof typeof TeamRepository]: ReturnType<typeof mock> });
 
 const mockSession = {
   user: {
@@ -111,7 +108,7 @@ function serviceError(message: string, statusCode: number, code = 'TEAM_SERVICE_
 
 describe('Team API Routes', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mock.clearAllMocks();
 
     const { auth } = require('@/auth');
     auth.mockResolvedValue(mockSession);

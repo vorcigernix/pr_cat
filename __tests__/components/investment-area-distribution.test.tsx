@@ -1,13 +1,15 @@
-import { render, screen } from '@testing-library/react';
-import { InvestmentAreaDistribution } from '@/components/investment-area-distribution';
+import { expect, it, mock } from 'bun:test';
+import '../setup-dom';
+const { render, screen } = await import('@testing-library/react');
+
 import { SWRConfig } from 'swr';
 
-jest.mock('@/hooks/use-team-filter', () => ({
+mock.module('@/hooks/use-team-filter', () => ({
   useTeamFilter: () => ({ timeRange: '14d' }),
   useTeamFilterParams: () => 'organizationId=1&timeRange=14d',
 }));
 
-jest.mock('recharts', () => ({
+mock.module('recharts', () => ({
   Bar: () => null,
   CartesianGrid: () => null,
   XAxis: () => null,
@@ -16,13 +18,15 @@ jest.mock('recharts', () => ({
   ),
 }));
 
-jest.mock('@/components/ui/chart', () => ({
+mock.module('@/components/ui/chart', () => ({
   ChartContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   ChartLegend: () => null,
   ChartLegendContent: () => null,
   ChartTooltip: () => null,
   ChartTooltipContent: () => null,
 }));
+
+const { InvestmentAreaDistribution } = await import('@/components/investment-area-distribution');
 
 it('uses the selected 14 days for the shared request and chart label', async () => {
   const recentDate = new Date(Date.now() - 10 * 86400000).toISOString();
@@ -31,7 +35,7 @@ it('uses the selected 14 days for the shared request and chart label', async () 
     data: [{ date: recentDate, feature: 2 }],
   };
   const originalFetch = global.fetch;
-  global.fetch = jest.fn().mockResolvedValue(new Response(JSON.stringify(data)));
+  global.fetch = Object.assign(mock().mockResolvedValue(new Response(JSON.stringify(data))), { preconnect: mock() });
 
   try {
     render(<SWRConfig value={{ provider: () => new Map(), shouldRetryOnError: false }}><InvestmentAreaDistribution /></SWRConfig>);

@@ -1,15 +1,19 @@
+import { afterAll, beforeEach, expect, it, mock } from 'bun:test';
+import '../setup-dom';
 import { useState } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+const { act, fireEvent, render, screen, waitFor } = await import('@testing-library/react');
 import { SWRConfig } from 'swr';
 import { Toaster, toast } from 'sonner';
-import { AiSettingsTab } from '@/components/ui/ai-settings-tab';
+
 import type { OrganizationWithInstallation } from '@/components/ui/github-org-setup-item';
 import type { AiSettings, UpdateAiSettingsPayload } from '@/lib/repositories/settings-repository';
+
+const { AiSettingsTab } = await import('@/components/ui/ai-settings-tab');
 
 const originalFetch = global.fetch;
 const originalResizeObserver = global.ResizeObserver;
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
-const mockFetch = jest.fn();
+const mockFetch = Object.assign(mock(), { preconnect: mock() });
 const organizations: OrganizationWithInstallation[] = [
   { id: 1, github_id: 10, name: 'Acme', avatar_url: null, hasAppInstalled: true, installationId: 100 },
   { id: 2, github_id: 20, name: 'Beta', avatar_url: null, hasAppInstalled: true, installationId: 200 },

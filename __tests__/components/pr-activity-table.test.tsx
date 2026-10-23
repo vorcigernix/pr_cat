@@ -1,14 +1,17 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterAll, beforeEach, expect, it, mock, type Mock } from 'bun:test';
+import '../setup-dom';
+const { act, fireEvent, render, screen } = await import('@testing-library/react');
 import { SWRConfig } from 'swr';
-import { PRActivityTable } from '@/components/pr-activity-table';
-import { useTeamFilterParams } from '@/hooks/use-team-filter';
 
-jest.mock('@/hooks/use-team-filter', () => ({
-  useTeamFilterParams: jest.fn(),
+mock.module('@/hooks/use-team-filter', () => ({
+  useTeamFilterParams: mock(),
 }));
 
-const mockFilterParams = jest.mocked(useTeamFilterParams);
-const mockFetch = jest.fn();
+const { PRActivityTable } = await import('@/components/pr-activity-table');
+const { useTeamFilterParams } = await import('@/hooks/use-team-filter');
+
+const mockFilterParams = (useTeamFilterParams as Mock<typeof useTeamFilterParams>);
+const mockFetch = Object.assign(mock(), { preconnect: mock() });
 const originalFetch = global.fetch;
 
 function response(data: unknown, status = 200) {

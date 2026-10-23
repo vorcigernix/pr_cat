@@ -1,16 +1,18 @@
-/** @jest-environment node */
-
+import { createClient as createNativeClient } from '@libsql/client/sqlite3';
+import { afterAll, beforeAll, beforeEach, expect, it, mock, spyOn, setSystemTime, type Mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { createHmac, randomUUID } from 'node:crypto';
-import { createClient, type Client } from '@libsql/client';
+import type { Client } from '@libsql/client';
 import { NextRequest } from 'next/server';
-import { POST } from '@/app/api/webhook/github/route';
 
-jest.mock('ai', () => ({ generateText: jest.fn() }));
-jest.mock('@ai-sdk/google', () => ({ createGoogle: jest.fn() }));
-jest.mock('@ai-sdk/openai', () => ({ createOpenAI: jest.fn() }));
-jest.mock('@ai-sdk/anthropic', () => ({ createAnthropic: jest.fn() }));
-jest.mock('@libsql/client', () => ({ ...jest.requireActual('@libsql/client'), createClient: jest.fn() }));
+mock.module('ai', () => ({ generateText: mock() }));
+mock.module('@ai-sdk/google', () => ({ createGoogle: mock() }));
+mock.module('@ai-sdk/openai', () => ({ createOpenAI: mock() }));
+mock.module('@ai-sdk/anthropic', () => ({ createAnthropic: mock() }));
+mock.module('@libsql/client', () => ({ createClient: mock() }));
+
+const { createClient } = await import('@libsql/client');
+const { POST } = await import('@/app/api/webhook/github/route');
 
 let db: Client;
 const secret = 'webhook-route-test-secret';
@@ -34,8 +36,8 @@ function request(body = JSON.stringify(payload), headers: Record<string, string>
 }
 
 beforeAll(async () => {
-  db = jest.requireActual<typeof import('@libsql/client')>('@libsql/client').createClient({ url: 'file::memory:' });
-  jest.mocked(createClient).mockReturnValue(db);
+  db = createNativeClient({ url: 'file::memory:' });
+  (createClient as Mock<typeof createClient>).mockReturnValue(db);
   await db.executeMultiple(readFileSync('lib/schema.sql', 'utf8'));
 });
 
@@ -58,7 +60,7 @@ afterAll(() => {
 it('persists signed PR deliveries through the actual adapter and rejects successful replays', async () => {
   const delivery = randomUUID();
   expect((await POST(request(undefined, { 'x-github-delivery': delivery }))).status).toBe(200);
-  expect((await db.execute('SELECT number, title, author_id, additions, deletions FROM pull_requests')).rows).toEqual([
+  expect((await db.execute('SELECT number, title, author_id, additions, deletions FROM pull_requests')).rows).toEqual<unknown>([
     { number: 1, title: 'Persist this PR', author_id: '7', additions: 0, deletions: 0 },
   ]);
   const replay = await POST(request(undefined, { 'x-github-delivery': delivery }));
@@ -106,7 +108,7 @@ it('fails closed when no signing secret is configured', async () => {
 
 it('allows failed persistence to retry the same delivery ID', async () => {
   const delivery = randomUUID();
-  const execute = jest.spyOn(db, 'execute').mockRejectedValueOnce(new Error('Temporary database failure'));
+  const execute = spyOn(db, 'execute').mockRejectedValueOnce(new Error('Temporary database failure'));
   const failed = await POST(request(undefined, { 'x-github-delivery': delivery }));
   execute.mockRestore();
   expect(failed.status).toBe(422);
@@ -120,7 +122,7 @@ it('creates unknown review authors and persists review state changes', async () 
   const reviewPayload = { ...payload, action: 'submitted', review };
   expect((await POST(request(JSON.stringify(reviewPayload), { 'x-github-event': 'pull_request_review' }))).status).toBe(200);
   expect((await POST(request(JSON.stringify({ ...reviewPayload, action: 'dismissed', review: { ...review, state: 'dismissed' } }), { 'x-github-event': 'pull_request_review' }))).status).toBe(200);
-  expect((await db.execute('SELECT github_id, reviewer_id, state FROM pr_reviews')).rows).toEqual([{ github_id: 600, reviewer_id: '8', state: 'dismissed' }]);
+  expect((await db.execute('SELECT github_id, reviewer_id, state FROM pr_reviews')).rows).toEqual<unknown>([{ github_id: 600, reviewer_id: '8', state: 'dismissed' }]);
 });
 
 it('reserves an in-flight delivery before awaiting database work', async () => {
@@ -130,7 +132,7 @@ it('reserves an in-flight delivery before awaiting database work', async () => {
   const pending = new Promise<void>(resolve => { release = resolve; });
   const started = new Promise<void>(resolve => { entered = resolve; });
   const originalExecute = db.execute.bind(db);
-  const execute = jest.spyOn(db, 'execute').mockImplementationOnce(async statement => {
+  const execute = spyOn(db, 'execute').mockImplementationOnce(async statement => {
     entered();
     await pending;
     return originalExecute(statement);
@@ -147,14 +149,14 @@ it('reserves an in-flight delivery before awaiting database work', async () => {
 });
 
 it('expires successful replay entries after the configured window', async () => {
-  jest.useFakeTimers();
+
   const delivery = randomUUID();
   try {
     expect((await POST(request('{}', { 'x-github-delivery': delivery, 'x-github-event': 'ping' }))).status).toBe(200);
-    jest.advanceTimersByTime(5 * 60 * 1000 + 1);
+    setSystemTime(Date.now() + 5 * 60 * 1000 + 1);
     expect((await POST(request('{}', { 'x-github-delivery': delivery, 'x-github-event': 'ping' }))).status).toBe(200);
   } finally {
-    jest.useRealTimers();
+    setSystemTime();
   }
 });
 
@@ -173,11 +175,11 @@ it('retries a partially failed installation delivery without duplicating reposit
     const failed = await POST(request(body, headers));
     expect(failed.status).toBe(422);
     expect(await failed.json()).toMatchObject({ success: false });
-    expect((await db.execute('SELECT github_id FROM repositories WHERE github_id IN (301, 302)')).rows).toEqual([{ github_id: 301 }]);
+    expect((await db.execute('SELECT github_id FROM repositories WHERE github_id IN (301, 302)')).rows).toEqual<unknown>([{ github_id: 301 }]);
   } finally {
     await db.execute('DROP TRIGGER reject_second_repository');
   }
   expect((await POST(request(body, headers))).status).toBe(200);
-  expect((await db.execute('SELECT github_id FROM repositories WHERE github_id IN (301, 302) ORDER BY github_id')).rows).toEqual([{ github_id: 301 }, { github_id: 302 }]);
+  expect((await db.execute('SELECT github_id FROM repositories WHERE github_id IN (301, 302) ORDER BY github_id')).rows).toEqual<unknown>([{ github_id: 301 }, { github_id: 302 }]);
   expect((await db.execute('SELECT installation_id FROM organizations WHERE id = 1')).rows[0].installation_id).toBe(42);
 });

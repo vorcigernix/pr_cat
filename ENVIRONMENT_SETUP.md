@@ -148,6 +148,8 @@ TURSO_TOKEN=your-turso-token
 
 ### 3. Install dependencies and run
 
+Install Bun 1.4.4, or run `bun upgrade` to update an existing installation. Bun is both the package manager and runtime; `bunfig.toml` selects it for all package scripts.
+
 ```bash
 # Install dependencies
 bun install
@@ -183,6 +185,8 @@ ngrok http 3000
 
 1. Import your GitHub repository to Vercel
 2. Navigate to: **Project Settings → Environment Variables**
+
+The committed `vercel.json` uses Bun 1.4.4 for installation and builds, and `bunVersion: "1.4.x"` for functions. Vercel manages function runtime patches within the 1.4 series; its Bun runtime is currently in beta. See [Vercel's Bun runtime documentation](https://vercel.com/docs/functions/runtimes/bun).
 
 ### 2. Add Environment Variables
 
