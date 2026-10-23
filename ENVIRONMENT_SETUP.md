@@ -186,7 +186,7 @@ ngrok http 3000
 1. Import your GitHub repository to Vercel
 2. Navigate to: **Project Settings → Environment Variables**
 
-The committed `vercel.json` uses Bun 1.4.4 for installation and builds, and `bunVersion: "1.4.x"` for functions. Vercel manages function runtime patches within the 1.4 series; its Bun runtime is currently in beta. See [Vercel's Bun runtime documentation](https://vercel.com/docs/functions/runtimes/bun).
+The committed `vercel.json` uses Vercel's installed Bun directly for installation and builds, and `bunVersion: "1.4.x"` for functions. Local development and CI pin Bun 1.4.4 in `package.json`; Vercel manages its Bun versions. Avoid bootstrapping a second Bun executable with `bunx` during deployment. Vercel's Bun runtime is currently in beta. See [Vercel's Bun runtime documentation](https://vercel.com/docs/functions/runtimes/bun).
 
 ### 2. Add Environment Variables
 
